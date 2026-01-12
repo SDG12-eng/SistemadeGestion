@@ -1,423 +1,113 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard Sistema Gestión FCI</title>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.5.0/axios.min.js"></script>
-<style>
-    :root {
-        --primary: #2563eb;
-        --secondary: #1e293b;
-        --bg: #f8fafc;
-        --card: #ffffff;
-        --text: #334155;
-        --accent: #3b82f6;
-        --success: #10b981;
-        --danger: #ef4444;
-    }
+<section id="dashboard" style="display:none;">
+<h2>Panel Administrativo</h2>
+<div class="container">
 
-    body { 
-        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-        margin:0; 
-        padding:0; 
-        background-color: var(--bg); 
-        color: var(--text);
-    }
+<!-- Tabs -->
+<div style="width:100%; display:flex; gap:10px; margin-bottom:10px;">
+<button onclick="abrirTab('usuarios-tab')">Usuarios</button>
+<button onclick="abrirTab('gerencias-tab')">Gerencias</button>
+<button onclick="abrirTab('departamentos-tab')">Departamentos</button>
+<button onclick="abrirTab('solicitudes-tab')">Solicitudes</button>
+<button onclick="abrirTab('nueva-solicitud-tab')">Nueva Solicitud</button>
+</div>
 
-    /* Estilos Login */
-    #login-section {
-        height: 100vh;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        background: linear-gradient(135deg, var(--secondary) 0%, #0f172a 100%);
-    }
+<!-- Tab Usuarios -->
+<div id="usuarios-tab" class="tab" style="display:block;">
+<!-- aquí va todo el HTML de usuarios que te pasé antes -->
+</div>
 
-    .login-card {
-        background: white;
-        padding: 40px;
-        border-radius: 16px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        width: 100%;
-        max-width: 350px;
-        text-align: center;
-    }
+<!-- Tab Gerencias -->
+<div id="gerencias-tab" class="tab" style="display:none;">
+<!-- HTML de gerencias -->
+</div>
 
-    .login-card h2 { margin-bottom: 25px; color: var(--secondary); }
+<!-- Tab Departamentos -->
+<div id="departamentos-tab" class="tab" style="display:none;">
+<!-- HTML de departamentos -->
+</div>
 
-    /* Layout Dashboard */
-    header { 
-        background: var(--card); 
-        color: var(--secondary); 
-        padding: 15px 30px; 
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        position: sticky;
-        top: 0;
-        z-index: 100;
-    }
+<!-- Tab Solicitudes -->
+<div id="solicitudes-tab" class="tab" style="display:none;">
+<!-- HTML para listar solicitudes -->
+</div>
 
-    header h1 { font-size: 1.2rem; margin: 0; font-weight: 600; }
-
-    .main-layout {
-        display: flex;
-        min-height: calc(100vh - 60px);
-    }
-
-    .sidebar {
-        width: 240px;
-        background: var(--secondary);
-        color: white;
-        padding: 20px 0;
-    }
-
-    .sidebar-item {
-        padding: 12px 25px;
-        display: block;
-        color: #cbd5e1;
-        text-decoration: none;
-        transition: 0.3s;
-        border-left: 4px solid transparent;
-    }
-
-    .sidebar-item:hover {
-        background: #334155;
-        color: white;
-    }
-
-    section { padding: 30px; width: 100%; box-sizing: border-box; }
-
-    /* Componentes UI */
-    input, select, textarea { 
-        margin: 8px 0; 
-        padding: 10px 12px; 
-        width: 100%; 
-        box-sizing: border-box;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        font-size: 14px;
-        transition: border-color 0.2s;
-    }
-
-    input:focus { outline: none; border-color: var(--accent); ring: 2px solid #bfdbfe; }
-
-    button { 
-        background: var(--primary); 
-        color: white; 
-        border: none; 
-        padding: 10px 20px; 
-        border-radius: 8px; 
-        cursor: pointer; 
-        font-weight: 500;
-        transition: filter 0.2s;
-        margin-top: 10px;
-    }
-
-    button:hover { filter: brightness(1.1); }
-    
-    .btn-secondary { background: #64748b; }
-    .btn-approve { background: var(--success); }
-    .btn-reject { background: var(--danger); }
-
-    .container { 
-        display: grid; 
-        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
-        gap: 25px; 
-    }
-
-    .card { 
-        background: var(--card); 
-        padding: 24px; 
-        border-radius: 12px; 
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); 
-    }
-
-    h2, h3 { margin-top: 0; color: var(--secondary); font-size: 1.1rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 20px; }
-
-    ul { list-style: none; padding: 0; }
-    
-    li { 
-        padding: 12px;
-        background: #f8fafc;
-        border-radius: 8px;
-        margin-bottom: 10px;
-        font-size: 13px;
-        border-left: 4px solid var(--accent);
-    }
-
-    .solicitud-card {
-        background: white;
-        border: 1px solid #e2e8f0;
-        padding: 15px;
-        margin-bottom: 15px;
-        border-radius: 8px;
-    }
-
-    label { display: flex; align-items: center; gap: 8px; font-size: 13px; margin: 5px 0; cursor: pointer; }
-    input[type="checkbox"] { width: auto; margin: 0; }
-
-    .status-badge {
-        display: inline-block;
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 11px;
-        font-weight: bold;
-        text-transform: uppercase;
-    }
-</style>
-</head>
-<body>
-
-<section id="login-section">
-    <div class="login-card">
-        <h2 style="border:none">SISTEMA FCI</h2>
-        <input type="text" id="usuario" placeholder="Usuario">
-        <input type="password" id="contraseña" placeholder="Contraseña">
-        <button style="width:100%" onclick="login()">Iniciar Sesión</button>
-    </div>
-</section>
-
-<div id="dashboard" style="display:none;">
-    <header>
-        <h1>Dashboard Gestión FCI</h1>
-        <div style="font-size: 14px; font-weight: 500;">Administrador</div>
-    </header>
-
-    <div class="main-layout">
-        <div class="sidebar">
-            <a href="#" class="sidebar-item">🏠 Inicio</a>
-            <a href="#" class="sidebar-item">👥 Usuarios</a>
-            <a href="#" class="sidebar-item">🏢 Estructura</a>
-            <a href="#" class="sidebar-item" onclick="cargarSolicitudes()">📥 Solicitudes</a>
-        </div>
-
-        <section>
-            <div class="container">
-
-                <div class="card">
-                    <h3>Registro de Usuarios</h3>
-                    <input type="text" id="nuevoUsuario" placeholder="Nombre de Usuario">
-                    <input type="password" id="nuevaContraseña" placeholder="Contraseña">
-                    <input type="email" id="nuevoCorreo" placeholder="Correo electrónico">
-                    <select id="nuevoGerencia">
-                        <option value="">Seleccione Gerencia</option>
-                    </select>
-                    <select id="nuevoDepartamento">
-                        <option value="">Seleccione Departamento</option>
-                    </select>
-                    
-                    <div style="margin: 15px 0; background: #f1f5f9; padding: 10px; border-radius: 8px;">
-                        <span style="font-size: 12px; font-weight: bold; color: #64748b;">PERMISOS DEL ROL:</span>
-                        <label><input type="checkbox" id="permSolicitudes"> Realizar solicitudes</label>
-                        <label><input type="checkbox" id="permVerPropias"> Ver solicitudes propias</label>
-                        <label><input type="checkbox" id="permVerGerencia"> Ver solicitudes de gerencia</label>
-                        <label><input type="checkbox" id="permAprobar"> Aprobar/Rechazar solicitudes</label>
-                        <label><input type="checkbox" id="permGestionarUsuarios"> Gestionar usuarios</label>
-                    </div>
-                    
-                    <button style="width: 100%;" onclick="crearUsuario()">Crear Nuevo Usuario</button>
-                    
-                    <h4 style="margin-top: 25px; font-size: 0.9rem;">Usuarios Registrados</h4>
-                    <ul id="listaUsuarios"></ul>
-                </div>
-
-                <div style="display: flex; flex-direction: column; gap: 25px;">
-                    <div class="card">
-                        <h3>Gerencias</h3>
-                        <div style="display:flex; gap: 10px;">
-                            <input type="text" id="nuevaGerenciaNombre" placeholder="Nombre Gerencia">
-                            <button onclick="crearGerencia()">Añadir</button>
-                        </div>
-                        <ul id="listaGerencias" style="margin-top: 15px;"></ul>
-                    </div>
-
-                    <div class="card">
-                        <h3>Departamentos</h3>
-                        <input type="text" id="nuevoDepartamentoNombre" placeholder="Nombre Departamento">
-                        <select id="departamentoGerencia">
-                            <option value="">Seleccione Gerencia</option>
-                        </select>
-                        <button style="width: 100%;" onclick="crearDepartamento()">Vincular Departamento</button>
-                        <ul id="listaDepartamentos" style="margin-top: 15px;"></ul>
-                    </div>
-                </div>
-
-                <div class="card" style="grid-column: 1 / -1;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h3 style="margin:0; border:none;">Bandeja de Solicitudes</h3>
-                        <button class="btn-secondary" onclick="cargarSolicitudes()">🔄 Actualizar</button>
-                    </div>
-                    <div id="listaSolicitudes">
-                        </div>
-                </div>
-
-            </div>
-        </section>
-    </div>
+<!-- Tab Nueva Solicitud -->
+<div id="nueva-solicitud-tab" class="tab" style="display:none;">
+<h3>Crear Nueva Solicitud</h3>
+<input type="text" id="solNombre" placeholder="Nombre del documento">
+<select id="solTipo">
+<option value="Procedimiento">Procedimiento</option>
+<option value="Guía">Guía</option>
+<option value="Instructivo">Instructivo</option>
+<option value="Manual">Manual</option>
+<option value="Formato">Formato</option>
+</select>
+<select id="solAccion">
+<option value="Creación">Creación</option>
+<option value="Modificación">Modificación</option>
+<option value="Inactivación">Inactivación</option>
+</select>
+<select id="solGerencia">
+<option value="">Seleccione Gerencia</option>
+</select>
+<select id="solDepartamento">
+<option value="">Seleccione Departamento</option>
+</select>
+<input type="text" id="solMotivo" placeholder="Motivo">
+<input type="text" id="solUltimaVersion" placeholder="Última versión (solo si Modificación/Inactivación)">
+<input type="text" id="solFechaUltima" placeholder="Fecha última versión">
+<input type="text" id="solCodigo" placeholder="Codificación del documento">
+<button onclick="crearSolicitud()">Crear Solicitud</button>
+</div>
 </div>
 
 <script>
-// Firebase Config (Igual al original)
-const firebaseConfig = {
-  apiKey: "AIzaSyDdzCiachuhbE9jATz-TesPI2vUVIJrHjM",
-  authDomain: "sistemadegestion-7400d.firebaseapp.com",
-  projectId: "sistemadegestion-7400d",
-  storageBucket: "sistemadegestion-7400d.firebasestorage.app",
-  messagingSenderId: "709030283072",
-  appId: "1:709030283072:web:5997837b36a448e9515ca5"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-
-let usuarios = [
-  {usuario:"Admin", contraseña:"1130", correo:"admin@fci.com", permisos:["Realizar solicitudes","Ver solicitudes propias","Ver solicitudes de gerencia","Aprobar/Rechazar solicitudes","Gestionar usuarios"]}
-];
-
-function login(){
-    const user = document.getElementById("usuario").value;
-    const pass = document.getElementById("contraseña").value;
-    const found = usuarios.find(u => u.usuario===user && u.contraseña===pass);
-    if(found){
-        document.getElementById("login-section").style.display="none";
-        document.getElementById("dashboard").style.display="block";
-        cargarUsuarios();
-        cargarGerencias();
-        cargarDepartamentos();
-        cargarSolicitudes();
-    } else {
-        alert("Usuario o contraseña incorrectos");
-    }
+// Función Tabs
+function abrirTab(tabId){
+    const tabs = document.querySelectorAll(".tab");
+    tabs.forEach(t=>t.style.display="none");
+    document.getElementById(tabId).style.display="block";
 }
 
-async function crearUsuario(){
-    const user = document.getElementById("nuevoUsuario").value;
-    const pass = document.getElementById("nuevaContraseña").value;
-    const correo = document.getElementById("nuevoCorreo").value;
-    const gerencia = document.getElementById("nuevoGerencia").value;
-    const departamento = document.getElementById("nuevoDepartamento").value;
-    const permisos = [];
-    if(document.getElementById("permSolicitudes").checked) permisos.push("Realizar solicitudes");
-    if(document.getElementById("permVerPropias").checked) permisos.push("Ver solicitudes propias");
-    if(document.getElementById("permVerGerencia").checked) permisos.push("Ver solicitudes de gerencia");
-    if(document.getElementById("permAprobar").checked) permisos.push("Aprobar/Rechazar solicitudes");
-    if(document.getElementById("permGestionarUsuarios").checked) permisos.push("Gestionar usuarios");
-
-    if(!user || !pass) { alert("Usuario y contraseña obligatorios"); return; }
-    const nuevo = {usuario:user, contraseña:pass, correo, gerencia, departamento, permisos};
-    usuarios.push(nuevo);
-    await db.collection("usuarios").add(nuevo);
-    alert("Usuario creado exitosamente");
-    cargarUsuarios();
-}
-
-async function cargarUsuarios(){
-    const ul = document.getElementById("listaUsuarios");
-    ul.innerHTML="";
-    const snapshot = await db.collection("usuarios").get();
-    snapshot.forEach(doc=>{
-        const data = doc.data();
-        const li = document.createElement("li");
-        li.innerHTML = `<strong>${data.usuario}</strong><br><small>${data.gerencia || "-"} | ${data.departamento || "-"}</small>`;
-        ul.appendChild(li);
-    });
-}
-
-async function crearGerencia(){
-    const nombre = document.getElementById("nuevaGerenciaNombre").value;
-    if(!nombre) return alert("Ingrese nombre de gerencia");
-    await db.collection("gerencias").add({nombre});
-    document.getElementById("nuevaGerenciaNombre").value = "";
-    cargarGerencias();
-}
-
-async function cargarGerencias(){
-    const ul = document.getElementById("listaGerencias");
-    const select = document.getElementById("nuevoGerencia");
-    const selectDep = document.getElementById("departamentoGerencia");
-    ul.innerHTML=""; select.innerHTML='<option value="">Seleccione Gerencia</option>'; selectDep.innerHTML='<option value="">Seleccione Gerencia</option>';
+// Cargar gerencias y departamentos en formulario de solicitud
+async function cargarGerenciasSolicitudes(){
     const snapshot = await db.collection("gerencias").get();
+    const gerSelect = document.getElementById("solGerencia");
+    gerSelect.innerHTML='<option value="">Seleccione Gerencia</option>';
     snapshot.forEach(doc=>{
         const data = doc.data();
-        ul.innerHTML += `<li>${data.nombre}</li>`;
-        select.innerHTML += `<option value="${data.nombre}">${data.nombre}</option>`;
-        selectDep.innerHTML += `<option value="${data.nombre}">${data.nombre}</option>`;
+        gerSelect.innerHTML += `<option value="${data.nombre}">${data.nombre}</option>`;
     });
 }
-
-async function crearDepartamento(){
-    const nombre = document.getElementById("nuevoDepartamentoNombre").value;
-    const gerencia = document.getElementById("departamentoGerencia").value;
-    if(!nombre || !gerencia) return alert("Ingrese nombre y gerencia");
-    await db.collection("departamentos").add({nombre, gerencia});
-    document.getElementById("nuevoDepartamentoNombre").value = "";
-    cargarDepartamentos();
-}
-
-async function cargarDepartamentos(){
-    const ul = document.getElementById("listaDepartamentos");
-    ul.innerHTML="";
+async function cargarDepartamentosSolicitudes(){
     const snapshot = await db.collection("departamentos").get();
+    const depSelect = document.getElementById("solDepartamento");
+    depSelect.innerHTML='<option value="">Seleccione Departamento</option>';
     snapshot.forEach(doc=>{
         const data = doc.data();
-        ul.innerHTML += `<li>${data.nombre} <small>(${data.gerencia})</small></li>`;
-        document.getElementById("nuevoDepartamento").innerHTML += `<option value="${data.nombre}">${data.nombre}</option>`;
+        depSelect.innerHTML += `<option value="${data.nombre}">${data.nombre}</option>`;
     });
 }
+cargarGerenciasSolicitudes();
+cargarDepartamentosSolicitudes();
 
-async function cargarSolicitudes(){
-    const container = document.getElementById("listaSolicitudes");
-    container.innerHTML="";
-    const snapshot = await db.collection("solicitudes").get();
-    snapshot.forEach(doc=>{
-        const data = doc.data();
-        const div = document.createElement("div");
-        div.className = "solicitud-card";
-        const statusColor = data.estado === 'Aprobada' ? '#d1fae5' : (data.estado === 'Rechazada' ? '#fee2e2' : '#fef3c7');
-        const textColor = data.estado === 'Aprobada' ? '#065f46' : (data.estado === 'Rechazada' ? '#991b1b' : '#92400e');
-        
-        div.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:start">
-                <div>
-                    <span class="status-badge" style="background:${statusColor}; color:${textColor}">${data.estado || 'Pendiente'}</span>
-                    <h4 style="margin:10px 0 5px 0">${data.nombreDocumento}</h4>
-                    <p style="margin:0; font-size:13px; color:#64748b">${data.tipo} | Accion: ${data.accion}</p>
-                </div>
-                <div style="text-align:right; font-size:12px">
-                    <b>Solicitante:</b> ${data.usuario || '-'}<br>
-                    <b>Depto:</b> ${data.departamento || '-'}
-                </div>
-            </div>
-            <p style="background:#f1f5f9; padding:10px; border-radius:6px; font-size:13px; margin:15px 0">
-                <strong>Motivo:</strong> ${data.motivo || '-'}
-            </p>
-            <div style="display:flex; gap:10px">
-                <button class="btn-approve" onclick="aprobarSolicitud('${doc.id}')">Aprobar</button>
-                <button class="btn-reject" onclick="rechazarSolicitud('${doc.id}')">Rechazar</button>
-            </div>
-        `;
-        container.appendChild(div);
-    });
-}
-
-async function aprobarSolicitud(id){
-    await db.collection("solicitudes").doc(id).update({estado:"Aprobada"});
-    alert("Solicitud aprobada");
-    cargarSolicitudes();
-}
-
-async function rechazarSolicitud(id){
-    const motivo = prompt("Motivo de rechazo:");
-    if(!motivo) return;
-    await db.collection("solicitudes").doc(id).update({estado:"Rechazada", motivoRechazo:motivo});
-    alert("Solicitud rechazada");
-    cargarSolicitudes();
+// Crear Solicitud
+async function crearSolicitud(){
+    const solicitud = {
+        nombreDocumento: document.getElementById("solNombre").value,
+        tipo: document.getElementById("solTipo").value,
+        accion: document.getElementById("solAccion").value,
+        gerencia: document.getElementById("solGerencia").value,
+        departamento: document.getElementById("solDepartamento").value,
+        motivo: document.getElementById("solMotivo").value,
+        ultimaVersion: document.getElementById("solUltimaVersion").value,
+        fechaUltima: document.getElementById("solFechaUltima").value,
+        codificacion: document.getElementById("solCodigo").value,
+        estado: "Pendiente",
+        usuario: "Admin"
+    };
+    await db.collection("solicitudes").add(solicitud);
+    alert("Solicitud creada");
+    cargarSolicitudes(); // refresca lista
 }
 </script>
-</body>
-</html>
