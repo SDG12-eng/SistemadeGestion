@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>FCI | Gestión Documental</title>
+<title>FCI | Sistema de Gestión Documental</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <!-- Firebase -->
@@ -40,41 +40,48 @@ td,th{border:1px solid #ccc;padding:6px;text-align:left}
 <!-- PANEL PRINCIPAL -->
 <section id="panel" class="card hidden">
 
-  <h3>Usuario: <span id="usuarioActual"></span> | Rol: <span id="rolActual"></span></h3>
+<h3>Usuario: <span id="usuarioActual"></span> | Rol: <span id="rolActual"></span></h3>
 
-  <div class="card">
-    <h3>➕ Nueva Solicitud</h3>
-    <select id="tipoAccion">
-      <option>Creación</option>
-      <option>Modificación</option>
-      <option>Inactivación</option>
-    </select>
-    <input id="nombreDocumento" placeholder="Nombre documento">
-    <select id="gerencia"></select>
-    <select id="departamento"></select>
-    <textarea id="motivo" placeholder="Motivo"></textarea>
-    <input id="codificacion" placeholder="Codificación actual">
-    <input id="ultimaVersion" placeholder="Última versión">
-    <input type="date" id="fechaUltimaVersion">
-    <input type="file" id="archivo">
-    <button onclick="crearSolicitud()">Enviar Solicitud</button>
-  </div>
+<div class="card">
+  <h3>➕ Nueva Solicitud</h3>
+  <select id="tipoAccion">
+    <option>Creación</option>
+    <option>Modificación</option>
+    <option>Inactivación</option>
+  </select>
+  <input id="nombreDocumento" placeholder="Nombre documento">
+  <select id="gerencia"></select>
+  <select id="departamento"></select>
+  <textarea id="motivo" placeholder="Motivo"></textarea>
+  <input id="codificacion" placeholder="Codificación actual">
+  <input id="ultimaVersion" placeholder="Última versión">
+  <input type="date" id="fechaUltimaVersion">
+  <input type="file" id="archivo">
+  <button onclick="crearSolicitud()">Enviar Solicitud</button>
+</div>
 
-  <div class="card">
-    <h3>📋 Solicitudes</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Documento</th>
-          <th>Estado</th>
-          <th>Solicitante</th>
-          <th>Acción</th>
-        </tr>
-      </thead>
-      <tbody id="tabla"></tbody>
-    </table>
-  </div>
+<div class="card">
+  <h3>📋 Solicitudes</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Documento</th>
+        <th>Estado</th>
+        <th>Solicitante</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+    <tbody id="tabla"></tbody>
+  </table>
+</div>
+
+<!-- DETALLES DE SOLICITUD -->
+<div class="card hidden" id="detalleSolicitudCard">
+  <h3>📝 Detalles de Solicitud</h3>
+  <div id="detalleContenido"></div>
+  <button onclick="cerrarDetalle()">Cerrar</button>
+</div>
 
 </section>
 
@@ -88,19 +95,18 @@ const firebaseConfig = {
   messagingSenderId: "709030283072",
   appId: "1:709030283072:web:5997837b36a448e9515ca5"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 // Inicializar EmailJS
-emailjs.init("2jVnfkJKKG0bpKN-U"); // Public Key EmailJS
+emailjs.init("2jVnfkJKKG0bpKN-U");
 
 // ================= USUARIOS INICIALES =================
 let usuarios = [
   {usuario:"Admin", correo:"admin@fcipty.com", password:"123456", rol:"admin", gerencia:"Todas"}
 ];
 
-// ================= VARIABLES =================
+// Variables globales
 let gerencias = [];
 let departamentos = [];
 let usuarioActual = null;
@@ -171,32 +177,11 @@ async function crearSolicitud(){
   };
 
   await db.collection("solicitudes").add(nuevaSolicitud);
-
-  // EmailJS autoreply
   enviarCorreo(usuarioActual.correo, id, "pendiente", "Tu solicitud fue registrada correctamente.");
-  alert("Solicitud creada: "+id);
   cargarSolicitudes();
 }
 
-// Cargar solicitudes
-async function cargarSolicitudes(){
-  const tabla = document.getElementById("tabla");
-  tabla.innerHTML="";
-  const snap = await db.collection("solicitudes").orderBy("fecha","desc").get();
-  snap.forEach(d=>{
-    const s = d.data();
-    tabla.innerHTML+=`
-      <tr>
-        <td>${s.idSolicitud}</td>
-        <td>${s.nombreDocumento}</td>
-        <td>${s.estado}</td>
-        <td>${s.solicitante.usuario}</td>
-        <td><button onclick="verSolicitud('${d.id}')">Ver Detalles</button></td>
-      </tr>`;
-  });
-}
-
-// ================= GERENCIAS Y DEPARTAMENTOS =================
+// ================= CARGAR DATOS =================
 async function cargarGerencias(){
   const sel = document.getElementById("gerencia");
   sel.innerHTML = "";
@@ -229,12 +214,49 @@ function enviarCorreo(destino,id,estado,mensaje){
   }).catch(err=>console.log("Error email:",err));
 }
 
+// ================= SOLICITUDES =================
+async function cargarSolicitudes(){
+  const tabla = document.getElementById("tabla");
+  tabla.innerHTML="";
+  const snap = await db.collection("solicitudes").orderBy("fecha","desc").get();
+  snap.forEach(d=>{
+    const s = d.data();
+    tabla.innerHTML+=`
+      <tr>
+        <td>${s.idSolicitud}</td>
+        <td>${s.nombreDocumento}</td>
+        <td>${s.estado}</td>
+        <td>${s.solicitante.usuario}</td>
+        <td><button onclick="verSolicitud('${d.id}')">Ver Detalles</button></td>
+      </tr>`;
+  });
+}
+
 // ================= DETALLES =================
 async function verSolicitud(docId){
   const doc = await db.collection("solicitudes").doc(docId).get();
   const s = doc.data();
-  alert(`ID: ${s.idSolicitud}\nDocumento: ${s.nombreDocumento}\nEstado: ${s.estado}\nSolicitante: ${s.solicitante.usuario}\nCorreo: ${s.solicitante.correo}\nMotivo: ${s.motivo}`);
+  document.getElementById("detalleContenido").innerHTML = `
+    <p><b>ID:</b> ${s.idSolicitud}</p>
+    <p><b>Documento:</b> ${s.nombreDocumento}</p>
+    <p><b>Estado:</b> ${s.estado}</p>
+    <p><b>Solicitante:</b> ${s.solicitante.usuario} (${s.solicitante.correo})</p>
+    <p><b>Tipo acción:</b> ${s.tipoAccion}</p>
+    <p><b>Gerencia:</b> ${s.gerencia}</p>
+    <p><b>Departamento:</b> ${s.departamento}</p>
+    <p><b>Motivo:</b> ${s.motivo}</p>
+    <p><b>Codificación:</b> ${s.codificacionActual}</p>
+    <p><b>Última versión:</b> ${s.ultimaVersion}</p>
+    <p><b>Fecha última versión:</b> ${s.fechaUltimaVersion}</p>
+    <p><b>Documento adjunto:</b> <a href="${s.documento}" target="_blank">Ver archivo</a></p>
+  `;
+  document.getElementById("detalleSolicitudCard").classList.remove("hidden");
+}
+
+function cerrarDetalle(){
+  document.getElementById("detalleSolicitudCard").classList.add("hidden");
 }
 </script>
+
 </body>
 </html>
