@@ -3,171 +3,185 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FCI - Gestión Documental Final</title>
+    <title>Dashboard FCI | Gestión Documental</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; }
-        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 20px; margin-bottom: 20px; border: 1px solid #e2e8f0; }
-        input, select, textarea { width: 100%; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; margin-top: 4px; outline: none; font-size: 0.9rem; transition: all 0.2s; }
-        input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
-        label { font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-top: 10px; display: block; }
-        .btn-primary { background: #2563eb; color: white; font-weight: 600; border-radius: 8px; padding: 10px; cursor: pointer; border: none; }
-        .btn-primary:hover { background: #1d4ed8; }
-        .btn-danger { background: #ef4444; color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; }
-        th { background: #f8fafc; color: #475569; font-size: 0.65rem; padding: 12px; border-bottom: 2px solid #e2e8f0; text-align: left; text-transform: uppercase; }
-        td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; vertical-align: middle; }
-        .badge { padding: 4px 8px; border-radius: 9999px; font-size: 0.65rem; font-weight: 800; display: inline-block; }
-        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); }
-        .modal-content { background: white; margin: 10% auto; padding: 24px; border-radius: 16px; width: 90%; max-width: 450px; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; color: #1e293b; }
+        .sidebar-item { transition: all 0.3s; cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; color: #64748b; font-weight: 600; }
+        .sidebar-item:hover { background-color: #f1f5f9; color: #2563eb; }
+        .sidebar-item.active { background-color: #eff6ff; color: #2563eb; border-right: 4px solid #2563eb; }
+        .glass-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border: 1px solid rgba(226, 232, 240, 0.8); border-radius: 16px; box-shadow: 0 4px 12px -2px rgba(0,0,0,0.05); }
+        .btn-grad { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); transition: transform 0.2s; }
+        .btn-grad:hover { transform: translateY(-1px); box-shadow: 0 10px 15px -3px rgba(37,99,235,0.4); }
+        input, select, textarea { border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; font-size: 0.9rem; outline: none; }
+        input:focus { border-color: #3b82f6; ring: 2px solid #dbeafe; }
+        th { background: #f8fafc; font-size: 0.7rem; font-weight: 800; color: #64748b; text-transform: uppercase; padding: 16px; letter-spacing: 0.05em; }
+        td { padding: 16px; border-bottom: 1px solid #f1f5f9; }
+        .section-view { display: none; animation: fadeIn 0.4s ease-out; }
+        .section-view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .modal { display: none; position: fixed; z-index: 1000; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); }
     </style>
 </head>
 <body>
 
-<div class="max-w-7xl mx-auto p-4 md:p-6">
-    <header class="flex justify-between items-center mb-6 bg-slate-900 p-5 rounded-2xl shadow-xl text-white">
-        <div>
-            <h1 class="text-xl font-black tracking-tight italic">FCI <span class="text-blue-400 font-light">DOCUMENTAL</span></h1>
-            <p class="text-[10px] text-slate-400 uppercase tracking-widest">Sistema de Control de Calidad</p>
+<div id="loginDiv" class="min-h-screen flex items-center justify-center p-4">
+    <div class="glass-card p-10 w-full max-w-md">
+        <div class="text-center mb-10">
+            <h1 class="text-3xl font-extrabold text-slate-900 italic">FCI <span class="text-blue-600">SGC</span></h1>
+            <p class="text-slate-500 mt-2 text-sm">Control de Gestión Documental</p>
         </div>
-        <div id="userInfo" class="hidden flex items-center gap-5">
-            <div class="text-right border-r pr-5 border-slate-700">
-                <p class="text-sm font-bold" id="currentUser"></p>
-                <p class="text-[10px] uppercase text-blue-400 font-bold" id="currentRole"></p>
-                <p class="text-[9px] text-slate-500" id="currentGerenciaDisplay"></p>
-            </div>
-            <button onclick="logout()" class="text-xs bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white px-4 py-2 rounded-lg transition-colors">Cerrar Sesión</button>
-        </div>
-    </header>
-
-    <div id="loginDiv" class="max-w-md mx-auto mt-20 card animate-pulse">
-        <h2 class="text-2xl font-bold mb-8 text-center text-slate-800">Identificación</h2>
-        <label>Usuario</label>
-        <input type="text" id="loginUser" placeholder="Ingresa tu usuario">
-        <label>Contraseña</label>
-        <input type="password" id="loginPass" placeholder="••••••••" class="mb-8">
-        <button onclick="login()" class="btn-primary w-full shadow-lg shadow-blue-500/30 py-4">Entrar al Sistema</button>
-    </div>
-
-    <div id="appDiv" class="hidden space-y-6">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            
-            <div id="adminPanel" class="lg:col-span-3 space-y-6 hidden">
-                <div class="card">
-                    <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">👥 Usuarios</h3>
-                    <input type="text" id="newUser" placeholder="Nombre Usuario" class="text-sm">
-                    <select id="newRole" class="text-sm"><option value="user">Usuario</option><option value="gerente">Gerente</option><option value="admin">Admin</option></select>
-                    <label>Gerencia Perteneciente</label>
-                    <select id="newUserGerencia" class="text-sm"></select>
-                    <input type="password" id="newPass" placeholder="Contraseña" class="text-sm">
-                    <button onclick="crearUsuario()" class="btn-primary text-xs w-full mt-3">Registrar Usuario</button>
-                    <div class="mt-4 max-h-40 overflow-y-auto border rounded-lg">
-                        <table id="usersTable" class="w-full"><tbody></tbody></table>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <h3 class="font-bold text-slate-800 mb-4">🏢 Estructura Organizativa</h3>
-                    <div class="space-y-4">
-                        <div>
-                            <input type="text" id="newGerencia" placeholder="Nueva Gerencia" class="text-sm">
-                            <button onclick="crearGerencia()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 mt-1 rounded-md text-[10px] font-bold">AÑADIR GERENCIA</button>
-                            <div class="max-h-32 overflow-y-auto mt-2 border rounded">
-                                <table id="gerenciasTable" class="w-full text-[10px]"></table>
-                            </div>
-                        </div>
-                        <div>
-                            <input type="text" id="newDepartamento" placeholder="Nuevo Departamento" class="text-sm">
-                            <button onclick="crearDepartamento()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 mt-1 rounded-md text-[10px] font-bold">AÑADIR DEPARTAMENTO</button>
-                            <div class="max-h-32 overflow-y-auto mt-2 border rounded">
-                                <table id="departamentosTable" class="w-full text-[10px]"></table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="mainContent" class="lg:col-span-12 space-y-6">
-                <div class="card border-l-4 border-blue-500 shadow-xl" id="formSolicitud">
-                    <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">📝 Crear Nueva Solicitud de Gestión</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="md:col-span-2"><label>Nombre del Documento</label><input type="text" id="solNombreDoc"></div>
-                        <div>
-                            <label>Tipo de Acción</label>
-                            <select id="solTipoAccion" onchange="toggleModificacionFields()">
-                                <option value="Creación">Creación</option>
-                                <option value="Modificación">Modificación</option>
-                                <option value="Inactivación">Inactivación</option>
-                            </select>
-                        </div>
-                        <div><label>Gerencia Destino</label><select id="selectGerencia"></select></div>
-                        <div><label>Departamento</label><select id="selectDepartamento"></select></div>
-                        
-                        <div id="divCod" class="hidden"><label>Codificación Actual</label><input type="text" id="solCodificacion"></div>
-                        <div id="divVer" class="hidden"><label>Última Versión</label><input type="text" id="solVersion"></div>
-                        <div id="divFec" class="hidden"><label>Fecha última versión</label><input type="date" id="solFechaVersion"></div>
-
-                        <div class="md:col-span-3"><label>Justificación / Motivo</label><textarea id="solMotivo" rows="2"></textarea></div>
-                        <div class="md:col-span-2"><label>Archivo Adjunto</label><input type="file" id="solDocumento" class="bg-white"></div>
-                        <div class="md:col-span-1 flex items-end"><button onclick="crearSolicitud()" class="btn-primary w-full shadow-md bg-green-600 hover:bg-green-700">Enviar Solicitud</button></div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <h3 class="font-bold text-slate-800 mb-6 flex justify-between items-center">
-                        <span>📋 Bandeja de Seguimiento</span>
-                        <span class="text-[10px] bg-slate-100 px-3 py-1 rounded text-slate-500 uppercase tracking-tighter">Historial General</span>
-                    </h3>
-                    <div class="overflow-x-auto">
-                        <table id="solicitudesTable" class="w-full">
-                            <thead>
-                                <tr>
-                                    <th>Identificador</th>
-                                    <th>Documento / Acción</th>
-                                    <th>Origen / Estructura</th>
-                                    <th>Estado de Gestión</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+        <div class="space-y-6">
+            <div><label class="text-xs font-bold uppercase text-slate-400">Usuario</label><input type="text" id="loginUser" class="w-full mt-1"></div>
+            <div><label class="text-xs font-bold uppercase text-slate-400">Password</label><input type="password" id="loginPass" class="w-full mt-1"></div>
+            <button onclick="login()" class="btn-grad w-full text-white py-4 rounded-xl font-bold">ACCEDER AL PANEL</button>
         </div>
     </div>
 </div>
 
-<div id="modalAdmin" class="modal">
-    <div class="modal-content shadow-2xl border-t-4 border-blue-500">
-        <h3 class="font-black text-slate-800 text-lg mb-6 uppercase tracking-tight">Gestionar Solicitud</h3>
+<div id="appDiv" class="hidden min-h-screen flex">
+    
+    <aside class="w-72 bg-white border-r border-slate-200 p-6 flex flex-col fixed h-full">
+        <div class="mb-10 px-2">
+            <h1 class="text-2xl font-black text-slate-800 italic">FCI <span class="text-blue-600">DASH</span></h1>
+        </div>
+
+        <nav class="flex-1 space-y-2">
+            <div onclick="showSection('view-home')" class="sidebar-item active" id="nav-home">🏠 <span>Escritorio</span></div>
+            <div onclick="showSection('view-solicitudes')" class="sidebar-item" id="nav-sol">📋 <span>Solicitudes</span></div>
+            <div onclick="showSection('view-estructura')" id="nav-admin-est" class="sidebar-item hidden">🏢 <span>Estructura</span></div>
+            <div onclick="showSection('view-usuarios')" id="nav-admin-usr" class="sidebar-item hidden">👤 <span>Usuarios</span></div>
+        </nav>
+
+        <div class="mt-auto p-4 bg-slate-50 rounded-2xl border border-slate-100">
+            <p class="text-[10px] font-bold text-slate-400 uppercase">Sesión activa</p>
+            <p id="currentUser" class="text-sm font-bold text-slate-800 truncate"></p>
+            <p id="currentRole" class="text-[10px] text-blue-600 font-bold mb-3"></p>
+            <button onclick="logout()" class="text-xs text-red-500 font-bold hover:underline">Cerrar sesión</button>
+        </div>
+    </aside>
+
+    <main class="ml-72 flex-1 p-8">
+
+        <section id="view-home" class="section-view active">
+            <div class="flex justify-between items-end mb-8">
+                <div>
+                    <h2 class="text-2xl font-extrabold text-slate-800">Panel Principal</h2>
+                    <p class="text-slate-500 text-sm">Crea nuevas solicitudes de documentos.</p>
+                </div>
+            </div>
+
+            <div class="glass-card p-8 border-l-8 border-blue-600 shadow-xl">
+                <h3 class="text-lg font-bold mb-6">Nueva Solicitud</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="md:col-span-2"><label class="text-[10px] font-bold">Nombre del Documento</label><input type="text" id="solNombreDoc" class="w-full"></div>
+                    <div>
+                        <label class="text-[10px] font-bold">Acción</label>
+                        <select id="solTipoAccion" onchange="toggleModificacionFields()" class="w-full">
+                            <option value="Creación">Creación</option>
+                            <option value="Modificación">Modificación</option>
+                            <option value="Inactivación">Inactivación</option>
+                        </select>
+                    </div>
+                    <div><label class="text-[10px] font-bold">Gerencia</label><select id="selectGerencia" class="w-full"></select></div>
+                    <div><label class="text-[10px] font-bold">Departamento</label><select id="selectDepartamento" class="w-full"></select></div>
+                    
+                    <div id="divCod" class="hidden"><label class="text-[10px] font-bold">Código</label><input type="text" id="solCodificacion" class="w-full"></div>
+                    <div id="divVer" class="hidden"><label class="text-[10px] font-bold">Versión</label><input type="text" id="solVersion" class="w-full"></div>
+                    <div id="divFec" class="hidden"><label class="text-[10px] font-bold">Fecha Versión</label><input type="date" id="solFechaVersion" class="w-full"></div>
+
+                    <div class="md:col-span-3"><label class="text-[10px] font-bold">Justificación</label><textarea id="solMotivo" class="w-full"></textarea></div>
+                    <div class="md:col-span-2"><label class="text-[10px] font-bold">Adjuntar Archivo</label><input type="file" id="solDocumento" class="w-full bg-slate-50"></div>
+                    <div class="flex items-end"><button onclick="crearSolicitud()" class="btn-grad text-white w-full py-4 rounded-xl font-bold shadow-lg shadow-blue-500/30">ENVIAR SOLICITUD</button></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-solicitudes" class="section-view">
+            <h2 class="text-2xl font-extrabold text-slate-800 mb-6">Bandeja de Solicitudes</h2>
+            <div class="glass-card overflow-hidden">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Documento</th>
+                            <th>Ubicación</th>
+                            <th>Estado</th>
+                            <th>Gestión</th>
+                        </tr>
+                    </thead>
+                    <tbody id="solicitudesTableBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="view-estructura" class="section-view">
+            <h2 class="text-2xl font-extrabold text-slate-800 mb-6">Administración de Estructura</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="glass-card p-6">
+                    <h3 class="font-bold mb-4">Gerencias</h3>
+                    <div class="flex gap-2 mb-4"><input type="text" id="newGerencia" class="flex-1" placeholder="Nueva Gerencia..."><button onclick="crearGerencia()" class="bg-blue-600 text-white px-4 rounded-lg font-bold">+</button></div>
+                    <div class="max-h-96 overflow-y-auto"><table class="w-full text-xs"><tbody id="gerenciasTableBody"></tbody></table></div>
+                </div>
+                <div class="glass-card p-6">
+                    <h3 class="font-bold mb-4">Departamentos</h3>
+                    <div class="flex gap-2 mb-4"><input type="text" id="newDepartamento" class="flex-1" placeholder="Nuevo Depto..."><button onclick="crearDepartamento()" class="bg-blue-600 text-white px-4 rounded-lg font-bold">+</button></div>
+                    <div class="max-h-96 overflow-y-auto"><table class="w-full text-xs"><tbody id="departamentosTableBody"></tbody></table></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-usuarios" class="section-view">
+            <h2 class="text-2xl font-extrabold text-slate-800 mb-6">Control de Usuarios</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="glass-card p-6 md:col-span-1">
+                    <h3 class="font-bold mb-4 border-b pb-2">Crear Usuario</h3>
+                    <label class="text-[10px] font-bold">Usuario</label><input type="text" id="newUser" class="w-full mb-2">
+                    <label class="text-[10px] font-bold">Rol</label>
+                    <select id="newRole" class="w-full mb-2"><option value="user">Usuario</option><option value="gerente">Gerente</option><option value="admin">Admin</option></select>
+                    <label class="text-[10px] font-bold">Gerencia Asignada</label><select id="newUserGerencia" class="w-full mb-2"></select>
+                    <label class="text-[10px] font-bold">Password</label><input type="password" id="newPass" class="w-full mb-4">
+                    <button onclick="crearUsuario()" class="btn-grad text-white w-full py-3 rounded-lg font-bold">REGISTRAR</button>
+                </div>
+                <div class="glass-card p-6 md:col-span-3">
+                    <h3 class="font-bold mb-4">Usuarios en el sistema</h3>
+                    <table class="w-full text-sm"><thead><tr><th>Usuario</th><th>Rol</th><th>Gerencia</th><th>Borrar</th></tr></thead><tbody id="usersTableBody"></tbody></table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<div id="modalAdmin" class="modal flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl">
+        <h3 class="text-xl font-bold mb-6">Actualizar Estado de Gestión</h3>
         <input type="hidden" id="modalSolId">
-        
-        <label>Asignar Nuevo Estado:</label>
-        <select id="modalEstadoAdmin" onchange="mostrarCamposModal()" class="font-bold text-blue-600 bg-blue-50 border-blue-200 mb-6">
-            <option value="">Seleccione estado...</option>
-            <option value="Pendiente">Pendiente (Normal)</option>
+        <label class="text-[10px] font-bold">Seleccionar Estado</label>
+        <select id="modalEstadoAdmin" onchange="mostrarCamposModal()" class="w-full mb-4 font-bold text-blue-600">
+            <option value="">Seleccione...</option>
+            <option value="Pendiente">Pendiente</option>
             <option value="En Reunión">En Reunión</option>
             <option value="En Consulta">En Consulta</option>
-            <option value="Corrección">Solicitar Corrección (Usuario)</option>
-            <option value="Aprobación SGC">Aprobación SGC (Solicitar Firmas)</option>
+            <option value="Corrección">Solicitar Corrección</option>
+            <option value="Aprobación SGC">Aprobación SGC</option>
             <option value="Solicitar Aprobación Gerente">SOLICITAR APROBACIÓN GERENTE</option>
         </select>
-
-        <div id="fieldFecha" class="hidden"><label>Fecha y Hora Programada:</label><input type="datetime-local" id="modalFecha" class="mb-4"></div>
-        <div id="fieldMotivoModal" class="hidden"><label>Detalle / Motivo de la Acción:</label><textarea id="modalMotivoExtra" class="mb-4"></textarea></div>
-
-        <div class="grid grid-cols-2 gap-3">
-            <button onclick="cerrarModal()" class="bg-slate-100 text-slate-600 font-bold py-3 rounded-lg hover:bg-slate-200">Cerrar</button>
-            <button onclick="guardarGestionAdmin()" class="btn-primary py-3">Aplicar Cambio</button>
+        <div id="fieldFecha" class="hidden mb-4"><label class="text-[10px] font-bold">Citar para:</label><input type="datetime-local" id="modalFecha" class="w-full"></div>
+        <div id="fieldMotivoModal" class="hidden mb-6"><label class="text-[10px] font-bold">Observación/Motivo:</label><textarea id="modalMotivoExtra" class="w-full"></textarea></div>
+        <div class="grid grid-cols-2 gap-4">
+            <button onclick="cerrarModal()" class="py-3 font-bold text-slate-500 hover:bg-slate-100 rounded-xl">Cancelar</button>
+            <button onclick="guardarGestionAdmin()" class="btn-grad text-white py-3 font-bold rounded-xl">Guardar</button>
         </div>
     </div>
 </div>
 
 <script>
-// 🔹 FIREBASE CONFIG (Sincronizado con tus llaves)
+// --- CONFIGURACIÓN & INICIO ---
 const firebaseConfig = {
     apiKey: "AIzaSyDdzCiachuhbE9jATz-TesPI2vUVIJrHjM",
     authDomain: "sistemadegestion-7400d.firebaseapp.com",
@@ -179,240 +193,188 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const storage = firebase.storage();
-
 let currentUserData = null;
 
-// 🔹 LÓGICA DE INTERFAZ
-function toggleModificacionFields() {
-    const a = document.getElementById("solTipoAccion").value;
-    const isSpecial = (a === "Modificación" || a === "Inactivación");
-    document.getElementById("divCod").classList.toggle("hidden", !isSpecial);
-    document.getElementById("divVer").classList.toggle("hidden", !isSpecial);
-    document.getElementById("divFec").classList.toggle("hidden", !isSpecial);
+// --- NAVEGACIÓN ---
+function showSection(id) {
+    document.querySelectorAll('.section-view').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    document.getElementById('nav-' + id.replace('view-', '')).classList.add('active');
 }
 
-// 🔹 LOGIN
+function toggleModificacionFields() {
+    const a = document.getElementById("solTipoAccion").value;
+    const special = (a === "Modificación" || a === "Inactivación");
+    ["divCod", "divVer", "divFec"].forEach(id => document.getElementById(id).classList.toggle("hidden", !special));
+}
+
+// --- CORE FUNCIONES ---
 async function login() {
     const u = document.getElementById("loginUser").value;
     const p = document.getElementById("loginPass").value;
-
     if(u === "Admin" && p === "123456") {
         currentUserData = {usuario:"Admin", role:"admin", gerenciaId:"global"};
-        mostrarApp(); return;
+        iniciarApp(); return;
     }
-
     const snap = await db.collection("users").where("usuario","==",u).where("password","==",p).get();
     if(!snap.empty){
         currentUserData = {id:snap.docs[0].id, ...snap.docs[0].data()};
-        mostrarApp();
-    } else alert("Error de credenciales");
+        iniciarApp();
+    } else alert("Credenciales inválidas");
 }
 
-function mostrarApp() {
+function iniciarApp() {
     document.getElementById("loginDiv").classList.add("hidden");
     document.getElementById("appDiv").classList.remove("hidden");
-    document.getElementById("userInfo").classList.remove("hidden");
     document.getElementById("currentUser").innerText = currentUserData.usuario;
     document.getElementById("currentRole").innerText = currentUserData.role;
-    
     if(currentUserData.role === "admin") {
-        document.getElementById("adminPanel").classList.remove("hidden");
-        document.getElementById("mainContent").classList.replace("lg:col-span-12", "lg:col-span-9");
+        document.getElementById("nav-admin-est").classList.remove("hidden");
+        document.getElementById("nav-admin-usr").classList.remove("hidden");
     }
-    
-    cargarListas();
+    actualizarTodo();
 }
 
-function logout() { location.reload(); }
+async function actualizarTodo() {
+    cargarListas();
+    cargarSolicitudes();
+    cargarUsuarios();
+}
 
-// 🔹 FUNCIONES DE ADMINISTRACIÓN (USUARIOS, GERENCIAS, DEPTOS)
-async function crearUsuario() {
-    const u = document.getElementById("newUser").value;
-    const r = document.getElementById("newRole").value;
-    const g = document.getElementById("newUserGerencia").value;
-    const p = document.getElementById("newPass").value;
-    if(!u || !p) return alert("Llenar campos");
-    await db.collection("users").add({usuario:u, role:r, gerenciaId:g, password:p});
-    alert("Usuario Creado"); cargarUsuarios();
+// --- GESTIÓN DATOS ---
+async function cargarListas() {
+    const sg = document.getElementById("selectGerencia");
+    const sd = document.getElementById("selectDepartamento");
+    const su = document.getElementById("newUserGerencia");
+    const tG = document.getElementById("gerenciasTableBody");
+    const tD = document.getElementById("departamentosTableBody");
+    
+    sg.innerHTML = sd.innerHTML = su.innerHTML = "<option value=''>Seleccione...</option>";
+    su.innerHTML += "<option value='global'>Global (Admin)</option>";
+    tG.innerHTML = tD.innerHTML = "";
+
+    const gSnap = await db.collection("gerencias").get();
+    gSnap.forEach(doc => {
+        const d = doc.data();
+        sg.innerHTML += `<option value="${doc.id}">${d.nombre}</option>`;
+        su.innerHTML += `<option value="${doc.id}">${d.nombre}</option>`;
+        tG.innerHTML += `<tr><td class="font-bold">${d.nombre}</td><td class="text-right"><button onclick="eliminarDoc('gerencias','${doc.id}', cargarListas)" class="text-red-400">✕</button></td></tr>`;
+    });
+
+    const dSnap = await db.collection("departamentos").get();
+    dSnap.forEach(doc => {
+        const d = doc.data();
+        sd.innerHTML += `<option value="${doc.id}">${d.nombre}</option>`;
+        tD.innerHTML += `<tr><td class="font-bold">${d.nombre}</td><td class="text-right"><button onclick="eliminarDoc('departamentos','${doc.id}', cargarListas)" class="text-red-400">✕</button></td></tr>`;
+    });
 }
 
 async function cargarUsuarios() {
-    const t = document.querySelector("#usersTable tbody"); t.innerHTML = "";
+    const t = document.getElementById("usersTableBody"); t.innerHTML = "";
+    const gSnap = await db.collection("gerencias").get();
+    const gers = {global: "Global"}; gSnap.forEach(d => gers[d.id] = d.data().nombre);
+    
     const snap = await db.collection("users").get();
     snap.forEach(doc => {
         const d = doc.data();
-        t.innerHTML += `<tr><td class="font-bold">${d.usuario}</td><td>${d.role}</td><td class="text-right"><button onclick="eliminarDoc('users','${doc.id}', cargarUsuarios)" class="text-red-500 font-bold">✕</button></td></tr>`;
+        t.innerHTML += `<tr><td class="font-bold">${d.usuario}</td><td><span class="bg-slate-100 px-2 py-1 rounded text-[10px] font-bold">${d.role}</span></td><td>${gers[d.gerenciaId] || 'S/G'}</td><td class="text-center"><button onclick="eliminarDoc('users','${doc.id}', cargarUsuarios)" class="text-red-500">✕</button></td></tr>`;
     });
 }
 
-async function crearGerencia() {
-    const n = document.getElementById("newGerencia").value;
-    if(n) { await db.collection("gerencias").add({nombre:n}); document.getElementById("newGerencia").value=""; cargarGerencias(); }
-}
-
-async function cargarGerencias() {
-    const t = document.getElementById("gerenciasTable"); 
-    const s1 = document.getElementById("selectGerencia");
-    const s2 = document.getElementById("newUserGerencia");
-    t.innerHTML = ""; s1.innerHTML = "<option value=''>Gerencia...</option>"; s2.innerHTML = "<option value='global'>Global (Admin)</option>";
-    const snap = await db.collection("gerencias").get();
-    snap.forEach(doc => {
-        const d = doc.data();
-        t.innerHTML += `<tr><td class="p-1">${d.nombre}</td><td class="text-right"><button onclick="eliminarDoc('gerencias','${doc.id}', cargarGerencias)" class="text-red-400">✕</button></td></tr>`;
-        s1.innerHTML += `<option value="${doc.id}">${d.nombre}</option>`;
-        s2.innerHTML += `<option value="${doc.id}">${d.nombre}</option>`;
-    });
-}
-
-async function crearDepartamento() {
-    const n = document.getElementById("newDepartamento").value;
-    if(n) { await db.collection("departamentos").add({nombre:n}); document.getElementById("newDepartamento").value=""; cargarDepartamentos(); }
-}
-
-async function cargarDepartamentos() {
-    const t = document.getElementById("departamentosTable"); 
-    const s = document.getElementById("selectDepartamento");
-    t.innerHTML = ""; s.innerHTML = "<option value=''>Depto...</option>";
-    const snap = await db.collection("departamentos").get();
-    snap.forEach(doc => {
-        const d = doc.data();
-        t.innerHTML += `<tr><td class="p-1">${d.nombre}</td><td class="text-right"><button onclick="eliminarDoc('departamentos','${doc.id}', cargarDepartamentos)" class="text-red-400">✕</button></td></tr>`;
-        s.innerHTML += `<option value="${doc.id}">${d.nombre}</option>`;
-    });
-}
-
-async function eliminarDoc(col, id, callback) { if(confirm("¿Eliminar este registro?")) { await db.collection(col).doc(id).delete(); callback(); } }
-
-// 🔹 SOLICITUDES
 async function crearSolicitud() {
-    const nombreDoc = document.getElementById("solNombreDoc").value;
-    const tipoAccion = document.getElementById("solTipoAccion").value;
-    const gerenciaId = document.getElementById("selectGerencia").value;
-    const departamentoId = document.getElementById("selectDepartamento").value;
-    const motivo = document.getElementById("solMotivo").value;
-    const file = document.getElementById("solDocumento").files[0];
+    const n = document.getElementById("solNombreDoc").value;
+    const a = document.getElementById("solTipoAccion").value;
+    const g = document.getElementById("selectGerencia").value;
+    const d = document.getElementById("selectDepartamento").value;
+    const m = document.getElementById("solMotivo").value;
+    const f = document.getElementById("solDocumento").files[0];
+    if(!n || !g || !m) return alert("Faltan datos");
 
-    if(!nombreDoc || !gerenciaId || !motivo) return alert("Completa los campos");
-
-    let docUrl = "";
-    if(file){
-        const ref = storage.ref('documentos/' + Date.now() + "_" + file.name);
-        await ref.put(file); docUrl = await ref.getDownloadURL();
-    }
+    let url = "";
+    if(f){ const ref = storage.ref('docs/' + Date.now() + "_" + f.name); await ref.put(f); url = await ref.getDownloadURL(); }
 
     const cRef = db.collection("counters").doc("solicitudes");
     const cSnap = await cRef.get();
-    let n = (cSnap.exists) ? cSnap.data().count + 1 : 1;
-    await cRef.set({count: n});
-    const solId = "FCI-SOL-" + String(n).padStart(4, "0");
+    let num = (cSnap.exists) ? cSnap.data().count + 1 : 1;
+    await cRef.set({count: num});
+    const sid = "FCI-SOL-" + String(num).padStart(4, "0");
 
-    await db.collection("solicitudes").doc(solId).set({
-        solId, nombreDoc, tipoAccion, usuario: currentUserData.usuario,
-        gerenciaId, departamentoId, motivo,
+    await db.collection("solicitudes").doc(sid).set({
+        solId: sid, nombreDoc: n, tipoAccion: a, usuario: currentUserData.usuario,
+        gerenciaId: g, departamentoId: d, motivo: m, documento: url, estado: "Pendiente",
         codificacion: document.getElementById("solCodificacion").value,
         version: document.getElementById("solVersion").value,
         fechaVersion: document.getElementById("solFechaVersion").value,
-        documento: docUrl,
-        estado: "Pendiente",
         fecha: new Date().toISOString()
     });
-    
-    alert("Solicitud Enviada");
-    cargarSolicitudes();
+    alert("Solicitud Enviada"); location.reload();
 }
 
 async function cargarSolicitudes() {
-    const tb = document.querySelector("#solicitudesTable tbody"); tb.innerHTML = "";
+    const tb = document.getElementById("solicitudesTableBody"); tb.innerHTML = "";
     const gSnap = await db.collection("gerencias").get(); const gers = {}; gSnap.forEach(d => gers[d.id] = d.data().nombre);
     const dSnap = await db.collection("departamentos").get(); const deps = {}; dSnap.forEach(d => deps[d.id] = d.data().nombre);
 
     const snap = await db.collection("solicitudes").orderBy("fecha", "desc").get();
     snap.forEach(doc => {
         const d = doc.data();
-        
-        // FILTRO GERENTE
         if(currentUserData.role === "gerente" && d.gerenciaId !== currentUserData.gerenciaId) return;
 
-        let badge = "bg-gray-100 text-gray-700";
-        if(d.estado === "Pendiente") badge = "bg-blue-100 text-blue-700";
-        if(d.estado === "Solicitar Aprobación Gerente") badge = "bg-purple-600 text-white animate-pulse";
-        if(d.estado === "Finalizado") badge = "bg-green-100 text-green-700";
-        if(d.estado === "Corrección") badge = "bg-orange-100 text-orange-700";
+        let badge = "bg-slate-100 text-slate-600";
+        if(d.estado === "Pendiente") badge = "bg-blue-50 text-blue-600";
+        if(d.estado === "Solicitar Aprobación Gerente") badge = "bg-purple-100 text-purple-600 animate-pulse";
+        if(d.estado === "Finalizado") badge = "bg-emerald-50 text-emerald-600";
 
-        let acciones = `<div class="flex gap-2">`;
-        if(d.documento) acciones += `<a href="${d.documento}" target="_blank" class="text-blue-500">📂</a>`;
-        
-        if(currentUserData.role === "admin" && d.estado !== "Finalizado") acciones += `<button onclick="abrirModalAdmin('${doc.id}')" class="text-[10px] bg-slate-800 text-white px-2 py-1 rounded">GESTIONAR</button>`;
-        
-        if(currentUserData.role === "gerente" && d.estado === "Solicitar Aprobación Gerente") {
-            acciones += `<button onclick="finalizarSol('${doc.id}', 'Aprobado')" class="bg-green-500 text-white px-2 py-1 rounded text-[9px]">APROBAR</button>`;
-            acciones += `<button onclick="finalizarSol('${doc.id}', 'Rechazado')" class="bg-red-500 text-white px-2 py-1 rounded text-[9px]">RECHAZAR</button>`;
-        }
-
-        if(d.estado === "Corrección" && currentUserData.usuario === d.usuario) {
-            acciones += `<input type="file" id="up-${doc.id}" class="text-[8px] w-20">`;
-            acciones += `<button onclick="reSubir('${doc.id}')" class="bg-orange-500 text-white px-1 py-1 rounded text-[9px]">SUBIR</button>`;
-        }
-        acciones += `</div>`;
-
-        tb.innerHTML += `<tr>
-            <td class="font-mono font-bold text-blue-600">${d.solId}</td>
-            <td><p class="font-bold">${d.nombreDoc}</p><p class="text-[9px] uppercase font-bold text-slate-400">${d.tipoAccion}</p></td>
+        let html = `<tr>
+            <td class="font-mono text-[10px] font-bold text-blue-600">${d.solId}</td>
+            <td><p class="font-bold text-sm">${d.nombreDoc}</p><p class="text-[9px] uppercase font-bold text-slate-400">${d.tipoAccion}</p></td>
             <td><p class="text-[10px] font-bold">${gers[d.gerenciaId] || 'S/G'}</p><p class="text-[9px] text-slate-400">${deps[d.departamentoId] || ''}</p></td>
-            <td>
-                <span class="badge ${badge}">${d.estado}</span>
-                ${d.fechaReunion ? `<p class="text-[8px] mt-1 font-bold">📅 REUNIÓN: ${d.fechaReunion.replace('T', ' ')}</p>` : ''}
-                ${d.ultimoMotivo ? `<p class="text-[9px] italic text-slate-500">Nota: ${d.ultimoMotivo}</p>` : ''}
-            </td>
-            <td>${acciones}</td>
-        </tr>`;
+            <td><span class="px-3 py-1 rounded-full text-[9px] font-bold ${badge}">${d.estado}</span></td>
+            <td><div class="flex gap-2">
+                ${d.documento ? `<a href="${d.documento}" target="_blank" class="text-lg">📄</a>`:''}
+                ${currentUserData.role === 'admin' ? `<button onclick="abrirModalAdmin('${doc.id}')" class="text-[10px] bg-slate-800 text-white px-3 py-1 rounded-lg">GESTIONAR</button>`:''}
+                ${(currentUserData.role === 'gerente' && d.estado === 'Solicitar Aprobación Gerente') ? `
+                    <button onclick="gestionarGerente('${doc.id}', 'Aprobado')" class="bg-emerald-500 text-white px-2 py-1 rounded-lg text-[9px]">Aprobar</button>
+                    <button onclick="gestionarGerente('${doc.id}', 'Rechazado')" class="bg-red-500 text-white px-2 py-1 rounded-lg text-[9px]">Rechazar</button>
+                `:''}
+            </div></td></tr>`;
+        tb.innerHTML += html;
     });
 }
 
-// 🔹 FUNCIONES MODAL
-function abrirModalAdmin(id) { 
-    document.getElementById("modalSolId").value = id; 
-    document.getElementById("modalAdmin").style.display = "block"; 
+// --- FUNCIONES ADMIN ---
+async function crearUsuario(){
+    const u = document.getElementById("newUser").value, r = document.getElementById("newRole").value, g = document.getElementById("newUserGerencia").value, p = document.getElementById("newPass").value;
+    if(!u || !p) return alert("Campos vacíos");
+    await db.collection("users").add({usuario:u, role:r, gerenciaId:g, password:p});
+    alert("Usuario Creado"); cargarUsuarios();
 }
+async function crearGerencia(){ const n = document.getElementById("newGerencia").value; if(n){ await db.collection("gerencias").add({nombre:n}); cargarListas(); } }
+async function crearDepartamento(){ const n = document.getElementById("newDepartamento").value; if(n){ await db.collection("departamentos").add({nombre:n}); cargarListas(); } }
+async function eliminarDoc(col, id, cb) { if(confirm("¿Seguro?")){ await db.collection(col).doc(id).delete(); cb(); } }
+
+// --- MODAL ---
+function abrirModalAdmin(id) { document.getElementById("modalSolId").value = id; document.getElementById("modalAdmin").style.display = "flex"; }
 function cerrarModal() { document.getElementById("modalAdmin").style.display = "none"; }
 function mostrarCamposModal() {
     const v = document.getElementById("modalEstadoAdmin").value;
     document.getElementById("fieldFecha").classList.toggle("hidden", v !== "En Reunión");
     document.getElementById("fieldMotivoModal").classList.toggle("hidden", !v || v === "Pendiente");
 }
-
 async function guardarGestionAdmin() {
-    const id = document.getElementById("modalSolId").value;
-    const est = document.getElementById("modalEstadoAdmin").value;
-    const fec = document.getElementById("modalFecha").value;
-    const mot = document.getElementById("modalMotivoExtra").value;
-    if(!est) return;
-    let up = { estado: est, ultimoMotivo: mot || "" };
-    if(est === "En Reunión") up.fechaReunion = fec;
+    const id = document.getElementById("modalSolId").value, est = document.getElementById("modalEstadoAdmin").value, mot = document.getElementById("modalMotivoExtra").value;
+    let up = { estado: est, ultimoMotivo: mot };
+    if(est === "En Reunión") up.fechaReunion = document.getElementById("modalFecha").value;
     await db.collection("solicitudes").doc(id).update(up);
     cerrarModal(); cargarSolicitudes();
 }
-
-async function finalizarSol(id, res) {
-    const m = prompt("Detalles finales / motivo del " + res);
-    await db.collection("solicitudes").doc(id).update({
-        estado: res === "Aprobado" ? "Finalizado" : "Rechazado por Gerente",
-        ultimoMotivo: m
-    });
+async function gestionarGerente(id, res){
+    const m = prompt("Motivo de la decisión:");
+    await db.collection("solicitudes").doc(id).update({ estado: res === 'Aprobado' ? 'Finalizado' : 'Rechazado por Gerente', ultimoMotivo: m });
     cargarSolicitudes();
 }
-
-async function reSubir(id) {
-    const file = document.getElementById(`up-${id}`).files[0];
-    if(!file) return alert("Selecciona archivo");
-    const ref = storage.ref('documentos/CORREGIDO_' + Date.now() + "_" + file.name);
-    await ref.put(file);
-    const url = await ref.getDownloadURL();
-    await db.collection("solicitudes").doc(id).update({ documento: url, estado: "Pendiente (Revisión)", ultimoMotivo: "Usuario re-subió documento" });
-    alert("Enviado"); cargarSolicitudes();
-}
-
-function cargarListas() { cargarGerencias(); cargarDepartamentos(); cargarUsuarios(); cargarSolicitudes(); }
+function logout() { location.reload(); }
 </script>
 </body>
 </html>
