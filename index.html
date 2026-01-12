@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>FCI | Gestión Documental</title>
+<title>FCI | Sistema de Gestión Documental</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <!-- Firebase -->
@@ -13,7 +13,7 @@
 <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
 
 <style>
-body{font-family:Arial;background:#f3f4f6;margin:0}
+body{font-family:Arial;background:#f3f4f6;margin:0;padding:0}
 header{background:#111827;color:#fff;padding:15px}
 .card{background:#fff;padding:15px;margin:15px;border-radius:8px}
 input,select,textarea,button{width:100%;margin-top:8px;padding:8px;border-radius:4px}
@@ -21,9 +21,12 @@ button{background:#2563eb;color:#fff;border:none;cursor:pointer}
 table{width:100%;border-collapse:collapse}
 td,th{border:1px solid #ccc;padding:6px;text-align:left}
 .hidden{display:none}
+h3{margin-top:0;}
+.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;justify-content:center;align-items:center}
+.modal-content{background:#fff;padding:20px;border-radius:8px;width:90%;max-width:600px;position:relative;}
+.modal-content button{width:auto;margin-top:10px;}
 </style>
 </head>
-
 <body>
 
 <header>
@@ -31,15 +34,16 @@ td,th{border:1px solid #ccc;padding:6px;text-align:left}
 </header>
 
 <!-- LOGIN -->
-<section id="loginSection" class="card">
-<h3>🔑 Ingreso al Sistema</h3>
+<section id="loginPanel" class="card">
+<h3>🔑 Login</h3>
 <input id="loginUsuario" placeholder="Usuario">
 <input type="password" id="loginPassword" placeholder="Contraseña">
 <button onclick="login()">Ingresar</button>
+<p id="loginError" style="color:red;"></p>
 </section>
 
 <!-- PANEL PRINCIPAL -->
-<section id="panel" class="card hidden">
+<section id="mainPanel" class="hidden">
 
 <div class="card">
 <h3>➕ Nueva Solicitud</h3>
@@ -51,8 +55,8 @@ td,th{border:1px solid #ccc;padding:6px;text-align:left}
 </select>
 
 <input id="nombreDocumento" placeholder="Nombre documento">
-<select id="gerenciaSelect"></select>
-<select id="departamentoSelect"></select>
+<select id="selectGerencia"></select>
+<select id="selectDepartamento"></select>
 <textarea id="motivo" placeholder="Motivo"></textarea>
 
 <input id="codificacion" placeholder="Codificación actual">
@@ -74,39 +78,46 @@ td,th{border:1px solid #ccc;padding:6px;text-align:left}
 <th>Acción</th>
 </tr>
 </thead>
-<tbody id="tabla"></tbody>
+<tbody id="tablaSolicitudes"></tbody>
 </table>
 </div>
 
-<div class="card">
-<h3>👥 Panel de Usuarios</h3>
+<div class="card" id="adminPanel" class="hidden">
+<h3>👥 Panel de Administración</h3>
+
+<h4>Usuarios</h4>
 <input id="nuevoUsuario" placeholder="Usuario">
 <input id="nuevoCorreo" placeholder="Correo">
-<input id="nuevoPassword" placeholder="Contraseña">
-<select id="nuevoRol">
-<option value="user">Usuario</option>
-<option value="gerente">Gerente</option>
+<input type="password" id="nuevoPassword" placeholder="Contraseña">
+<select id="rolUsuario">
 <option value="admin">Admin</option>
+<option value="gerente">Gerente</option>
+<option value="usuario">Usuario</option>
 </select>
-<select id="nuevoGerencia"></select>
+<select id="rolGerencia"></select>
 <button onclick="crearUsuario()">Agregar Usuario</button>
-
-<h4>Lista de Usuarios</h4>
 <ul id="listaUsuarios"></ul>
-</div>
 
-<div class="card">
-<h3>🏢 Panel de Gerencias / Departamentos</h3>
-<input id="inputGerencia" placeholder="Nombre gerencia">
+<h4>Gerencias</h4>
+<input id="nuevaGerencia" placeholder="Nombre Gerencia">
 <button onclick="agregarGerencia()">Agregar Gerencia</button>
 <ul id="listaGerencias"></ul>
 
-<input id="inputDepartamento" placeholder="Nombre departamento">
+<h4>Departamentos</h4>
+<input id="nuevoDepartamento" placeholder="Nombre Departamento">
 <button onclick="agregarDepartamento()">Agregar Departamento</button>
 <ul id="listaDepartamentos"></ul>
+
 </div>
 
-</section>
+<!-- Modal Detalles Solicitud -->
+<div id="modalDetalles" class="modal">
+  <div class="modal-content">
+    <h3>Detalles de Solicitud</h3>
+    <div id="detalleSolicitud"></div>
+    <button onclick="cerrarModal()">Cerrar</button>
+  </div>
+</div>
 
 <script>
 // ================= CONFIG FIREBASE =================
@@ -118,178 +129,215 @@ const firebaseConfig = {
   messagingSenderId: "709030283072",
   appId: "1:709030283072:web:5997837b36a448e9515ca5"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 // Inicializar EmailJS
 emailjs.init("2jVnfkJKKG0bpKN-U");
 
-// ================= USUARIOS =================
-let usuarios = [
-  { uid: "admin", usuario: "Admin", correo: "admin@fcipty.com", password:"123456", rol:"admin", gerencia:"Todas" }
-];
-let usuarioActual = null;
-
-// ================= GERENCIAS Y DEPARTAMENTOS =================
-let gerencias = ["Gerencia Demo"];
-let departamentos = ["Departamento Demo"];
+// ================= VARIABLES =================
+let usuarioActivo = null;
 
 // ================= LOGIN =================
-function login(){
+async function login(){
   const u = document.getElementById("loginUsuario").value;
   const p = document.getElementById("loginPassword").value;
 
-  const user = usuarios.find(x => x.usuario === u && x.password === p);
-  if(!user){ alert("Usuario o contraseña incorrectos"); return; }
+  if(u==="Admin" && p==="123456"){
+    usuarioActivo = { usuario:"Admin", rol:"admin", gerencia:"Todas" };
+    abrirPanel();
+    return;
+  }
 
-  usuarioActual = user;
-  document.getElementById("loginSection").classList.add("hidden");
-  document.getElementById("panel").classList.remove("hidden");
+  const snap = await db.collection("usuarios").doc(u).get();
+  if(snap.exists){
+    const data = snap.data();
+    if(data.password===p){
+      usuarioActivo = data;
+      abrirPanel();
+    } else{
+      document.getElementById("loginError").innerText="Contraseña incorrecta";
+    }
+  } else{
+    document.getElementById("loginError").innerText="Usuario no encontrado";
+  }
+}
+
+// ================= PANEL =================
+function abrirPanel(){
+  document.getElementById("loginPanel").classList.add("hidden");
+  document.getElementById("mainPanel").classList.remove("hidden");
+
+  if(usuarioActivo.rol==="admin") document.getElementById("adminPanel").classList.remove("hidden");
 
   cargarGerenciasDepartamentos();
   cargarUsuarios();
   cargarSolicitudes();
 }
 
-// ================= CREAR SOLICITUD =================
-async function generarID(){
-  const ref = db.collection("counters").doc("global");
-  return db.runTransaction(async t=>{
-    const d = await t.get(ref);
-    let n = (d.exists ? d.data().solicitudes : 0) + 1;
-    t.set(ref,{solicitudes:n},{merge:true});
-    return "FCI-SOL-" + String(n).padStart(4,"0");
+// ================= USUARIOS / GERENCIAS / DEPARTAMENTOS =================
+async function crearUsuario(){
+  const u=document.getElementById("nuevoUsuario").value;
+  const c=document.getElementById("nuevoCorreo").value;
+  const p=document.getElementById("nuevoPassword").value;
+  const r=document.getElementById("rolUsuario").value;
+  const g=document.getElementById("rolGerencia").value;
+  if(!u||!c||!p) return alert("Completa todos los campos");
+  await db.collection("usuarios").doc(u).set({usuario:u,correo:c,password:p,rol:r,gerencia:g});
+  document.getElementById("nuevoUsuario").value="";
+  document.getElementById("nuevoCorreo").value="";
+  document.getElementById("nuevoPassword").value="";
+  cargarUsuarios();
+}
+
+async function cargarUsuarios(){
+  const snap = await db.collection("usuarios").get();
+  const lista = document.getElementById("listaUsuarios");
+  lista.innerHTML="";
+  snap.forEach(d=>{
+    const u=d.data();
+    lista.innerHTML+=`<li>${u.usuario} (${u.rol} / ${u.gerencia}) <button onclick="eliminarUsuario('${u.usuario}')">Eliminar</button></li>`;
   });
 }
 
-async function subirArchivo(file){
-  const form = new FormData();
-  form.append("file", file);
-  form.append("upload_preset", "fci_documentos");
-  form.append("folder", "fci_documentos");
+async function eliminarUsuario(u){
+  if(confirm("Eliminar usuario "+u+"?")) await db.collection("usuarios").doc(u).delete();
+  cargarUsuarios();
+}
 
-  const res = await fetch("https://api.cloudinary.com/v1_1/df79cjklp/upload", {method:"POST",body:form});
-  const data = await res.json();
-  if(data.error){ throw new Error(data.error.message); }
+// Gerencias
+async function agregarGerencia(){
+  const g=document.getElementById("nuevaGerencia").value;
+  if(!g) return;
+  await db.collection("gerencias").doc(g).set({nombre:g});
+  document.getElementById("nuevaGerencia").value="";
+  cargarGerenciasDepartamentos();
+}
+
+async function agregarDepartamento(){
+  const d=document.getElementById("nuevoDepartamento").value;
+  if(!d) return;
+  await db.collection("departamentos").doc(d).set({nombre:d});
+  document.getElementById("nuevoDepartamento").value="";
+  cargarGerenciasDepartamentos();
+}
+
+// Cargar selects y listas
+async function cargarGerenciasDepartamentos(){
+  const gSnap=await db.collection("gerencias").get();
+  const dSnap=await db.collection("departamentos").get();
+  const selG=document.getElementById("selectGerencia");
+  const selD=document.getElementById("selectDepartamento");
+  const selGG=document.getElementById("rolGerencia");
+  selG.innerHTML=""; selD.innerHTML=""; selGG.innerHTML="";
+  const listaG=document.getElementById("listaGerencias"); listaG.innerHTML="";
+  const listaD=document.getElementById("listaDepartamentos"); listaD.innerHTML="";
+  gSnap.forEach(d=>{
+    selG.innerHTML+=`<option>${d.data().nombre}</option>`;
+    selGG.innerHTML+=`<option>${d.data().nombre}</option>`;
+    listaG.innerHTML+=`<li>${d.data().nombre} <button onclick="eliminarGerencia('${d.data().nombre}')">Eliminar</button></li>`;
+  });
+  dSnap.forEach(d=>{
+    selD.innerHTML+=`<option>${d.data().nombre}</option>`;
+    listaD.innerHTML+=`<li>${d.data().nombre} <button onclick="eliminarDepartamento('${d.data().nombre}')">Eliminar</button></li>`;
+  });
+}
+
+async function eliminarGerencia(g){if(confirm("Eliminar gerencia "+g+"?")){await db.collection("gerencias").doc(g).delete();cargarGerenciasDepartamentos();}}
+async function eliminarDepartamento(d){if(confirm("Eliminar departamento "+d+"?")){await db.collection("departamentos").doc(d).delete();cargarGerenciasDepartamentos();}}
+
+// ================= SOLICITUD =================
+
+// Generar ID incremental
+async function generarID(){
+  const ref=db.collection("counters").doc("global");
+  return db.runTransaction(async t=>{
+    const doc=await t.get(ref);
+    let n=doc.exists ? doc.data().solicitudes+1 : 1;
+    t.set(ref,{solicitudes:n},{merge:true});
+    return "FCI-SOL-"+String(n).padStart(4,"0");
+  });
+}
+
+// Subir archivo a Cloudinary
+async function subirArchivo(file){
+  const form=new FormData();
+  form.append("file",file);
+  form.append("upload_preset","fci_documentos");
+  const res=await fetch("https://api.cloudinary.com/v1_1/df79cjklp/auto/upload",{method:"POST",body:form});
+  const data=await res.json();
   return data.secure_url;
 }
 
+// Crear solicitud
 async function crearSolicitud(){
-  if(!usuarioActual){ alert("Debes iniciar sesión"); return; }
+  const id=await generarID();
+  let url="";
+  const file=document.getElementById("archivo").files[0];
+  if(file) url=await subirArchivo(file);
 
-  const archivoFile = document.getElementById("archivo").files[0];
-  let url = null;
-  if(archivoFile){
-    try { url = await subirArchivo(archivoFile); }
-    catch(err){ console.error(err); alert("No se pudo subir el archivo"); return; }
-  }
-
-  const id = await generarID();
-  const nuevaSolicitud = {
-    idSolicitud: id,
-    tipoAccion: document.getElementById("tipoAccion").value,
-    nombreDocumento: document.getElementById("nombreDocumento").value,
-    gerencia: document.getElementById("gerenciaSelect").value,
-    departamento: document.getElementById("departamentoSelect").value,
-    motivo: document.getElementById("motivo").value,
-    codificacionActual: document.getElementById("codificacion").value || null,
-    ultimaVersion: document.getElementById("ultimaVersion").value || null,
-    fechaUltimaVersion: document.getElementById("fechaUltimaVersion").value || null,
-    documento: url || null,
-    estado: "pendiente",
-    solicitante: { uid: usuarioActual.uid, correo: usuarioActual.correo },
-    fecha: firebase.firestore.FieldValue.serverTimestamp()
+  const nuevaSolicitud={
+    idSolicitud:id,
+    tipoAccion:document.getElementById("tipoAccion").value,
+    nombreDocumento:document.getElementById("nombreDocumento").value,
+    gerencia:document.getElementById("selectGerencia").value,
+    departamento:document.getElementById("selectDepartamento").value,
+    motivo:document.getElementById("motivo").value,
+    codificacionActual:document.getElementById("codificacion").value,
+    ultimaVersion:document.getElementById("ultimaVersion").value,
+    fechaUltimaVersion:document.getElementById("fechaUltimaVersion").value,
+    documento:url||"",
+    estado:"pendiente",
+    solicitante:{usuario:usuarioActivo.usuario,correo:usuarioActivo.correo||""},
+    fecha:firebase.firestore.FieldValue.serverTimestamp()
   };
 
   await db.collection("solicitudes").add(nuevaSolicitud);
-  alert("Solicitud creada: " + id);
+  alert("Solicitud creada: "+id);
   cargarSolicitudes();
 }
 
-// ================= CARGAR SOLICITUDES =================
+// Cargar solicitudes con botón de ver detalles
 async function cargarSolicitudes(){
-  const tabla = document.getElementById("tabla");
+  const tabla=document.getElementById("tablaSolicitudes");
   tabla.innerHTML="";
-  const snap = await db.collection("solicitudes").get();
+  const snap=await db.collection("solicitudes").orderBy("fecha","desc").get();
   snap.forEach(d=>{
-    const s = d.data();
-    tabla.innerHTML+=`
-      <tr>
-        <td>${s.idSolicitud}</td>
-        <td>${s.nombreDocumento}</td>
-        <td>${s.estado}</td>
-        <td>-</td>
-      </tr>`;
+    const s=d.data();
+    // Mostrar solo solicitudes del usuario si no es admin
+    if(usuarioActivo.rol==="usuario" && s.solicitante.usuario!==usuarioActivo.usuario) return;
+    if(usuarioActivo.rol==="gerente" && s.gerencia!==usuarioActivo.gerencia) return;
+
+    tabla.innerHTML+=`<tr>
+      <td>${s.idSolicitud}</td>
+      <td>${s.nombreDocumento}</td>
+      <td>${s.estado}</td>
+      <td><button onclick='verDetalles(${JSON.stringify(s)})'>Ver Detalles</button></td>
+    </tr>`;
   });
 }
 
-// ================= USUARIOS =================
-function crearUsuario(){
-  const u = document.getElementById("nuevoUsuario").value;
-  const c = document.getElementById("nuevoCorreo").value;
-  const p = document.getElementById("nuevoPassword").value;
-  const r = document.getElementById("nuevoRol").value;
-  const g = document.getElementById("nuevoGerencia").value;
-
-  usuarios.push({ uid:u, usuario:u, correo:c, password:p, rol:r, gerencia:g });
-  cargarUsuarios();
+// Modal detalles
+function verDetalles(solicitud){
+  document.getElementById("detalleSolicitud").innerHTML=`
+    <p><b>ID:</b> ${solicitud.idSolicitud}</p>
+    <p><b>Documento:</b> ${solicitud.nombreDocumento}</p>
+    <p><b>Tipo acción:</b> ${solicitud.tipoAccion}</p>
+    <p><b>Gerencia:</b> ${solicitud.gerencia}</p>
+    <p><b>Departamento:</b> ${solicitud.departamento}</p>
+    <p><b>Motivo:</b> ${solicitud.motivo}</p>
+    <p><b>Codificación actual:</b> ${solicitud.codificacionActual || '-'}</p>
+    <p><b>Última versión:</b> ${solicitud.ultimaVersion || '-'}</p>
+    <p><b>Fecha última versión:</b> ${solicitud.fechaUltimaVersion || '-'}</p>
+    <p><b>Estado:</b> ${solicitud.estado}</p>
+    <p><b>Documento:</b> ${solicitud.documento ? `<a href="${solicitud.documento}" target="_blank">Ver archivo</a>` : '-'}</p>
+  `;
+  document.getElementById("modalDetalles").style.display="flex";
 }
 
-function cargarUsuarios(){
-  const ul = document.getElementById("listaUsuarios");
-  ul.innerHTML="";
-  usuarios.forEach((u,i)=>{
-    ul.innerHTML+=`<li>${u.usuario} (${u.rol}) - ${u.gerencia} 
-    <button onclick="eliminarUsuario(${i})">Eliminar</button></li>`;
-  });
-
-  // Cargar select de gerencia para nuevos usuarios
-  const sel = document.getElementById("nuevoGerencia");
-  sel.innerHTML="";
-  gerencias.forEach(g=>{ sel.innerHTML+=`<option>${g}</option>` });
-}
-
-// ================= GERENCIAS Y DEPARTAMENTOS =================
-function agregarGerencia(){
-  const g = document.getElementById("inputGerencia").value;
-  if(!g || gerencias.includes(g)) return;
-  gerencias.push(g);
-  cargarGerenciasDepartamentos();
-}
-
-function agregarDepartamento(){
-  const d = document.getElementById("inputDepartamento").value;
-  if(!d || departamentos.includes(d)) return;
-  departamentos.push(d);
-  cargarGerenciasDepartamentos();
-}
-
-function eliminarUsuario(idx){
-  usuarios.splice(idx,1);
-  cargarUsuarios();
-}
-
-function cargarGerenciasDepartamentos(){
-  const gsel = document.getElementById("gerenciaSelect");
-  const dsel = document.getElementById("departamentoSelect");
-  gsel.innerHTML=""; dsel.innerHTML="";
-  gerencias.forEach(g=> gsel.innerHTML+=`<option>${g}</option>`);
-  departamentos.forEach(d=> dsel.innerHTML+=`<option>${d}</option>`);
-
-  // Lista de gerencias y departamentos
-  const lg = document.getElementById("listaGerencias");
-  const ld = document.getElementById("listaDepartamentos");
-  lg.innerHTML=""; ld.innerHTML="";
-  gerencias.forEach((g,i)=> lg.innerHTML+=`<li>${g} <button onclick="gerencias.splice(${i},1);cargarGerenciasDepartamentos()">Eliminar</button></li>`);
-  departamentos.forEach((d,i)=> ld.innerHTML+=`<li>${d} <button onclick="departamentos.splice(${i},1);cargarGerenciasDepartamentos()">Eliminar</button></li>`);
-}
-
-// ================= CARGAR INICIAL =================
-cargarGerenciasDepartamentos();
-cargarUsuarios();
-cargarSolicitudes();
+function cerrarModal(){document.getElementById("modalDetalles").style.display="none";}
 
 </script>
+
 </body>
 </html>
