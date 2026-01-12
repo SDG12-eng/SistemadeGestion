@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>FCI | Gestión Documental 2</title>
+<title>FCI | Gestión Documental</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <!-- Firebase -->
@@ -83,20 +83,22 @@ td,th{border:1px solid #ccc;padding:6px;text-align:left}
 
 <script>
 // ================= CONFIG FIREBASE =================
-firebase.initializeApp({
+const firebaseConfig = {
   apiKey: "AIzaSyDdzCiachuhbE9jATz-TesPI2vUVIJrHjM",
   authDomain: "sistemadegestion-7400d.firebaseapp.com",
   projectId: "sistemadegestion-7400d",
   storageBucket: "sistemadegestion-7400d.firebasestorage.app",
   messagingSenderId: "709030283072",
   appId: "1:709030283072:web:5997837b36a448e9515ca5"
-});
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
 
 // Inicializar EmailJS
 emailjs.init("TU_PUBLIC_KEY_EMAILJS"); // Reemplaza con tu Public Key
 
-const auth = firebase.auth();
-const db = firebase.firestore();
 let usuario = {};
 
 // ================= LOGIN FUNCIONANDO =================
@@ -110,30 +112,23 @@ async function login(){
   try{
     const cred = await auth.signInWithEmailAndPassword(correo,password);
 
-    // Verificar si existe documento en Firestore
+    // Verificar Firestore
     const snap = await db.collection("users").doc(cred.user.uid).get();
 
     if(!snap.exists){
-      // Crear documento automáticamente si no existe
+      // Crear usuario admin automáticamente si no existe
       await db.collection("users").doc(cred.user.uid).set({
-        correo: correo,
-        rol: "admin",        // Por defecto admin si no existe
-        gerencia: "",
-        activo: true
-      });
-      usuario = {
         correo: correo,
         rol: "admin",
         gerencia: "",
-        activo: true,
-        uid: cred.user.uid
-      };
+        activo: true
+      });
+      usuario = { correo: correo, rol:"admin", gerencia:"", activo:true, uid:cred.user.uid };
     } else {
       usuario = snap.data();
       usuario.uid = cred.user.uid;
     }
 
-    // Mostrar panel
     login.classList.add("hidden");
     panel.classList.remove("hidden");
 
@@ -196,33 +191,33 @@ async function subirArchivo(file){
 
 // Crear solicitud
 async function crearSolicitud(){
+  if(!usuario.uid){ alert("No hay usuario logueado"); return; }
+
   const id = await generarID();
   let url = "";
   const archivoFile = document.getElementById("archivo").files[0];
   if(archivoFile){ url = await subirArchivo(archivoFile); }
 
   const nuevaSolicitud = {
-    idSolicitud:id,
-    tipoAccion:document.getElementById("tipoAccion").value,
-    nombreDocumento:document.getElementById("nombreDocumento").value,
-    gerencia:document.getElementById("gerencia").value,
-    departamento:document.getElementById("departamento").value,
-    motivo:document.getElementById("motivo").value,
-    codificacionActual:document.getElementById("codificacion").value,
-    ultimaVersion:document.getElementById("ultimaVersion").value,
-    fechaUltimaVersion:document.getElementById("fechaUltimaVersion").value,
-    documento:url,
-    estado:"pendiente",
-    solicitante:{ uid:usuario.uid, correo:usuario.correo },
-    fecha:firebase.firestore.FieldValue.serverTimestamp()
+    idSolicitud: id,
+    tipoAccion: document.getElementById("tipoAccion").value,
+    nombreDocumento: document.getElementById("nombreDocumento").value,
+    gerencia: document.getElementById("gerencia").value,
+    departamento: document.getElementById("departamento").value,
+    motivo: document.getElementById("motivo").value,
+    codificacionActual: document.getElementById("codificacion").value,
+    ultimaVersion: document.getElementById("ultimaVersion").value,
+    fechaUltimaVersion: document.getElementById("fechaUltimaVersion").value,
+    documento: url,
+    estado: "pendiente",
+    solicitante: { uid: usuario.uid, correo: usuario.correo },
+    fecha: firebase.firestore.FieldValue.serverTimestamp()
   };
 
   await db.collection("solicitudes").add(nuevaSolicitud);
 
-  // Autoreply al usuario
   enviarCorreo(usuario.correo,id,"Pendiente","Tu solicitud fue registrada correctamente.");
 
-  // Notificación al gerente
   if(document.getElementById("gerencia").value){
     enviarCorreo("gerente@empresa.com",id,"Pendiente de aprobación","Tienes una solicitud pendiente de revisión.");
   }
