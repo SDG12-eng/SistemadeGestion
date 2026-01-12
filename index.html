@@ -5,44 +5,69 @@
 <title>Sistema de Gestión Documental</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-
 <style>
 body{
-  font-family: Arial, sans-serif;
-  background:#f2f4f8;
   margin:0;
+  font-family: Arial, sans-serif;
+  background:#f3f4f6;
 }
 header{
   background:#1f2937;
   color:#fff;
-  padding:10px 15px;
+  padding:12px 16px;
   display:flex;
   justify-content:space-between;
   align-items:center;
 }
 button{
-  padding:6px 10px;
+  padding:8px 12px;
+  border:none;
+  background:#2563eb;
+  color:#fff;
+  border-radius:4px;
   cursor:pointer;
 }
-input,textarea,select{
-  width:100%;
-  padding:6px;
-  margin:4px 0;
+button.secondary{
+  background:#6b7280;
 }
 .container{
-  padding:15px;
+  padding:16px;
 }
 .card{
   background:#fff;
-  padding:12px;
-  margin-bottom:12px;
-  border-radius:5px;
+  padding:16px;
+  border-radius:6px;
+  margin-bottom:16px;
 }
-.hidden{display:none;}
-nav button{margin-right:5px;}
+input,textarea,select{
+  width:100%;
+  padding:8px;
+  margin-top:6px;
+  margin-bottom:10px;
+}
+nav button{
+  margin-right:6px;
+}
+.hidden{
+  display:none;
+}
+.table{
+  width:100%;
+  border-collapse:collapse;
+}
+.table th,.table td{
+  border-bottom:1px solid #e5e7eb;
+  padding:8px;
+  text-align:left;
+}
+.badge{
+  padding:3px 8px;
+  border-radius:12px;
+  font-size:12px;
+  background:#e5e7eb;
+}
+.badge.pendiente{background:#fde68a;}
+.badge.aprobado{background:#86efac;}
 </style>
 </head>
 
@@ -50,139 +75,105 @@ nav button{margin-right:5px;}
 
 <header>
   <strong>Sistema de Gestión Documental</strong>
-  <div id="headerUser" class="hidden">
-    <span id="userLabel"></span>
-    <button onclick="logout()">Salir</button>
+  <div>
+    <span>Usuario: admin</span>
+    <button class="secondary">Salir</button>
   </div>
 </header>
 
-<!-- LOGIN -->
-<div id="login" class="container">
-  <div class="card">
-    <h3>Iniciar Sesión</h3>
-    <input id="loginUser" placeholder="Usuario">
-    <input id="loginPass" type="password" placeholder="Contraseña">
-    <button onclick="login()">Ingresar</button>
-    <p id="loginError" style="color:red;"></p>
-  </div>
-</div>
+<div class="container">
 
-<!-- APP -->
-<div id="app" class="container hidden">
-
+  <!-- MENÚ -->
   <nav>
-    <button onclick="showTab('solicitudes')">Solicitudes</button>
-    <button onclick="showTab('nueva')">Nueva Solicitud</button>
-    <button id="adminBtn" onclick="showTab('admin')" class="hidden">Administración</button>
+    <button onclick="mostrar('panel')">Panel</button>
+    <button onclick="mostrar('solicitudes')">Solicitudes</button>
+    <button onclick="mostrar('nueva')">Nueva Solicitud</button>
+    <button onclick="mostrar('perfil')">Perfil</button>
   </nav>
+
+  <!-- PANEL -->
+  <div id="panel" class="card">
+    <h3>Panel General</h3>
+    <p>Bienvenido al Sistema de Gestión Documental.</p>
+    <ul>
+      <li>📄 Gestión de solicitudes</li>
+      <li>📎 Adjuntar comprobantes</li>
+      <li>🖊 Firma de recepción</li>
+      <li>👤 Roles: usuario / administrador</li>
+    </ul>
+  </div>
 
   <!-- SOLICITUDES -->
   <div id="solicitudes" class="card hidden">
     <h3>Solicitudes</h3>
-    <div id="listaSolicitudes"></div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Título</th>
+          <th>Usuario</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>001</td>
+          <td>Solicitud de Compra</td>
+          <td>usuario1</td>
+          <td><span class="badge pendiente">Pendiente</span></td>
+          <td>
+            <button>Ver</button>
+            <button class="secondary">Adjuntar</button>
+          </td>
+        </tr>
+        <tr>
+          <td>002</td>
+          <td>Reembolso</td>
+          <td>usuario2</td>
+          <td><span class="badge aprobado">Aprobado</span></td>
+          <td>
+            <button>Ver</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 
   <!-- NUEVA -->
   <div id="nueva" class="card hidden">
     <h3>Nueva Solicitud</h3>
-    <form onsubmit="crearSolicitud(event)">
-      <input id="titulo" placeholder="Título" required>
-      <textarea id="descripcion" placeholder="Descripción" required></textarea>
-      <button>Crear</button>
+    <form>
+      <label>Título</label>
+      <input placeholder="Título del documento">
+      <label>Descripción</label>
+      <textarea rows="4" placeholder="Descripción detallada"></textarea>
+      <label>Adjuntar Comprobante</label>
+      <input type="file">
+      <button>Enviar Solicitud</button>
     </form>
   </div>
 
-  <!-- ADMIN -->
-  <div id="admin" class="card hidden">
-    <h3>Panel Administrador</h3>
-    <p>Solo visible para admin</p>
+  <!-- PERFIL -->
+  <div id="perfil" class="card hidden">
+    <h3>Perfil de Usuario</h3>
+    <p><strong>Nombre:</strong> Admin</p>
+    <p><strong>Rol:</strong> Administrador</p>
+    <p><strong>Historial:</strong></p>
+    <ul>
+      <li>Solicitud #001 – Pendiente</li>
+      <li>Solicitud #002 – Aprobada</li>
+    </ul>
   </div>
 
 </div>
 
 <script>
-// ================= FIREBASE =================
-firebase.initializeApp({
-  apiKey: "AIzaSyDdzCiachuhbE9jATz-TesPI2vUVIJrHjM",
-  authDomain: "sistemadegestion-7400d.firebaseapp.com",
-  projectId: "sistemadegestion-7400d",
-});
-const db = firebase.firestore();
-
-// ================= USUARIOS =================
-const USERS = {
-  admin:{pass:"123456", role:"admin"},
-  usuario:{pass:"123456", role:"user"}
-};
-
-let currentUser = null;
-let role = null;
-
-// ================= LOGIN =================
-function login(){
-  const u = loginUser.value;
-  const p = loginPass.value;
-
-  if(!USERS[u] || USERS[u].pass !== p){
-    loginError.innerText = "Credenciales incorrectas";
-    return;
-  }
-
-  currentUser = u;
-  role = USERS[u].role;
-
-  document.getElementById("login").classList.add("hidden");
-  document.getElementById("app").classList.remove("hidden");
-  document.getElementById("headerUser").classList.remove("hidden");
-  userLabel.innerText = `${u} (${role})`;
-  adminBtn.classList.toggle("hidden", role!=="admin");
-
-  showTab("solicitudes");
-  cargarSolicitudes();
-}
-
-// ================= LOGOUT =================
-function logout(){
-  location.reload();
-}
-
-// ================= TABS =================
-function showTab(id){
-  ["solicitudes","nueva","admin"].forEach(t=>{
-    document.getElementById(t).classList.add("hidden");
+function mostrar(id){
+  ["panel","solicitudes","nueva","perfil"].forEach(v=>{
+    document.getElementById(v).classList.add("hidden");
   });
   document.getElementById(id).classList.remove("hidden");
-}
-
-// ================= SOLICITUDES =================
-function crearSolicitud(e){
-  e.preventDefault();
-  db.collection("solicitudes").add({
-    titulo:titulo.value,
-    descripcion:descripcion.value,
-    usuario:currentUser,
-    fecha:new Date()
-  });
-  titulo.value="";
-  descripcion.value="";
-  cargarSolicitudes();
-  showTab("solicitudes");
-}
-
-function cargarSolicitudes(){
-  listaSolicitudes.innerHTML="Cargando...";
-  db.collection("solicitudes").orderBy("fecha","desc").onSnapshot(snap=>{
-    listaSolicitudes.innerHTML="";
-    snap.forEach(doc=>{
-      const d = doc.data();
-      listaSolicitudes.innerHTML+=`
-        <div class="card">
-          <strong>${d.titulo}</strong>
-          <p>${d.descripcion}</p>
-          <small>${d.usuario}</small>
-        </div>`;
-    });
-  });
 }
 </script>
 
