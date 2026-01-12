@@ -17,7 +17,7 @@
 body{font-family:Arial;background:#f3f4f6;margin:0}
 header{background:#111827;color:#fff;padding:15px}
 .card{background:#fff;padding:15px;margin:15px;border-radius:8px}
-input,select,textarea,button{width:100%;margin-top:8px;padding:8px}
+input,select,textarea,button{width:100%;margin-top:8px;padding:8px;border-radius:4px}
 button{background:#2563eb;color:#fff;border:none;cursor:pointer}
 table{width:100%;border-collapse:collapse}
 td,th{border:1px solid #ccc;padding:6px;text-align:left}
@@ -34,9 +34,9 @@ td,th{border:1px solid #ccc;padding:6px;text-align:left}
 <!-- LOGIN -->
 <section id="login" class="card">
 <h3>Iniciar sesión</h3>
-<input id="email" placeholder="Correo">
-<input id="password" type="password" placeholder="Contraseña">
-<button onclick="login()">Ingresar</button>
+<input id="email" placeholder="Correo" value="admin@fcipty.com">
+<input id="password" type="password" placeholder="Contraseña" value="Admin123!">
+<button id="btnLogin">Ingresar</button>
 </section>
 
 <!-- PANEL PRINCIPAL -->
@@ -92,33 +92,87 @@ firebase.initializeApp({
   appId: "1:709030283072:web:5997837b36a448e9515ca5"
 });
 
-emailjs.init("2jVnfkJKKG0bpKN-U"); // Reemplaza con tu EmailJS Public Key
+// Inicializar EmailJS
+emailjs.init("TU_PUBLIC_KEY_EMAILJS"); // Reemplaza con tu Public Key
 
 const auth = firebase.auth();
 const db = firebase.firestore();
 let usuario = {};
-// ===================================================
 
-// LOGIN
-function login(){
-  auth.signInWithEmailAndPassword(email.value,password.value)
-  .catch(err=>alert("Error: "+err.message));
+// ================= LOGIN FUNCIONANDO =================
+document.getElementById("btnLogin").addEventListener("click", login);
+
+async function login(){
+  const correo = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  if(!correo || !password){ alert("Ingresa correo y contraseña"); return; }
+
+  try{
+    const cred = await auth.signInWithEmailAndPassword(correo,password);
+
+    // Verificar si existe documento en Firestore
+    const snap = await db.collection("users").doc(cred.user.uid).get();
+
+    if(!snap.exists){
+      // Crear documento automáticamente si no existe
+      await db.collection("users").doc(cred.user.uid).set({
+        correo: correo,
+        rol: "admin",        // Por defecto admin si no existe
+        gerencia: "",
+        activo: true
+      });
+      usuario = {
+        correo: correo,
+        rol: "admin",
+        gerencia: "",
+        activo: true,
+        uid: cred.user.uid
+      };
+    } else {
+      usuario = snap.data();
+      usuario.uid = cred.user.uid;
+    }
+
+    // Mostrar panel
+    login.classList.add("hidden");
+    panel.classList.remove("hidden");
+
+    cargarSolicitudes();
+
+  } catch(err){
+    alert("Error de login: "+err.message);
+  }
 }
 
-// SESIÓN
+// Detectar sesión activa
 auth.onAuthStateChanged(async u=>{
-  if(!u) return;
-  const snap = await db.collection("users").doc(u.uid).get();
-  usuario = snap.data();
-  usuario.uid = u.uid;
-
-  login.classList.add("hidden");
-  panel.classList.remove("hidden");
-
-  cargarSolicitudes();
+  if(u && !usuario.uid){
+    const snap = await db.collection("users").doc(u.uid).get();
+    if(snap.exists){
+      usuario = snap.data();
+      usuario.uid = u.uid;
+      login.classList.add("hidden");
+      panel.classList.remove("hidden");
+      cargarSolicitudes();
+    } else {
+      // Crear admin automáticamente
+      await db.collection("users").doc(u.uid).set({
+        correo: u.email,
+        rol: "admin",
+        gerencia: "",
+        activo: true
+      });
+      usuario = { correo: u.email, rol:"admin", gerencia:"", activo:true, uid:u.uid };
+      login.classList.add("hidden");
+      panel.classList.remove("hidden");
+      cargarSolicitudes();
+    }
+  }
 });
 
-// GENERAR ID UNICO
+// ================= FUNCIONES SOLICITUD =================
+
+// Generar ID único
 async function generarID(){
   const ref = db.collection("counters").doc("global");
   return db.runTransaction(async t=>{
@@ -129,7 +183,7 @@ async function generarID(){
   });
 }
 
-// SUBIR ARCHIVO A CLOUDINARY
+// Subir archivo a Cloudinary
 async function subirArchivo(file){
   const form = new FormData();
   form.append("file", file);
@@ -140,50 +194,46 @@ async function subirArchivo(file){
   return data.secure_url;
 }
 
-// CREAR SOLICITUD
+// Crear solicitud
 async function crearSolicitud(){
   const id = await generarID();
   let url = "";
-
-  if(archivo.files[0]){
-    url = await subirArchivo(archivo.files[0]);
-  }
+  const archivoFile = document.getElementById("archivo").files[0];
+  if(archivoFile){ url = await subirArchivo(archivoFile); }
 
   const nuevaSolicitud = {
     idSolicitud:id,
-    tipoAccion:tipoAccion.value,
-    nombreDocumento:nombreDocumento.value,
-    gerencia:gerencia.value,
-    departamento:departamento.value,
-    motivo:motivo.value,
-    codificacionActual:codificacion.value,
-    ultimaVersion:ultimaVersion.value,
-    fechaUltimaVersion:fechaUltimaVersion.value,
+    tipoAccion:document.getElementById("tipoAccion").value,
+    nombreDocumento:document.getElementById("nombreDocumento").value,
+    gerencia:document.getElementById("gerencia").value,
+    departamento:document.getElementById("departamento").value,
+    motivo:document.getElementById("motivo").value,
+    codificacionActual:document.getElementById("codificacion").value,
+    ultimaVersion:document.getElementById("ultimaVersion").value,
+    fechaUltimaVersion:document.getElementById("fechaUltimaVersion").value,
     documento:url,
     estado:"pendiente",
-    solicitante:{
-      uid:usuario.uid,
-      correo:usuario.correo
-    },
+    solicitante:{ uid:usuario.uid, correo:usuario.correo },
     fecha:firebase.firestore.FieldValue.serverTimestamp()
   };
 
   await db.collection("solicitudes").add(nuevaSolicitud);
 
-  // AUTOREPLY AL USUARIO
+  // Autoreply al usuario
   enviarCorreo(usuario.correo,id,"Pendiente","Tu solicitud fue registrada correctamente.");
 
-  // NOTIFICACIÓN AL GERENTE (si hay email del gerente)
-  if(gerencia.value){
-    enviarCorreo("correo_gerente@empresa.com",id,"Pendiente de aprobación","Tienes una solicitud pendiente de revisión.");
+  // Notificación al gerente
+  if(document.getElementById("gerencia").value){
+    enviarCorreo("gerente@empresa.com",id,"Pendiente de aprobación","Tienes una solicitud pendiente de revisión.");
   }
 
   alert("Solicitud creada: "+id);
   cargarSolicitudes();
 }
 
-// CARGAR SOLICITUDES SEGUN ROL
+// Cargar solicitudes según rol
 async function cargarSolicitudes(){
+  const tabla = document.getElementById("tabla");
   tabla.innerHTML="";
   let q;
 
@@ -191,7 +241,7 @@ async function cargarSolicitudes(){
     q = db.collection("solicitudes").where("solicitante.uid","==",usuario.uid);
   } else if(usuario.rol==="gerente"){
     q = db.collection("solicitudes").where("gerencia","==",usuario.gerencia);
-  } else {
+  } else { // admin
     q = db.collection("solicitudes");
   }
 
@@ -199,11 +249,9 @@ async function cargarSolicitudes(){
   snap.forEach(d=>{
     const s = d.data();
     let boton = "";
-
     if(usuario.rol==="gerente" && s.estado!=="finalizado"){
       boton = `<button onclick="finalizar('${d.id}')">Finalizar</button>`;
     }
-
     tabla.innerHTML+=`
     <tr>
       <td>${s.idSolicitud}</td>
@@ -214,20 +262,20 @@ async function cargarSolicitudes(){
   });
 }
 
-// FINALIZAR SOLICITUD (SOLO GERENTE)
+// Finalizar solicitud (solo gerente)
 async function finalizar(id){
-  await db.collection("solicitudes").doc(id).update({
+  const docRef = db.collection("solicitudes").doc(id);
+  await docRef.update({
     estado:"finalizado",
     "gerente.aprobado":true,
     "gerente.nombre":usuario.correo
   });
-  // Notificación al solicitante
-  const doc = await db.collection("solicitudes").doc(id).get();
+  const doc = await docRef.get();
   enviarCorreo(doc.data().solicitante.correo,doc.data().idSolicitud,"Finalizado","La solicitud fue aprobada y cerrada.");
   cargarSolicitudes();
 }
 
-// FUNCIÓN GENERAL EMAILJS
+// Función EmailJS
 function enviarCorreo(destino,id,estado,mensaje){
   emailjs.send("TU_SERVICE_ID","TU_TEMPLATE_ID",{
     to_email: destino,
@@ -236,7 +284,6 @@ function enviarCorreo(destino,id,estado,mensaje){
     mensaje: mensaje
   }).catch(err=>console.log("Error email:",err));
 }
-
 </script>
 
 </body>
