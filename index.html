@@ -3,50 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistema de Gestión FCI Avanzado</title>
+<title>Sistema de Gestión - Dashboard</title>
 <style>
-body { font-family: Arial; margin:0; background:#f4f6f8; }
-header { background:#2c3e50; color:white; padding:15px; text-align:center; }
-.container { padding:20px; }
-input, select, button, textarea { padding:5px; margin:5px 0; width:100%; }
-button { cursor:pointer; }
-.tabs { display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
-.tab { padding:10px 15px; background:#ccc; cursor:pointer; border-radius:5px; }
-.tab.active { background:#2c3e50; color:white; }
-.tabContent { display:none; }
-.tabContent.active { display:block; }
-table { width:100%; border-collapse: collapse; margin-top:10px; }
-table, th, td { border:1px solid #ccc; }
-th, td { padding:5px; text-align:left; }
-.commentBox { margin-top:5px; }
-.statusButton { margin-right:5px; padding:3px 6px; cursor:pointer; }
+body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f4f4; }
+header { background:#007bff; color:white; padding:10px 20px; }
+h1 { margin:0; font-size:24px; }
+.container { display:flex; flex-wrap:wrap; padding:20px; }
+.card { background:white; border-radius:8px; padding:20px; margin:10px; flex:1 1 300px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+input, select, textarea, button { width:100%; padding:8px; margin:5px 0; border-radius:4px; border:1px solid #ccc; }
+button { background:#007bff; color:white; border:none; cursor:pointer; }
+button:hover { background:#0056b3; }
+table { width:100%; border-collapse:collapse; margin-top:10px; }
+th, td { padding:8px; border:1px solid #ccc; text-align:left; }
+.tab { display:none; }
+.nav { margin:10px 0; }
+.nav button { display:inline-block; width:auto; margin-right:5px; }
 </style>
-</head>
-<body>
-
-<header>
-  <h1>Sistema de Gestión FCI Avanzado</h1>
-</header>
-
-<div class="container" id="loginDiv">
-  <h2>Login</h2>
-  <input type="text" id="usuario" placeholder="Usuario">
-  <input type="password" id="password" placeholder="Contraseña">
-  <button id="btnLogin">Ingresar</button>
-</div>
-
-<div class="container" id="dashboardDiv" style="display:none;">
-  <h2>Dashboard</h2>
-  <div class="tabs" id="tabsDiv"></div>
-  <div id="tabContents"></div>
-  <button id="btnLogout" style="background:#e74c3c;color:white;">Cerrar sesión</button>
-</div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs, addDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-// FIREBASE
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.5/axios.min.js"></script>
+<script>
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyDdzCiachuhbE9jATz-TesPI2vUVIJrHjM",
   authDomain: "sistemadegestion-7400d.firebaseapp.com",
@@ -55,182 +32,280 @@ const firebaseConfig = {
   messagingSenderId: "709030283072",
   appId: "1:709030283072:web:5997837b36a448e9515ca5"
 };
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-let currentUser = null;
+// Variables globales
+let usuarioActual = null;
+let rolActual = null;
 
-// LOGIN
-document.getElementById("btnLogin").addEventListener("click", async () => {
-  const usuario = document.getElementById("usuario").value;
-  const password = document.getElementById("password").value;
-  if(!usuario || !password){ alert("Ingrese usuario y contraseña"); return; }
-
-  const q = query(collection(db, "usuarios"), where("usuario","==",usuario), where("password","==",password));
-  const snapshot = await getDocs(q);
-
-  if(snapshot.empty){ alert("Usuario o contraseña incorrectos"); return; }
-
-  currentUser = snapshot.docs[0].data();
-  document.getElementById("loginDiv").style.display = "none";
-  document.getElementById("dashboardDiv").style.display = "block";
-  cargarDashboard();
-});
-
-document.getElementById("btnLogout").addEventListener("click", () => {
-  currentUser = null;
-  document.getElementById("loginDiv").style.display = "block";
-  document.getElementById("dashboardDiv").style.display = "none";
-});
+// LOGIN SIMPLE
+function login() {
+  const usuario = document.getElementById('loginUsuario').value;
+  const pass = document.getElementById('loginPassword').value;
+  db.collection('usuarios').doc(usuario).get().then(doc=>{
+    if(doc.exists && doc.data().password===pass){
+      usuarioActual = usuario;
+      rolActual = doc.data().rol;
+      document.getElementById('loginPanel').style.display='none';
+      document.getElementById('dashboard').style.display='block';
+      cargarDashboard();
+    } else {
+      alert('Usuario o contraseña incorrectos');
+    }
+  });
+}
 
 // DASHBOARD
 function cargarDashboard() {
-  const tabsDiv = document.getElementById("tabsDiv");
-  const tabContents = document.getElementById("tabContents");
-  tabsDiv.innerHTML = ""; tabContents.innerHTML = "";
+  // Mostrar tabs según rol
+  const adminTabs = ['usuariosTab','gerenciasTab','departamentosTab','solicitudesTab'];
+  const gerenteTabs = ['solicitudesTab'];
+  const usuarioTabs = ['solicitudesTab'];
 
-  const tabs = [];
-  if(currentUser.rol==="Admin"){ tabs.push({name:"Usuarios",id:"usuariosTab"}); tabs.push({name:"Solicitudes",id:"solicitudesTab"}); tabs.push({name:"Nueva Solicitud",id:"nuevaSolicitudTab"}); }
-  if(currentUser.rol==="Gerente"){ tabs.push({name:"Solicitudes",id:"solicitudesTab"}); tabs.push({name:"Nueva Solicitud",id:"nuevaSolicitudTab"}); }
-  if(currentUser.rol==="Usuario"){ tabs.push({name:"Mis Solicitudes",id:"solicitudesTab"}); tabs.push({name:"Nueva Solicitud",id:"nuevaSolicitudTab"}); }
+  document.querySelectorAll('.tab').forEach(t=>t.style.display='none');
+  document.querySelectorAll('.nav button').forEach(b=>b.style.display='none');
 
-  tabs.forEach((t,i)=>{
-    const tab = document.createElement("div");
-    tab.className="tab"+(i===0?" active":""); tab.textContent=t.name;
-    tab.onclick=()=>abrirTab(t.id); tabsDiv.appendChild(tab);
-    const content = document.createElement("div"); content.id=t.id; content.className="tabContent"+(i===0?" active":""); tabContents.appendChild(content);
-  });
-  cargarContenidoTabs();
-}
-
-function abrirTab(tabId){
-  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-  document.querySelectorAll(".tabContent").forEach(tc=>tc.classList.remove("active"));
-  const tabs = Array.from(document.querySelectorAll(".tab"));
-  tabs[tabs.findIndex(t=>t.textContent.includes(tabId.split("Tab")[0]))].classList.add("active");
-  document.getElementById(tabId).classList.add("active");
-}
-
-// CONTENIDO
-function cargarContenidoTabs(){
-  if(currentUser.rol==="Admin") cargarUsuarios();
-  cargarSolicitudes();
-  cargarNuevaSolicitud();
-}
-
-// USUARIOS
-async function cargarUsuarios(){
-  const container=document.getElementById("usuariosTab");
-  container.innerHTML="<h3>Usuarios</h3>";
-  const snapshot = await getDocs(collection(db,"usuarios"));
-  const table = document.createElement("table");
-  table.innerHTML="<tr><th>Usuario</th><th>Rol</th><th>Gerencia</th><th>Departamento</th></tr>";
-  snapshot.forEach(d=>{
-    const data=d.data();
-    const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${data.usuario}</td><td>${data.rol}</td><td>${data.gerencia||''}</td><td>${data.departamento||''}</td>`;
-    table.appendChild(tr);
-  });
-  container.appendChild(table);
-}
-
-// SOLICITUDES
-const ESTADOS=["Pendiente","Solicitud de reunión","Realizar consultas","Documentado","Verificado","Codificado","Solicitud de aprobación del gerente","Finalizado"];
-
-async function cargarSolicitudes(){
-  const container=document.getElementById("solicitudesTab");
-  container.innerHTML="<h3>Solicitudes</h3>";
-  let q;
-  if(currentUser.rol==="Usuario") q = query(collection(db,"solicitudes"), where("usuario","==",currentUser.usuario));
-  else if(currentUser.rol==="Gerente") q = query(collection(db,"solicitudes"), where("gerencia","==",currentUser.gerencia));
-  else q = collection(db,"solicitudes");
-  const snapshot = await getDocs(q);
-  const table=document.createElement("table");
-  table.innerHTML="<tr><th>ID</th><th>Nombre</th><th>Acción</th><th>Estado</th><th>Archivo</th><th>Detalles</th></tr>";
-  snapshot.forEach(d=>{
-    const s=d.data();
-    const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${s.id}</td><td>${s.nombreDocumento}</td><td>${s.accion}</td><td>${s.estado}</td><td>${s.archivo?'<a href="'+s.archivo+'" target="_blank">Ver</a>':''}</td><td><button onclick='verDetalle("${d.id}")'>Ver</button></td>`;
-    table.appendChild(tr);
-  });
-  container.appendChild(table);
-}
-
-// NUEVA SOLICITUD
-function cargarNuevaSolicitud(){
-  const container=document.getElementById("nuevaSolicitudTab");
-  container.innerHTML=`
-    <h3>Nueva Solicitud</h3>
-    <input type="text" id="nombreDoc" placeholder="Nombre del documento">
-    <select id="accionDoc">
-      <option value="Creación">Creación</option>
-      <option value="Modificación">Modificación</option>
-      <option value="Inactivación">Inactivación</option>
-    </select>
-    <input type="text" id="gerenciaDoc" placeholder="Gerencia">
-    <input type="text" id="departamentoDoc" placeholder="Departamento">
-    <textarea id="motivoDoc" placeholder="Motivo"></textarea>
-    <input type="file" id="fileDoc">
-    <button onclick="crearSolicitud()">Crear Solicitud</button>
-  `;
-}
-
-window.crearSolicitud=async()=>{
-  const nombreDocumento=document.getElementById("nombreDoc").value;
-  const accion=document.getElementById("accionDoc").value;
-  const gerencia=document.getElementById("gerenciaDoc").value;
-  const departamento=document.getElementById("departamentoDoc").value;
-  const motivo=document.getElementById("motivoDoc").value;
-  const file=document.getElementById("fileDoc").files[0];
-
-  if(!nombreDocumento || !accion || !gerencia || !departamento){ alert("Complete todos los campos"); return; }
-
-  let fileUrl="";
-  if(file){
-    const data=new FormData();
-    data.append("file",file);
-    data.append("upload_preset","fci_documentos");
-    const res=await fetch("https://api.cloudinary.com/v1_1/df79cjklp/auto/upload",{method:"POST",body:data});
-    const json=await res.json();
-    fileUrl=json.secure_url;
+  if(rolActual==='Admin'){
+    adminTabs.forEach(id=>document.getElementById(id+'Btn').style.display='inline-block');
+  } else if(rolActual==='Gerente'){
+    gerenteTabs.forEach(id=>document.getElementById(id+'Btn').style.display='inline-block');
+  } else {
+    usuarioTabs.forEach(id=>document.getElementById(id+'Btn').style.display='inline-block');
   }
 
-  await addDoc(collection(db,"solicitudes"),{
-    id: Date.now(),
-    usuario: currentUser.usuario,
-    correo: currentUser.correo||"",
-    nombreDocumento,
+  mostrarTab('solicitudesTab');
+  cargarSolicitudes();
+  cargarUsuarios();
+  cargarGerencias();
+  cargarDepartamentos();
+}
+
+// TAB NAV
+function mostrarTab(tabId){
+  document.querySelectorAll('.tab').forEach(t=>t.style.display='none');
+  document.getElementById(tabId).style.display='block';
+}
+
+// CARGAR USUARIOS
+function cargarUsuarios(){
+  const tbody = document.getElementById('usuariosBody');
+  tbody.innerHTML='';
+  db.collection('usuarios').get().then(snapshot=>{
+    snapshot.forEach(doc=>{
+      const u = doc.data();
+      tbody.innerHTML+=`<tr>
+        <td>${doc.id}</td>
+        <td>${u.password}</td>
+        <td>${u.rol}</td>
+        <td>${u.gerencia||''}</td>
+        <td>${u.departamento||''}</td>
+      </tr>`;
+    });
+  });
+}
+
+// CREAR USUARIO
+function crearUsuario(){
+  const u = document.getElementById('nuevoUsuario').value;
+  const p = document.getElementById('nuevaPassword').value;
+  const r = document.getElementById('nuevoRol').value;
+  const g = document.getElementById('nuevoGerencia').value;
+  const d = document.getElementById('nuevoDepartamento').value;
+  db.collection('usuarios').doc(u).set({
+    password:p,
+    rol:r,
+    gerencia:g,
+    departamento:d
+  }).then(()=>{ alert('Usuario creado'); cargarUsuarios(); });
+}
+
+// CARGAR GERENCIAS
+function cargarGerencias(){
+  const tbody = document.getElementById('gerenciasBody');
+  tbody.innerHTML='';
+  db.collection('gerencias').get().then(snapshot=>{
+    snapshot.forEach(doc=>{
+      tbody.innerHTML+=`<tr><td>${doc.id}</td></tr>`;
+    });
+  });
+}
+
+// CREAR GERENCIA
+function crearGerencia(){
+  const g = document.getElementById('nuevaGerenciaName').value;
+  db.collection('gerencias').doc(g).set({nombre:g}).then(()=>{ alert('Gerencia creada'); cargarGerencias(); });
+}
+
+// CARGAR DEPARTAMENTOS
+function cargarDepartamentos(){
+  const tbody = document.getElementById('departamentosBody');
+  tbody.innerHTML='';
+  db.collection('departamentos').get().then(snapshot=>{
+    snapshot.forEach(doc=>{
+      tbody.innerHTML+=`<tr><td>${doc.id}</td></tr>`;
+    });
+  });
+}
+
+// CREAR DEPARTAMENTO
+function crearDepartamento(){
+  const d = document.getElementById('nuevoDepartamentoName').value;
+  db.collection('departamentos').doc(d).set({nombre:d}).then(()=>{ alert('Departamento creado'); cargarDepartamentos(); });
+}
+
+// SUBIR A CLOUDINARY
+async function subirDocumento(file){
+  const form = new FormData();
+  form.append('file',file);
+  form.append('upload_preset','documentos');
+  const res = await axios.post('https://api.cloudinary.com/v1_1/demo12345/upload',form);
+  return res.data.secure_url;
+}
+
+// CREAR SOLICITUD
+async function crearSolicitud(){
+  const nombre = document.getElementById('solNombre').value;
+  const tipo = document.getElementById('solTipo').value;
+  const accion = document.getElementById('solAccion').value;
+  const gerencia = document.getElementById('solGerencia').value;
+  const departamento = document.getElementById('solDepartamento').value;
+  const motivo = document.getElementById('solMotivo').value;
+  const archivo = document.getElementById('solArchivo').files[0];
+  const archivoURL = archivo ? await subirDocumento(archivo) : '';
+
+  const estados = [
+    {estado:'Pendiente', comentario:'', fecha:new Date()},
+  ];
+
+  db.collection('solicitudes').add({
+    usuario:usuarioActual,
+    nombre,
+    tipo,
     accion,
     gerencia,
     departamento,
     motivo,
-    archivo:fileUrl,
-    estado:"Pendiente",
-    comentarios:[]
+    archivo:archivoURL,
+    estados
+  }).then(()=>{ alert('Solicitud creada'); cargarSolicitudes(); });
+}
+
+// CARGAR SOLICITUDES
+function cargarSolicitudes(){
+  const tbody = document.getElementById('solicitudesBody');
+  tbody.innerHTML='';
+  db.collection('solicitudes').get().then(snapshot=>{
+    snapshot.forEach(doc=>{
+      const s = doc.data();
+      // Filtro según rol
+      if(rolActual==='Usuario' && s.usuario!==usuarioActual) return;
+      if(rolActual==='Gerente' && s.gerencia!==getGerencia(usuarioActual)) return;
+      tbody.innerHTML+=`<tr>
+        <td>${doc.id}</td>
+        <td>${s.usuario}</td>
+        <td>${s.nombre}</td>
+        <td>${s.tipo}</td>
+        <td>${s.accion}</td>
+        <td>${s.estados[s.estados.length-1].estado}</td>
+        <td><button onclick="verDetalles('${doc.id}')">Ver detalles</button></td>
+      </tr>`;
+    });
   });
-  alert("Solicitud creada");
-  cargarSolicitudes();
-};
+}
 
-// DETALLE Y CAMBIO DE ESTADO
-window.verDetalle=async(id)=>{
-  const docRef=doc(db,"solicitudes",id);
-  const snap=await getDocs(docRef);
-  const data = snap.data();
+// SIMPLIFICAMOS FUNCION GET GERENCIA DEL USUARIO
+function getGerencia(userId){
+  return ''; // Se puede extender para traer de db si es necesario
+}
 
-  let contenido=`ID: ${data.id}\nNombre: ${data.nombreDocumento}\nAcción: ${data.accion}\nEstado: ${data.estado}\nArchivo: ${data.archivo||''}\nComentarios:\n`;
-  data.comentarios.forEach(c=>contenido+=`- ${c.usuario}: ${c.texto}\n`);
-
-  const nuevoEstado = prompt(contenido+"\n\nCambiar estado a:\n"+ESTADOS.join(", "));
-  if(nuevoEstado && ESTADOS.includes(nuevoEstado)){
-    const comentario = prompt("Agregar comentario para este estado:");
-    const comentarios = data.comentarios || [];
-    if(comentario) comentarios.push({usuario:currentUser.usuario,texto:comentario,fecha:new Date().toLocaleString()});
-    await updateDoc(doc(db,"solicitudes",id),{estado:nuevoEstado,comentarios});
-    alert("Estado actualizado");
-    cargarSolicitudes();
-  }
-};
+// VER DETALLES DE SOLICITUD
+function verDetalles(id){
+  db.collection('solicitudes').doc(id).get().then(doc=>{
+    if(doc.exists){
+      const s = doc.data();
+      let detalles='';
+      s.estados.forEach(e=>{
+        detalles+=`Estado: ${e.estado}, Comentario: ${e.comentario}, Fecha: ${new Date(e.fecha.seconds*1000).toLocaleString()} \n`;
+      });
+      alert(`Solicitud: ${s.nombre}\nUsuario: ${s.usuario}\nGerencia: ${s.gerencia}\nDepartamento: ${s.departamento}\nMotivo: ${s.motivo}\nArchivo: ${s.archivo}\n\nHistorial de estados:\n${detalles}`);
+    }
+  });
+}
 </script>
+</head>
+<body>
+<header><h1>Sistema de Gestión</h1></header>
+
+<div id="loginPanel" class="container">
+  <div class="card" style="flex:1 1 400px;">
+    <h2>Login</h2>
+    <input id="loginUsuario" placeholder="Usuario">
+    <input id="loginPassword" placeholder="Contraseña" type="password">
+    <button onclick="login()">Ingresar</button>
+  </div>
+</div>
+
+<div id="dashboard" style="display:none;">
+  <div class="nav">
+    <button id="usuariosTabBtn" onclick="mostrarTab('usuariosTab')">Usuarios</button>
+    <button id="gerenciasTabBtn" onclick="mostrarTab('gerenciasTab')">Gerencias</button>
+    <button id="departamentosTabBtn" onclick="mostrarTab('departamentosTab')">Departamentos</button>
+    <button id="solicitudesTabBtn" onclick="mostrarTab('solicitudesTab')">Solicitudes</button>
+  </div>
+
+  <!-- USUARIOS -->
+  <div id="usuariosTab" class="tab card">
+    <h2>Usuarios</h2>
+    <input id="nuevoUsuario" placeholder="Usuario">
+    <input id="nuevaPassword" placeholder="Contraseña">
+    <select id="nuevoRol">
+      <option value="Usuario">Usuario</option>
+      <option value="Gerente">Gerente</option>
+      <option value="Admin">Admin</option>
+    </select>
+    <input id="nuevoGerencia" placeholder="Gerencia">
+    <input id="nuevoDepartamento" placeholder="Departamento">
+    <button onclick="crearUsuario()">Crear Usuario</button>
+    <table><thead><tr><th>Usuario</th><th>Password</th><th>Rol</th><th>Gerencia</th><th>Departamento</th></tr></thead><tbody id="usuariosBody"></tbody></table>
+  </div>
+
+  <!-- GERENCIAS -->
+  <div id="gerenciasTab" class="tab card">
+    <h2>Gerencias</h2>
+    <input id="nuevaGerenciaName" placeholder="Nombre Gerencia">
+    <button onclick="crearGerencia()">Crear Gerencia</button>
+    <table><tbody id="gerenciasBody"></tbody></table>
+  </div>
+
+  <!-- DEPARTAMENTOS -->
+  <div id="departamentosTab" class="tab card">
+    <h2>Departamentos</h2>
+    <input id="nuevoDepartamentoName" placeholder="Nombre Departamento">
+    <button onclick="crearDepartamento()">Crear Departamento</button>
+    <table><tbody id="departamentosBody"></tbody></table>
+  </div>
+
+  <!-- SOLICITUDES -->
+  <div id="solicitudesTab" class="tab card">
+    <h2>Solicitudes</h2>
+    <input id="solNombre" placeholder="Nombre Documento">
+    <input id="solTipo" placeholder="Tipo (Procedimiento, Guía...)">
+    <select id="solAccion">
+      <option value="Creación">Creación</option>
+      <option value="Modificación">Modificación</option>
+      <option value="Inactivación">Inactivación</option>
+    </select>
+    <input id="solGerencia" placeholder="Gerencia">
+    <input id="solDepartamento" placeholder="Departamento">
+    <textarea id="solMotivo" placeholder="Motivo"></textarea>
+    <input type="file" id="solArchivo">
+    <button onclick="crearSolicitud()">Crear Solicitud</button>
+    <table>
+      <thead><tr><th>ID</th><th>Usuario</th><th>Nombre</th><th>Tipo</th><th>Acción</th><th>Estado</th><th>Detalle</th></tr></thead>
+      <tbody id="solicitudesBody"></tbody>
+    </table>
+  </div>
+</div>
 </body>
 </html>
