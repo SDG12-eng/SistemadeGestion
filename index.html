@@ -13,83 +13,52 @@
 <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
 
 <style>
-body{font-family:Arial;background:#f3f4f6;margin:0}
+body{font-family:Arial;background:#f3f4f6;margin:0;padding:0}
+.container{width:400px;margin:80px auto;background:#fff;padding:20px;border-radius:8px;box-shadow:0 0 10px rgba(0,0,0,0.1)}
+input,select,textarea,button{width:100%;margin-top:8px;padding:8px;border-radius:4px;border:1px solid #ccc}
+button{background:#2563eb;color:#fff;border:none;cursor:pointer}
 header{background:#111827;color:#fff;padding:15px}
 .card{background:#fff;padding:15px;margin:15px;border-radius:8px}
-input,select,textarea,button{width:100%;margin-top:8px;padding:8px;border-radius:4px}
-button{background:#2563eb;color:#fff;border:none;cursor:pointer;margin-top:5px}
 table{width:100%;border-collapse:collapse}
 td,th{border:1px solid #ccc;padding:6px;text-align:left}
 .hidden{display:none}
 </style>
 </head>
+
 <body>
 
+<!-- ===== LOGIN ===== -->
+<div id="loginDiv" class="container">
+  <h2>Login FCI</h2>
+  <input id="usuarioInput" placeholder="Usuario o correo">
+  <input id="passwordInput" type="password" placeholder="Contraseña">
+  <button onclick="login()">Ingresar</button>
+  <p id="error" style="color:red;"></p>
+</div>
+
+<!-- ===== PANEL PRINCIPAL ===== -->
+<section id="panel" class="hidden">
 <header>
-<h2>📄 FCI – Sistema de Gestión Documental</h2>
-<p id="usuarioLog">Usuario: -</p>
+<h2>📄 FCI – Sistema de Solicitudes Documentales</h2>
+<button onclick="logout()" style="float:right;background:#ef4444;">Cerrar sesión</button>
 </header>
-
-<!-- LOGIN -->
-<section id="login" class="card">
-<h3>🔑 Iniciar sesión</h3>
-<input id="loginUsuario" placeholder="Usuario">
-<input id="loginPassword" placeholder="Contraseña" type="password">
-<button onclick="login()">Ingresar</button>
-</section>
-
-<!-- PANEL PRINCIPAL -->
-<section id="panel" class="card hidden">
 
 <div class="card">
 <h3>➕ Nueva Solicitud</h3>
-
 <select id="tipoAccion">
 <option>Creación</option>
 <option>Modificación</option>
 <option>Inactivación</option>
 </select>
-
 <input id="nombreDocumento" placeholder="Nombre documento">
-<select id="gerenciaSelect"></select>
-<select id="departamentoSelect"></select>
+<select id="gerencia"></select>
+<select id="departamento"></select>
 <textarea id="motivo" placeholder="Motivo"></textarea>
-
 <input id="codificacion" placeholder="Codificación actual">
 <input id="ultimaVersion" placeholder="Última versión">
 <input type="date" id="fechaUltimaVersion">
-
 <input type="file" id="archivo">
 <button onclick="crearSolicitud()">Enviar Solicitud</button>
-</div>
-
-<div class="card" id="panelAdmin" style="display:none;">
-<h3>👤 Panel Admin</h3>
-
-<h4>Usuarios</h4>
-<input id="nuevoUsuario" placeholder="Usuario">
-<input id="nuevoCorreo" placeholder="Correo">
-<input id="nuevoPassword" placeholder="Contraseña">
-<select id="nuevoRol">
-<option value="usuario">Usuario</option>
-<option value="gerente">Gerente</option>
-<option value="admin">Admin</option>
-</select>
-<select id="nuevoGerencia">
-<option value="Todas">Todas</option>
-</select>
-<button onclick="agregarUsuario()">Agregar Usuario</button>
-<ul id="listaUsuarios"></ul>
-
-<h4>Gerencias</h4>
-<input id="nuevaGerencia" placeholder="Nueva Gerencia">
-<button onclick="agregarGerencia()">Agregar Gerencia</button>
-<ul id="listaGerencias"></ul>
-
-<h4>Departamentos</h4>
-<input id="nuevoDepartamento" placeholder="Nuevo Departamento">
-<button onclick="agregarDepartamento()">Agregar Departamento</button>
-<ul id="listaDepartamentos"></ul>
 </div>
 
 <div class="card">
@@ -107,11 +76,10 @@ td,th{border:1px solid #ccc;padding:6px;text-align:left}
 <tbody id="tabla"></tbody>
 </table>
 </div>
-
 </section>
 
 <script>
-// ================= CONFIG FIREBASE =================
+///////////////////// CONFIGURACIÓN /////////////////////
 const firebaseConfig = {
   apiKey: "AIzaSyDdzCiachuhbE9jATz-TesPI2vUVIJrHjM",
   authDomain: "sistemadegestion-7400d.firebaseapp.com",
@@ -120,237 +88,156 @@ const firebaseConfig = {
   messagingSenderId: "709030283072",
   appId: "1:709030283072:web:5997837b36a448e9515ca5"
 };
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// ================= CONFIG EMAILJS =================
-emailjs.init("2jVnfkJKKG0bpKN-U"); // tu Public Key
+// Inicializar EmailJS
+emailjs.init("2jVnfkJKKG0bpKN-U"); // Tu Public Key
 
-// ================= USUARIO LOGUEADO =================
-let usuario = null;
+///////////////////// USUARIOS HARD-CODE /////////////////////
+let usuarios = [
+  { uid:"1", usuario:"Admin", correo:"admin@fcipty.com", password:"123456", rol:"admin", gerencia:"General" },
+  // Agregar más usuarios creados manualmente aquí
+];
 
-// ================= LOGIN =================
-async function login(){
-  const user = document.getElementById("loginUsuario").value;
-  const pass = document.getElementById("loginPassword").value;
-  const snap = await db.collection("usuarios").where("usuario","==",user).get();
-  if(snap.empty){ alert("Usuario no encontrado"); return; }
-  const doc = snap.docs[0].data();
-  if(doc.password!==pass){ alert("Contraseña incorrecta"); return; }
-  usuario = doc;
-  document.getElementById("usuarioLog").innerText = "Usuario: "+usuario.usuario+" ("+usuario.rol+")";
-  document.getElementById("login").classList.add("hidden");
-  document.getElementById("panel").classList.remove("hidden");
+///////////////////// LOGIN /////////////////////
+function login(){
+  const usuarioVal = document.getElementById("usuarioInput").value.trim();
+  const passVal = document.getElementById("passwordInput").value.trim();
+  const usuario = usuarios.find(u => (u.usuario === usuarioVal || u.correo === usuarioVal) && u.password === passVal);
 
-  if(usuario.rol==="admin") document.getElementById("panelAdmin").style.display="block";
-
-  cargarGerencias();
-  cargarDepartamentos();
-  cargarUsuarios();
-  cargarSolicitudes();
+  if(usuario){
+    sessionStorage.setItem("usuario", JSON.stringify(usuario));
+    document.getElementById("loginDiv").classList.add("hidden");
+    document.getElementById("panel").classList.remove("hidden");
+    cargarSelects();
+    cargarSolicitudes();
+    alert("Bienvenido " + usuario.usuario + " (" + usuario.rol + ")");
+  }else{
+    document.getElementById("error").innerText = "Usuario o contraseña incorrectos";
+  }
 }
 
-// ================= CARGAR LISTAS =================
-async function cargarGerencias(){
-  const select = document.getElementById("gerenciaSelect");
-  const selectNuevo = document.getElementById("nuevoGerencia");
-  select.innerHTML=""; selectNuevo.value="";
-  const snap = await db.collection("gerencias").get();
-  const nombres = [];
-  snap.forEach(d=>{
-    const g = d.data();
-    nombres.push(g.nombre);
-    const opt = document.createElement("option");
-    opt.value = g.nombre; opt.innerText=g.nombre;
-    select.appendChild(opt);
-  });
-  nombres.forEach(n=>{ 
-    const opt = document.createElement("option");
-    opt.value=n; opt.innerText=n;
-    selectNuevo.appendChild(opt);
-  });
+function logout(){
+  sessionStorage.removeItem("usuario");
+  document.getElementById("panel").classList.add("hidden");
+  document.getElementById("loginDiv").classList.remove("hidden");
 }
 
-async function cargarDepartamentos(){
-  const select = document.getElementById("departamentoSelect");
-  select.innerHTML="";
-  const snap = await db.collection("departamentos").get();
-  snap.forEach(d=>{
-    const dep = d.data();
-    const opt = document.createElement("option");
-    opt.value=dep.nombre; opt.innerText=dep.nombre;
-    select.appendChild(opt);
-  });
+///////////////////// CARGAR GERENCIAS Y DEPARTAMENTOS /////////////////////
+async function cargarSelects(){
+  const gerencias = await db.collection("gerencias").get();
+  const departamentos = await db.collection("departamentos").get();
+
+  const gSel = document.getElementById("gerencia");
+  gSel.innerHTML="";
+  gerencias.forEach(g=> gSel.innerHTML += `<option value="${g.id}">${g.data().nombre}</option>`);
+
+  const dSel = document.getElementById("departamento");
+  dSel.innerHTML="";
+  departamentos.forEach(d=> dSel.innerHTML += `<option value="${d.id}">${d.data().nombre}</option>`);
 }
 
-async function cargarUsuarios(){
-  const lista = document.getElementById("listaUsuarios");
-  lista.innerHTML="";
-  const snap = await db.collection("usuarios").get();
-  snap.forEach(d=>{
-    const u = d.data();
-    const li = document.createElement("li");
-    li.innerText = `${u.usuario} (${u.rol}) - ${u.gerencia}`;
-    const btn = document.createElement("button");
-    btn.innerText="Eliminar";
-    btn.onclick=()=> db.collection("usuarios").doc(d.id).delete().then(cargarUsuarios);
-    li.appendChild(btn);
-    lista.appendChild(li);
-  });
-}
-
-// ================= AGREGAR ELEMENTOS =================
-async function agregarUsuario(){
-  const u = document.getElementById("nuevoUsuario").value;
-  const c = document.getElementById("nuevoCorreo").value;
-  const p = document.getElementById("nuevoPassword").value;
-  const r = document.getElementById("nuevoRol").value;
-  const g = document.getElementById("nuevoGerencia").value;
-  if(!u||!c||!p){ alert("Completa todos los datos"); return; }
-  await db.collection("usuarios").add({usuario:u,correo:c,password:p,rol:r,gerencia:g});
-  cargarUsuarios();
-}
-
-async function agregarGerencia(){
-  const g = document.getElementById("nuevaGerencia").value;
-  if(!g) return alert("Nombre requerido");
-  await db.collection("gerencias").add({nombre:g});
-  cargarGerencias();
-}
-
-async function agregarDepartamento(){
-  const d = document.getElementById("nuevoDepartamento").value;
-  if(!d) return alert("Nombre requerido");
-  await db.collection("departamentos").add({nombre:d});
-  cargarDepartamentos();
-}
-
-// ================= SOLICITUDES =================
+///////////////////// GENERAR ID /////////////////////
 async function generarID(){
   const ref = db.collection("counters").doc("global");
   return db.runTransaction(async t=>{
     const d = await t.get(ref);
-    let n = (d.exists?d.data().solicitudes:0)+1;
+    let n = (d.exists ? d.data().solicitudes : 0) + 1;
     t.set(ref,{solicitudes:n},{merge:true});
-    return "FCI-SOL-"+String(n).padStart(4,"0");
+    return "FCI-SOL-" + String(n).padStart(4,"0");
   });
 }
 
+///////////////////// SUBIR ARCHIVO /////////////////////
 async function subirArchivo(file){
+  if(!file) return "";
   const form = new FormData();
-  form.append("file",file);
-  form.append("upload_preset","fci_documentos");
-  const res = await fetch("https://api.cloudinary.com/v1_1/df79cjklp/auto/upload",{method:"POST",body:form});
+  form.append("file", file);
+  form.append("upload_preset", "fci_documentos"); // Tu preset
+  const res = await fetch("https://api.cloudinary.com/v1_1/df79cjklp/auto/upload",{method:"POST", body:form});
   const data = await res.json();
-  if(data.secure_url) return data.secure_url;
-  throw new Error("Error al subir archivo");
+  return data.secure_url;
 }
 
+///////////////////// CREAR SOLICITUD /////////////////////
 async function crearSolicitud(){
+  const usuario = JSON.parse(sessionStorage.getItem("usuario"));
   const id = await generarID();
-  let url="";
   const archivoFile = document.getElementById("archivo").files[0];
-  if(archivoFile) url = await subirArchivo(archivoFile);
+  const url = await subirArchivo(archivoFile);
 
   const nuevaSolicitud = {
-    idSolicitud:id,
-    tipoAccion:document.getElementById("tipoAccion").value,
-    nombreDocumento:document.getElementById("nombreDocumento").value,
-    gerencia:document.getElementById("gerenciaSelect").value,
-    departamento:document.getElementById("departamentoSelect").value,
-    motivo:document.getElementById("motivo").value,
-    codificacionActual:document.getElementById("codificacion").value,
-    ultimaVersion:document.getElementById("ultimaVersion").value,
-    fechaUltimaVersion:document.getElementById("fechaUltimaVersion").value,
-    documento:url||"",
-    estado:"pendiente",
-    solicitante:{usuario:usuario.usuario,correo:usuario.correo},
-    firmas:{
-      documentado:{nombre:"",firma:false},
-      verificado:{nombre:"",firma:false},
-      codificado:{nombre:"",firma:false}
-    },
-    fecha:firebase.firestore.FieldValue.serverTimestamp()
+    idSolicitud: id,
+    tipoAccion: document.getElementById("tipoAccion").value,
+    nombreDocumento: document.getElementById("nombreDocumento").value,
+    gerencia: document.getElementById("gerencia").value,
+    departamento: document.getElementById("departamento").value,
+    motivo: document.getElementById("motivo").value,
+    codificacionActual: document.getElementById("codificacion").value || "",
+    ultimaVersion: document.getElementById("ultimaVersion").value || "",
+    fechaUltimaVersion: document.getElementById("fechaUltimaVersion").value || "",
+    documento: url,
+    estado: "pendiente",
+    solicitante:{ uid: usuario.uid, usuario: usuario.usuario, correo: usuario.correo },
+    fecha: firebase.firestore.FieldValue.serverTimestamp()
   };
 
   await db.collection("solicitudes").add(nuevaSolicitud);
 
-  // EmailJS
-  enviarCorreo(usuario.correo,id,"Pendiente","Solicitud creada correctamente");
-  enviarCorreo("gerente@empresa.com",id,"Pendiente","Solicitud para revisión");
+  // Emails
+  enviarCorreo(usuario.correo,id,"Pendiente","Tu solicitud fue registrada correctamente.");
+  enviarCorreo("gerente@empresa.com",id,"Pendiente de aprobación","Tienes una solicitud pendiente.");
 
   alert("Solicitud creada: "+id);
   cargarSolicitudes();
 }
 
+///////////////////// CARGAR SOLICITUDES /////////////////////
 async function cargarSolicitudes(){
-  const tabla = document.getElementById("tabla"); tabla.innerHTML="";
+  const usuario = JSON.parse(sessionStorage.getItem("usuario"));
+  const tabla = document.getElementById("tabla");
+  tabla.innerHTML="";
+
   const snap = await db.collection("solicitudes").orderBy("fecha","desc").get();
   snap.forEach(d=>{
-    const s=d.data();
-    if(usuario.rol==="usuario" && s.solicitante.usuario!==usuario.usuario) return;
-    if(usuario.rol==="gerente" && s.gerencia!==usuario.gerencia) return;
+    const s = d.data();
+
+    // Filtrar según rol
+    if(usuario.rol === "usuario" && s.solicitante.uid !== usuario.uid) return;
+    if(usuario.rol === "gerente" && s.gerencia !== usuario.gerencia) return;
+
     tabla.innerHTML+=`
       <tr>
         <td>${s.idSolicitud}</td>
         <td>${s.nombreDocumento}</td>
         <td>${s.estado}</td>
-        <td>${s.solicitante.usuario} (${s.solicitante.correo})</td>
-        <td><button onclick="verSolicitud('${d.id}')">Ver</button></td>
+        <td>${s.solicitante.usuario}</td>
+        <td><button onclick='verDetalle("${d.id}")'>Ver Detalle</button></td>
       </tr>`;
   });
 }
 
-// Ver solicitud y cambiar estado
-async function verSolicitud(docId){
+///////////////////// VER DETALLE /////////////////////
+async function verDetalle(docId){
   const doc = await db.collection("solicitudes").doc(docId).get();
-  if(!doc.exists) return alert("No existe");
   const s = doc.data();
-
-  let html=`ID:${s.idSolicitud}<br>Documento:${s.nombreDocumento}<br>Estado:${s.estado}<br>Solicitante:${s.solicitante.usuario} (${s.solicitante.correo})<br>Motivo:${s.motivo}<br>Documento: ${s.documento?`<a href="${s.documento}" target="_blank">Ver archivo</a>`:"No hay"}<hr>`;
-
-  if(usuario.rol!=="usuario"){
-    html+=`
-    <button onclick="cambiarEstado('${docId}','consulta')">Consulta</button>
-    <button onclick="cambiarEstado('${docId}','solicitar_reunion')">Solicitar reunión</button>
-    <button onclick="cambiarEstado('${docId}','aprobado_sistema')">Aprobado Sistema Gestión</button>
-    <button onclick="cambiarEstado('${docId}','finalizado')">Finalizado</button>
-    `;
-  }
-
-  const w = window.open("", "_blank", "width=500,height=600");
-  w.document.write(html);
+  alert(
+    `ID: ${s.idSolicitud}\nDocumento: ${s.nombreDocumento}\nEstado: ${s.estado}\nSolicitante: ${s.solicitante.usuario}\nMotivo: ${s.motivo}`
+  );
 }
 
-async function cambiarEstado(docId,estado){
-  const docRef = db.collection("solicitudes").doc(docId);
-  const doc = await docRef.get(); if(!doc.exists)return;
-  let updateData={estado};
-
-  if(estado==="consulta") updateData.consultaMotivo=prompt("Ingrese motivo de consulta:");
-  if(estado==="solicitar_reunion"){ 
-    updateData.reunionMotivo=prompt("Motivo de reunión:");
-    updateData.reunionFecha=prompt("Fecha y hora (YYYY-MM-DD HH:MM)");
-  }
-  if(estado==="aprobado_sistema"){
-    updateData.firmas={
-      documentado:{nombre:prompt("Nombre Documentado:"),firma:true},
-      verificado:{nombre:prompt("Nombre Verificado:"),firma:true},
-      codificado:{nombre:prompt("Nombre Codificado:"),firma:true}
-    };
-  }
-
-  await docRef.update(updateData);
-  alert("Estado actualizado: "+estado);
-  cargarSolicitudes();
-}
-
-// EmailJS
+///////////////////// EMAILJS /////////////////////
 function enviarCorreo(destino,id,estado,mensaje){
   emailjs.send("service_a7yozqh","template_2sy0hqh",{
-    to_email:destino,id_solicitud:id,estado:estado,mensaje:mensaje
+    to_email: destino,
+    id_solicitud: id,
+    estado: estado,
+    mensaje: mensaje
   }).catch(err=>console.log("Error email:",err));
 }
+
 </script>
 </body>
 </html>
