@@ -1,291 +1,378 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistema de Gestión</title>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
-<style>
-body{font-family:sans-serif;padding:20px;}
-input, select, button, textarea{margin:5px; padding:5px;}
-.container{border:1px solid #ccc; padding:15px; margin-bottom:20px;}
-table{border-collapse:collapse;width:100%; margin-top:10px;}
-th, td{border:1px solid #ccc;padding:5px;text-align:left;}
-button{cursor:pointer;}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FCI - Sistema de Gestión Documental</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+    <style>
+        body { background-color: #f3f4f6; font-family: 'Inter', sans-serif; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 20px; margin-bottom: 24px; }
+        .table-container { overflow-x: auto; border-radius: 8px; border: 1px solid #e5e7eb; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th { background: #f9fafb; color: #374151; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; padding: 12px 16px; border-bottom: 2px solid #e5e7eb; text-align: left; }
+        td { padding: 12px 16px; border-bottom: 1px solid #e5e7eb; color: #4b5563; font-size: 0.875rem; }
+        input, select, textarea { width: 100%; border: 1px solid #d1d5db; padding: 8px 12px; border-radius: 6px; outline: none; transition: border-color 0.2s; }
+        input:focus, select:focus { border-color: #2563eb; ring: 2px solid #bfdbfe; }
+        button { border-radius: 6px; font-weight: 500; transition: all 0.2s; cursor: pointer; padding: 8px 16px; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-danger { background: #ef4444; color: white; font-size: 0.75rem; }
+        .btn-danger:hover { background: #dc2626; }
+        .badge { padding: 4px 8px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+        .badge-status { background: #dcfce7; color: #166534; }
+    </style>
 </head>
 <body>
 
-<h2>Login</h2>
-<div id="loginDiv">
-  <input type="text" id="loginUser" placeholder="Usuario">
-  <input type="password" id="loginPass" placeholder="Contraseña">
-  <button onclick="login()">Ingresar</button>
-</div>
+<div class="max-w-7xl mx-auto p-4 md:p-8">
+    
+    <header class="flex justify-between items-center mb-8">
+        <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <span class="text-blue-600">📄</span> FCI Gestión
+        </h1>
+        <div id="userInfo" class="hidden flex items-center gap-4">
+            <div class="text-right">
+                <p class="text-sm font-semibold text-gray-700" id="currentUser"></p>
+                <p class="text-xs text-gray-500 uppercase" id="currentRole"></p>
+            </div>
+            <button onclick="logout()" class="text-sm bg-gray-200 hover:bg-gray-300 px-4 py-2">Salir</button>
+        </div>
+    </header>
 
-<div id="appDiv" style="display:none;">
-  <h2>Bienvenido <span id="currentUser"></span> (<span id="currentRole"></span>)</h2>
-  <button onclick="logout()">Cerrar Sesión</button>
+    <div id="loginDiv" class="max-w-md mx-auto mt-20 card">
+        <h2 class="text-xl font-bold mb-6 text-center text-gray-700 border-b pb-4">🔐 Iniciar Sesión</h2>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Usuario</label>
+                <input type="text" id="loginUser" placeholder="Ej: Admin">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Contraseña</label>
+                <input type="password" id="loginPass" placeholder="••••••••">
+            </div>
+            <button onclick="login()" class="btn-primary w-full py-3 mt-4">Ingresar al Sistema</button>
+        </div>
+    </div>
 
-  <div class="container">
-    <h3>Usuarios</h3>
-    <input type="text" id="newUser" placeholder="Usuario">
-    <input type="email" id="newEmail" placeholder="Correo">
-    <input type="password" id="newPass" placeholder="Contraseña">
-    <select id="newRole">
-      <option value="user">Usuario</option>
-      <option value="gerente">Gerente</option>
-      <option value="admin">Admin</option>
-    </select>
-    <button onclick="crearUsuario()">Agregar Usuario</button>
-    <table id="usersTable">
-      <tr><th>Usuario</th><th>Correo</th><th>Rol</th><th>Acciones</th></tr>
-    </table>
-  </div>
+    <div id="appDiv" class="hidden">
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <div class="lg:col-span-1 space-y-6">
+                <div class="card">
+                    <h3 class="text-lg font-bold mb-4 text-blue-700">👥 Usuarios</h3>
+                    <div class="space-y-2">
+                        <input type="text" id="newUser" placeholder="Nombre">
+                        <input type="email" id="newEmail" placeholder="Correo">
+                        <input type="password" id="newPass" placeholder="Contraseña">
+                        <select id="newRole">
+                            <option value="user">Usuario</option>
+                            <option value="gerente">Gerente</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                        <button onclick="crearUsuario()" class="btn-primary w-full mt-2">Agregar</button>
+                    </div>
+                    <div class="table-container mt-4">
+                        <table id="usersTable">
+                            <thead><tr><th>User</th><th>Rol</th><th>Acción</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
 
-  <div class="container">
-    <h3>Gerencias</h3>
-    <input type="text" id="newGerencia" placeholder="Nombre Gerencia">
-    <button onclick="crearGerencia()">Agregar Gerencia</button>
-    <table id="gerenciasTable"><tr><th>Gerencia</th><th>Acciones</th></tr></table>
-  </div>
+                <div class="card">
+                    <h3 class="text-lg font-bold mb-4 text-blue-700">🏢 Estructura</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex gap-2">
+                                <input type="text" id="newGerencia" placeholder="Nueva Gerencia">
+                                <button onclick="crearGerencia()" class="btn-primary">➕</button>
+                            </div>
+                            <div class="table-container mt-2 max-h-40 overflow-y-auto">
+                                <table id="gerenciasTable"></table>
+                            </div>
+                        </div>
+                        <hr>
+                        <div>
+                            <div class="flex gap-2">
+                                <input type="text" id="newDepartamento" placeholder="Nuevo Depto.">
+                                <button onclick="crearDepartamento()" class="btn-primary">➕</button>
+                            </div>
+                            <div class="table-container mt-2 max-h-40 overflow-y-auto">
+                                <table id="departamentosTable"></table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-  <div class="container">
-    <h3>Departamentos</h3>
-    <input type="text" id="newDepartamento" placeholder="Nombre Departamento">
-    <button onclick="crearDepartamento()">Agregar Departamento</button>
-    <table id="departamentosTable"><tr><th>Departamento</th><th>Acciones</th></tr></table>
-  </div>
+            <div class="lg:col-span-2 space-y-6">
+                <div class="card bg-blue-50 border border-blue-100">
+                    <h3 class="text-lg font-bold mb-4 text-blue-800 flex items-center gap-2">
+                        <span>📝</span> Crear Nueva Solicitud
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <select id="selectGerencia" class="bg-white"></select>
+                        <select id="selectDepartamento" class="bg-white"></select>
+                        <div class="md:col-span-2">
+                            <textarea id="solMotivo" rows="2" placeholder="Describa el motivo de su solicitud..." class="bg-white"></textarea>
+                        </div>
+                        <div class="md:col-span-1">
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Documento Adjunto</label>
+                            <input type="file" id="solDocumento" class="bg-white text-xs">
+                        </div>
+                        <div class="md:col-span-1 flex items-end">
+                            <button onclick="crearSolicitud()" class="btn-primary w-full bg-green-600 hover:bg-green-700">Enviar Solicitud</button>
+                        </div>
+                    </div>
+                </div>
 
-  <div class="container">
-    <h3>Solicitudes</h3>
-    <select id="selectGerencia"></select>
-    <select id="selectDepartamento"></select>
-    <textarea id="solMotivo" placeholder="Motivo"></textarea><br>
-    <input type="file" id="solDocumento">
-    <button onclick="crearSolicitud()">Crear Solicitud</button>
-
-    <table id="solicitudesTable">
-      <tr><th>ID</th><th>Usuario</th><th>Correo</th><th>Gerencia</th><th>Departamento</th><th>Motivo</th><th>Documento</th><th>Estado</th><th>Acciones</th></tr>
-    </table>
-  </div>
+                <div class="card">
+                    <h3 class="text-lg font-bold mb-4 text-gray-700">📊 Seguimiento de Solicitudes</h3>
+                    <div class="table-container">
+                        <table id="solicitudesTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Usuario</th>
+                                    <th>Gerencia / Depto</th>
+                                    <th>Documento</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
-// 🔹 FIREBASE CONFIG
+// 🔹 FIREBASE CONFIG (Mantén tus datos aquí)
 const firebaseConfig = {
-  apiKey: "TU_API_KEY",
-  authDomain: "TU_AUTH_DOMAIN",
-  projectId: "TU_PROJECT_ID",
-  storageBucket: "TU_STORAGE_BUCKET",
-  messagingSenderId: "TU_MSG_SENDER_ID",
-  appId: "TU_APP_ID"
+    apiKey: "TU_API_KEY",
+    authDomain: "TU_AUTH_DOMAIN",
+    projectId: "TU_PROJECT_ID",
+    storageBucket: "TU_STORAGE_BUCKET",
+    messagingSenderId: "TU_MSG_SENDER_ID",
+    appId: "TU_APP_ID"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-// 🔹 VARIABLES
 let currentUserData = null;
 
-// 🔹 LOGIN INTERNO
+// 🔹 LOGIN
 async function login() {
-  const usuario = document.getElementById("loginUser").value;
-  const pass = document.getElementById("loginPass").value;
+    const usuario = document.getElementById("loginUser").value;
+    const pass = document.getElementById("loginPass").value;
 
-  if(usuario === "Admin" && pass === "123456") {
-    currentUserData = {usuario:"Admin", correo:"admin@correo.com", role:"admin"};
-    mostrarApp();
-    return;
-  }
+    if(usuario === "Admin" && pass === "123456") {
+        currentUserData = {usuario:"Admin", correo:"admin@correo.com", role:"admin"};
+        mostrarApp();
+        return;
+    }
 
-  const snapshot = await db.collection("users").where("usuario","==",usuario).where("password","==",pass).get();
-  if(!snapshot.empty){
-    const data = snapshot.docs[0].data();
-    currentUserData = {id:snapshot.docs[0].id,...data};
-    mostrarApp();
-  } else {
-    alert("Usuario o contraseña incorrectos");
-  }
+    const snapshot = await db.collection("users").where("usuario","==",usuario).where("password","==",pass).get();
+    if(!snapshot.empty){
+        const data = snapshot.docs[0].data();
+        currentUserData = {id:snapshot.docs[0].id,...data};
+        mostrarApp();
+    } else {
+        alert("Usuario o contraseña incorrectos");
+    }
 }
 
-// 🔹 MOSTRAR APP
 function mostrarApp() {
-  document.getElementById("loginDiv").style.display = "none";
-  document.getElementById("appDiv").style.display = "block";
-  document.getElementById("currentUser").innerText = currentUserData.usuario;
-  document.getElementById("currentRole").innerText = currentUserData.role;
+    document.getElementById("loginDiv").classList.add("hidden");
+    document.getElementById("appDiv").classList.remove("hidden");
+    document.getElementById("userInfo").classList.remove("hidden");
+    document.getElementById("currentUser").innerText = currentUserData.usuario;
+    document.getElementById("currentRole").innerText = currentUserData.role;
 
-  cargarUsuarios();
-  cargarGerencias();
-  cargarDepartamentos();
-  cargarSolicitudes();
+    cargarUsuarios();
+    cargarGerencias();
+    cargarDepartamentos();
+    cargarSolicitudes();
 }
 
-// 🔹 LOGOUT
 function logout(){
-  currentUserData = null;
-  document.getElementById("appDiv").style.display = "none";
-  document.getElementById("loginDiv").style.display = "block";
+    currentUserData = null;
+    document.getElementById("appDiv").classList.add("hidden");
+    document.getElementById("userInfo").classList.add("hidden");
+    document.getElementById("loginDiv").classList.remove("hidden");
 }
 
 // 🔹 USUARIOS
 async function crearUsuario(){
-  const usuario = document.getElementById("newUser").value;
-  const correo = document.getElementById("newEmail").value;
-  const password = document.getElementById("newPass").value;
-  const role = document.getElementById("newRole").value;
-
-  if(!usuario || !correo || !password) { alert("Completa todos los campos"); return; }
-
-  await db.collection("users").add({usuario, correo, password, role});
-  cargarUsuarios();
+    const usuario = document.getElementById("newUser").value;
+    const correo = document.getElementById("newEmail").value;
+    const password = document.getElementById("newPass").value;
+    const role = document.getElementById("newRole").value;
+    if(!usuario || !correo || !password) { alert("Completa todos los campos"); return; }
+    await db.collection("users").add({usuario, correo, password, role});
+    cargarUsuarios();
 }
 
 async function cargarUsuarios(){
-  const table = document.getElementById("usersTable");
-  table.innerHTML = `<tr><th>Usuario</th><th>Correo</th><th>Rol</th><th>Acciones</th></tr>`;
-  const snapshot = await db.collection("users").get();
-  snapshot.forEach(doc => {
-    const data = doc.data();
-    table.innerHTML += `<tr>
-      <td>${data.usuario}</td>
-      <td>${data.correo}</td>
-      <td>${data.role}</td>
-      <td><button onclick="eliminarUsuario('${doc.id}')">Eliminar</button></td>
-    </tr>`;
-  });
+    const tableBody = document.querySelector("#usersTable tbody");
+    tableBody.innerHTML = "";
+    const snapshot = await db.collection("users").get();
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        tableBody.innerHTML += `<tr>
+            <td class="font-semibold text-gray-800">${data.usuario}</td>
+            <td class="text-xs uppercase text-gray-500">${data.role}</td>
+            <td><button class="btn-danger" onclick="eliminarUsuario('${doc.id}')">X</button></td>
+        </tr>`;
+    });
 }
 
-async function eliminarUsuario(id){ await db.collection("users").doc(id).delete(); cargarUsuarios(); }
+async function eliminarUsuario(id){ if(confirm("¿Eliminar usuario?")) { await db.collection("users").doc(id).delete(); cargarUsuarios(); } }
 
 // 🔹 GERENCIAS
 async function crearGerencia(){
-  const nombre = document.getElementById("newGerencia").value;
-  if(!nombre) return;
-  await db.collection("gerencias").add({nombre});
-  cargarGerencias();
+    const nombre = document.getElementById("newGerencia").value;
+    if(!nombre) return;
+    await db.collection("gerencias").add({nombre});
+    document.getElementById("newGerencia").value = "";
+    cargarGerencias();
 }
 
 async function cargarGerencias(){
-  const table = document.getElementById("gerenciasTable");
-  const select = document.getElementById("selectGerencia");
-  table.innerHTML = `<tr><th>Gerencia</th><th>Acciones</th></tr>`;
-  select.innerHTML = `<option value="">Seleccione Gerencia</option>`;
-  const snapshot = await db.collection("gerencias").get();
-  snapshot.forEach(doc=>{
-    const data=doc.data();
-    table.innerHTML += `<tr>
-      <td>${data.nombre}</td>
-      <td><button onclick="eliminarGerencia('${doc.id}')">Eliminar</button></td>
-    </tr>`;
-    select.innerHTML += `<option value="${doc.id}">${data.nombre}</option>`;
-  });
+    const table = document.getElementById("gerenciasTable");
+    const select = document.getElementById("selectGerencia");
+    table.innerHTML = "";
+    select.innerHTML = `<option value="">Gerencia...</option>`;
+    const snapshot = await db.collection("gerencias").get();
+    snapshot.forEach(doc=>{
+        const data=doc.data();
+        table.innerHTML += `<tr>
+            <td class="py-2">${data.nombre}</td>
+            <td class="text-right"><button class="text-red-500 text-xs" onclick="eliminarGerencia('${doc.id}')">Eliminar</button></td>
+        </tr>`;
+        select.innerHTML += `<option value="${doc.id}">${data.nombre}</option>`;
+    });
 }
 
 async function eliminarGerencia(id){ await db.collection("gerencias").doc(id).delete(); cargarGerencias(); }
 
 // 🔹 DEPARTAMENTOS
 async function crearDepartamento(){
-  const nombre = document.getElementById("newDepartamento").value;
-  if(!nombre) return;
-  await db.collection("departamentos").add({nombre});
-  cargarDepartamentos();
+    const nombre = document.getElementById("newDepartamento").value;
+    if(!nombre) return;
+    await db.collection("departamentos").add({nombre});
+    document.getElementById("newDepartamento").value = "";
+    cargarDepartamentos();
 }
 
 async function cargarDepartamentos(){
-  const table = document.getElementById("departamentosTable");
-  const select = document.getElementById("selectDepartamento");
-  table.innerHTML = `<tr><th>Departamento</th><th>Acciones</th></tr>`;
-  select.innerHTML = `<option value="">Seleccione Departamento</option>`;
-  const snapshot = await db.collection("departamentos").get();
-  snapshot.forEach(doc=>{
-    const data=doc.data();
-    table.innerHTML += `<tr>
-      <td>${data.nombre}</td>
-      <td><button onclick="eliminarDepartamento('${doc.id}')">Eliminar</button></td>
-    </tr>`;
-    select.innerHTML += `<option value="${doc.id}">${data.nombre}</option>`;
-  });
+    const table = document.getElementById("departamentosTable");
+    const select = document.getElementById("selectDepartamento");
+    table.innerHTML = "";
+    select.innerHTML = `<option value="">Departamento...</option>`;
+    const snapshot = await db.collection("departamentos").get();
+    snapshot.forEach(doc=>{
+        const data=doc.data();
+        table.innerHTML += `<tr>
+            <td class="py-2">${data.nombre}</td>
+            <td class="text-right"><button class="text-red-500 text-xs" onclick="eliminarDepartamento('${doc.id}')">Eliminar</button></td>
+        </tr>`;
+        select.innerHTML += `<option value="${doc.id}">${data.nombre}</option>`;
+    });
 }
 
 async function eliminarDepartamento(id){ await db.collection("departamentos").doc(id).delete(); cargarDepartamentos(); }
 
 // 🔹 SOLICITUDES
 async function crearSolicitud(){
-  const gerenciaId = document.getElementById("selectGerencia").value;
-  const departamentoId = document.getElementById("selectDepartamento").value;
-  const motivo = document.getElementById("solMotivo").value;
-  const file = document.getElementById("solDocumento").files[0];
+    const gerenciaId = document.getElementById("selectGerencia").value;
+    const departamentoId = document.getElementById("selectDepartamento").value;
+    const motivo = document.getElementById("solMotivo").value;
+    const file = document.getElementById("solDocumento").files[0];
 
-  if(!gerenciaId || !departamentoId || !motivo){ alert("Completa todos los campos"); return; }
+    if(!gerenciaId || !departamentoId || !motivo){ alert("Completa todos los campos"); return; }
 
-  let documentoUrl = "";
-  if(file){
-    const ref = storage.ref('documentos/'+Date.now()+"_"+file.name);
-    await ref.put(file);
-    documentoUrl = await ref.getDownloadURL();
-  }
+    let documentoUrl = "";
+    if(file){
+        const ref = storage.ref('documentos/'+Date.now()+"_"+file.name);
+        await ref.put(file);
+        documentoUrl = await ref.getDownloadURL();
+    }
 
-  // Generar ID tipo FCI-SOL-0001
-  const counterRef = db.collection("counters").doc("solicitudes");
-  const counterDoc = await counterRef.get();
-  let numero = 1;
-  if(counterDoc.exists) numero = counterDoc.data().count+1;
-  await counterRef.set({count:numero});
+    const counterRef = db.collection("counters").doc("solicitudes");
+    const counterDoc = await counterRef.get();
+    let numero = 1;
+    if(counterDoc.exists) numero = counterDoc.data().count+1;
+    await counterRef.set({count:numero});
 
-  const solId = "FCI-SOL-"+String(numero).padStart(4,"0");
+    const solId = "FCI-SOL-"+String(numero).padStart(4,"0");
 
-  await db.collection("solicitudes").doc(solId).set({
-    solId,
-    usuario: currentUserData.usuario,
-    correo: currentUserData.correo,
-    role: currentUserData.role,
-    gerenciaId,
-    departamentoId,
-    motivo,
-    documento: documentoUrl,
-    estado: "normal",
-    fecha: new Date()
-  });
+    await db.collection("solicitudes").doc(solId).set({
+        solId,
+        usuario: currentUserData.usuario,
+        correo: currentUserData.correo,
+        role: currentUserData.role,
+        gerenciaId,
+        departamentoId,
+        motivo,
+        documento: documentoUrl,
+        estado: "normal",
+        fecha: new Date()
+    });
 
-  cargarSolicitudes();
+    alert("Solicitud creada con éxito");
+    document.getElementById("solMotivo").value = "";
+    cargarSolicitudes();
 }
 
 async function cargarSolicitudes(){
-  const table = document.getElementById("solicitudesTable");
-  table.innerHTML = `<tr><th>ID</th><th>Usuario</th><th>Correo</th><th>Gerencia</th><th>Departamento</th><th>Motivo</th><th>Documento</th><th>Estado</th><th>Acciones</th></tr>`;
+    const tableBody = document.querySelector("#solicitudesTable tbody");
+    tableBody.innerHTML = "";
 
-  const snapshot = await db.collection("solicitudes").get();
-  const gerenciasSnap = await db.collection("gerencias").get();
-  const departamentosSnap = await db.collection("departamentos").get();
-  const gerencias = {}; gerenciasSnap.forEach(d=>gerencias[d.id]=d.data().nombre);
-  const departamentos = {}; departamentosSnap.forEach(d=>departamentos[d.id]=d.data().nombre);
+    const snapshot = await db.collection("solicitudes").orderBy("fecha", "desc").get();
+    const gerenciasSnap = await db.collection("gerencias").get();
+    const departamentosSnap = await db.collection("departamentos").get();
+    
+    const gerencias = {}; gerenciasSnap.forEach(d=>gerencias[d.id]=d.data().nombre);
+    const departamentos = {}; departamentosSnap.forEach(d=>departamentos[d.id]=d.data().nombre);
 
-  snapshot.forEach(doc=>{
-    const data = doc.data();
-    table.innerHTML += `<tr>
-      <td>${data.solId}</td>
-      <td>${data.usuario}</td>
-      <td>${data.correo}</td>
-      <td>${gerencias[data.gerenciaId]||''}</td>
-      <td>${departamentos[data.departamentoId]||''}</td>
-      <td>${data.motivo}</td>
-      <td>${data.documento?`<a href="${data.documento}" target="_blank">Ver</a>`:""}</td>
-      <td>${data.estado}</td>
-      <td>${currentUserData.role=="admin"||currentUserData.role=="gerente"?`<button onclick="cambiarEstado('${doc.id}')">Cambiar Estado</button>`:""}</td>
-    </tr>`;
-  });
+    snapshot.forEach(doc=>{
+        const data = doc.data();
+        tableBody.innerHTML += `<tr>
+            <td class="font-mono text-blue-600 font-bold text-xs">${data.solId}</td>
+            <td>
+                <p class="font-semibold text-gray-800">${data.usuario}</p>
+                <p class="text-xs text-gray-400">${data.correo}</p>
+            </td>
+            <td>
+                <p class="text-xs font-bold text-gray-600">${gerencias[data.gerenciaId]||'N/A'}</p>
+                <p class="text-xs text-gray-400">${departamentos[data.departamentoId]||'N/A'}</p>
+            </td>
+            <td>${data.documento?`<a href="${data.documento}" target="_blank" class="text-blue-500 hover:underline">📂 Ver</a>`:"-"}</td>
+            <td><span class="badge badge-status">${data.estado}</span></td>
+            <td>
+                ${currentUserData.role=="admin"||currentUserData.role=="gerente"?
+                `<button class="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200" onclick="cambiarEstado('${doc.id}')">Estado</button>`
+                :"-"}
+            </td>
+        </tr>`;
+    });
 }
 
-// Cambiar estado de solicitud
 async function cambiarEstado(id){
-  const nuevo = prompt("Ingrese nuevo estado (normal, pendiente, aprobado, verificado, codificado, finalizado):");
-  if(!nuevo) return;
-  await db.collection("solicitudes").doc(id).update({estado:nuevo});
-  cargarSolicitudes();
+    const nuevo = prompt("Ingrese nuevo estado (pendiente, aprobado, verificado, codificado, finalizado):");
+    if(!nuevo) return;
+    await db.collection("solicitudes").doc(id).update({estado:nuevo});
+    cargarSolicitudes();
 }
 </script>
 </body>
