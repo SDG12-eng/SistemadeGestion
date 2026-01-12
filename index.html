@@ -7,7 +7,6 @@
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
 <!-- EmailJS -->
@@ -28,19 +27,11 @@ td,th{border:1px solid #ccc;padding:6px;text-align:left}
 <body>
 
 <header>
-<h2>📄 FCI – Sistema de Solicitudes Documentales</h2>
+<h2>📄 FCI – Sistema de Solicitudes Documentales (Demo)</h2>
 </header>
 
-<!-- LOGIN -->
-<section id="login" class="card">
-<h3>Iniciar sesión</h3>
-<input id="email" placeholder="Correo" value="admin@fcipty.com">
-<input id="password" type="password" placeholder="Contraseña" value="Admin123!">
-<button id="btnLogin">Ingresar</button>
-</section>
-
 <!-- PANEL PRINCIPAL -->
-<section id="panel" class="hidden">
+<section id="panel" class="card">
 
 <div class="card">
 <h3>➕ Nueva Solicitud</h3>
@@ -52,8 +43,8 @@ td,th{border:1px solid #ccc;padding:6px;text-align:left}
 </select>
 
 <input id="nombreDocumento" placeholder="Nombre documento">
-<input id="gerencia" placeholder="Gerencia">
-<input id="departamento" placeholder="Departamento">
+<input id="gerencia" placeholder="Gerencia" value="Gerencia Demo">
+<input id="departamento" placeholder="Departamento" value="Departamento Demo">
 <textarea id="motivo" placeholder="Motivo"></textarea>
 
 <input id="codificacion" placeholder="Codificación actual">
@@ -93,77 +84,19 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
 const db = firebase.firestore();
 
 // Inicializar EmailJS
-emailjs.init("TU_PUBLIC_KEY_EMAILJS"); // Reemplaza con tu Public Key
+emailjs.init("2jVnfkJKKG0bpKN-U"); // Reemplaza con tu Public Key
 
-let usuario = {};
-
-// ================= LOGIN FUNCIONANDO =================
-document.getElementById("btnLogin").addEventListener("click", login);
-
-async function login(){
-  const correo = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-  if(!correo || !password){ alert("Ingresa correo y contraseña"); return; }
-
-  try{
-    const cred = await auth.signInWithEmailAndPassword(correo,password);
-
-    // Verificar Firestore
-    const snap = await db.collection("users").doc(cred.user.uid).get();
-
-    if(!snap.exists){
-      // Crear usuario admin automáticamente si no existe
-      await db.collection("users").doc(cred.user.uid).set({
-        correo: correo,
-        rol: "admin",
-        gerencia: "",
-        activo: true
-      });
-      usuario = { correo: correo, rol:"admin", gerencia:"", activo:true, uid:cred.user.uid };
-    } else {
-      usuario = snap.data();
-      usuario.uid = cred.user.uid;
-    }
-
-    login.classList.add("hidden");
-    panel.classList.remove("hidden");
-
-    cargarSolicitudes();
-
-  } catch(err){
-    alert("Error de login: "+err.message);
-  }
-}
-
-// Detectar sesión activa
-auth.onAuthStateChanged(async u=>{
-  if(u && !usuario.uid){
-    const snap = await db.collection("users").doc(u.uid).get();
-    if(snap.exists){
-      usuario = snap.data();
-      usuario.uid = u.uid;
-      login.classList.add("hidden");
-      panel.classList.remove("hidden");
-      cargarSolicitudes();
-    } else {
-      // Crear admin automáticamente
-      await db.collection("users").doc(u.uid).set({
-        correo: u.email,
-        rol: "admin",
-        gerencia: "",
-        activo: true
-      });
-      usuario = { correo: u.email, rol:"admin", gerencia:"", activo:true, uid:u.uid };
-      login.classList.add("hidden");
-      panel.classList.remove("hidden");
-      cargarSolicitudes();
-    }
-  }
-});
+// ================= USUARIO DEMO =================
+const usuario = {
+  uid: "demo-admin",
+  correo: "admin@fcipty.com",
+  rol: "admin",
+  gerencia: "Gerencia Demo",
+  activo: true
+};
 
 // ================= FUNCIONES SOLICITUD =================
 
@@ -191,8 +124,6 @@ async function subirArchivo(file){
 
 // Crear solicitud
 async function crearSolicitud(){
-  if(!usuario.uid){ alert("No hay usuario logueado"); return; }
-
   const id = await generarID();
   let url = "";
   const archivoFile = document.getElementById("archivo").files[0];
@@ -201,85 +132,61 @@ async function crearSolicitud(){
   const nuevaSolicitud = {
     idSolicitud: id,
     tipoAccion: document.getElementById("tipoAccion").value,
-    nombreDocumento: document.getElementById("nombreDocumento").value,
-    gerencia: document.getElementById("gerencia").value,
-    departamento: document.getElementById("departamento").value,
-    motivo: document.getElementById("motivo").value,
-    codificacionActual: document.getElementById("codificacion").value,
-    ultimaVersion: document.getElementById("ultimaVersion").value,
-    fechaUltimaVersion: document.getElementById("fechaUltimaVersion").value,
-    documento: url,
-    estado: "pendiente",
-    solicitante: { uid: usuario.uid, correo: usuario.correo },
+    nombreDocumento:document.getElementById("nombreDocumento").value,
+    gerencia:document.getElementById("gerencia").value,
+    departamento:document.getElementById("departamento").value,
+    motivo:document.getElementById("motivo").value,
+    codificacionActual:document.getElementById("codificacion").value,
+    ultimaVersion:document.getElementById("ultimaVersion").value,
+    fechaUltimaVersion:document.getElementById("fechaUltimaVersion").value,
+    documento:url,
+    estado:"pendiente",
+    solicitante:{ uid: usuario.uid, correo: usuario.correo },
     fecha: firebase.firestore.FieldValue.serverTimestamp()
   };
 
   await db.collection("solicitudes").add(nuevaSolicitud);
 
+  // Autoreply al usuario
   enviarCorreo(usuario.correo,id,"Pendiente","Tu solicitud fue registrada correctamente.");
 
-  if(document.getElementById("gerencia").value){
-    enviarCorreo("gerente@empresa.com",id,"Pendiente de aprobación","Tienes una solicitud pendiente de revisión.");
-  }
+  // Notificación al gerente
+  enviarCorreo("gerente@empresa.com",id,"Pendiente de aprobación","Tienes una solicitud pendiente de revisión.");
 
   alert("Solicitud creada: "+id);
   cargarSolicitudes();
 }
 
-// Cargar solicitudes según rol
+// Cargar solicitudes
 async function cargarSolicitudes(){
   const tabla = document.getElementById("tabla");
   tabla.innerHTML="";
-  let q;
-
-  if(usuario.rol==="usuario"){
-    q = db.collection("solicitudes").where("solicitante.uid","==",usuario.uid);
-  } else if(usuario.rol==="gerente"){
-    q = db.collection("solicitudes").where("gerencia","==",usuario.gerencia);
-  } else { // admin
-    q = db.collection("solicitudes");
-  }
-
-  const snap = await q.get();
+  const snap = await db.collection("solicitudes").get();
   snap.forEach(d=>{
     const s = d.data();
-    let boton = "";
-    if(usuario.rol==="gerente" && s.estado!=="finalizado"){
-      boton = `<button onclick="finalizar('${d.id}')">Finalizar</button>`;
-    }
     tabla.innerHTML+=`
-    <tr>
-      <td>${s.idSolicitud}</td>
-      <td>${s.nombreDocumento}</td>
-      <td>${s.estado}</td>
-      <td>${boton}</td>
-    </tr>`;
+      <tr>
+        <td>${s.idSolicitud}</td>
+        <td>${s.nombreDocumento}</td>
+        <td>${s.estado}</td>
+        <td>-</td>
+      </tr>`;
   });
-}
-
-// Finalizar solicitud (solo gerente)
-async function finalizar(id){
-  const docRef = db.collection("solicitudes").doc(id);
-  await docRef.update({
-    estado:"finalizado",
-    "gerente.aprobado":true,
-    "gerente.nombre":usuario.correo
-  });
-  const doc = await docRef.get();
-  enviarCorreo(doc.data().solicitante.correo,doc.data().idSolicitud,"Finalizado","La solicitud fue aprobada y cerrada.");
-  cargarSolicitudes();
 }
 
 // Función EmailJS
 function enviarCorreo(destino,id,estado,mensaje){
-  emailjs.send("TU_SERVICE_ID","TU_TEMPLATE_ID",{
+  emailjs.send("service_a7yozqh","template_2sy0hqh",{
     to_email: destino,
     id_solicitud: id,
     estado: estado,
     mensaje: mensaje
   }).catch(err=>console.log("Error email:",err));
 }
-</script>
 
+// Cargar solicitudes al abrir
+cargarSolicitudes();
+
+</script>
 </body>
 </html>
