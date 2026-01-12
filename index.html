@@ -3,30 +3,53 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistema de Gestión FCI</title>
+<title>Dashboard Sistema Gestión FCI</title>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.5.0/axios.min.js"></script>
 <style>
-body { font-family: Arial, sans-serif; padding: 20px; }
-input, select, textarea, button { margin: 5px 0; display: block; width: 300px; padding: 5px; }
+body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f5f5f5; }
+header { background:#2c3e50; color:white; padding:15px; text-align:center; }
+section { padding:20px; }
+input, select, textarea, button { margin:5px 0; padding:5px; width:100%; max-width:300px; }
+.container { display:flex; flex-wrap:wrap; gap:20px; }
+.card { background:white; padding:20px; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.2); flex:1; min-width:300px; }
+h2,h3 { margin-top:0; }
+ul { list-style:none; padding:0; }
+li { margin-bottom:5px; }
+button { cursor:pointer; }
+label { display:block; margin-top:10px; }
 </style>
 </head>
 <body>
 
+<header>
+<h1>Dashboard Sistema de Gestión FCI</h1>
+</header>
+
+<section id="login-section">
 <h2>Login</h2>
 <input type="text" id="usuario" placeholder="Usuario">
 <input type="password" id="contraseña" placeholder="Contraseña">
 <button onclick="login()">Ingresar</button>
-<hr>
+</section>
 
-<div id="panel" style="display:none;">
-<h2>Panel de Gestión</h2>
+<section id="dashboard" style="display:none;">
+<h2>Panel Administrativo</h2>
+<div class="container">
 
-<h3>Crear Usuario</h3>
+<!-- Gestión Usuarios -->
+<div class="card">
+<h3>Usuarios</h3>
 <input type="text" id="nuevoUsuario" placeholder="Usuario">
 <input type="password" id="nuevaContraseña" placeholder="Contraseña">
 <input type="email" id="nuevoCorreo" placeholder="Correo para notificaciones">
+<select id="nuevoGerencia">
+<option value="">Seleccione Gerencia</option>
+</select>
+<select id="nuevoDepartamento">
+<option value="">Seleccione Departamento</option>
+</select>
 <label>Permisos:</label>
 <label><input type="checkbox" id="permSolicitudes"> Realizar solicitudes</label>
 <label><input type="checkbox" id="permVerPropias"> Ver solicitudes propias</label>
@@ -34,15 +57,38 @@ input, select, textarea, button { margin: 5px 0; display: block; width: 300px; p
 <label><input type="checkbox" id="permAprobar"> Aprobar/Rechazar solicitudes</label>
 <label><input type="checkbox" id="permGestionarUsuarios"> Gestionar usuarios</label>
 <button onclick="crearUsuario()">Crear Usuario</button>
-
-<h3>Lista de Usuarios</h3>
+<h4>Lista de Usuarios</h4>
 <ul id="listaUsuarios"></ul>
+</div>
 
+<!-- Gestión Gerencias -->
+<div class="card">
+<h3>Gerencias</h3>
+<input type="text" id="nuevaGerenciaNombre" placeholder="Nombre Gerencia">
+<button onclick="crearGerencia()">Crear Gerencia</button>
+<ul id="listaGerencias"></ul>
+</div>
+
+<!-- Gestión Departamentos -->
+<div class="card">
+<h3>Departamentos</h3>
+<input type="text" id="nuevoDepartamentoNombre" placeholder="Nombre Departamento">
+<select id="departamentoGerencia">
+<option value="">Seleccione Gerencia</option>
+</select>
+<button onclick="crearDepartamento()">Crear Departamento</button>
+<ul id="listaDepartamentos"></ul>
+</div>
+
+<!-- Gestión Solicitudes -->
+<div class="card" style="flex-basis:100%;">
 <h3>Solicitudes</h3>
 <button onclick="cargarSolicitudes()">Cargar Solicitudes</button>
 <ul id="listaSolicitudes"></ul>
+</div>
 
 </div>
+</section>
 
 <script>
 // Firebase Config
@@ -54,34 +100,40 @@ const firebaseConfig = {
   messagingSenderId: "709030283072",
   appId: "1:709030283072:web:5997837b36a448e9515ca5"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// Usuarios iniciales
+// Usuarios locales (solo login sistema)
 let usuarios = [
   {usuario:"Admin", contraseña:"1130", correo:"admin@fci.com", permisos:["Realizar solicitudes","Ver solicitudes propias","Ver solicitudes de gerencia","Aprobar/Rechazar solicitudes","Gestionar usuarios"]}
 ];
 
-// Login del sistema
+// Login sistema
 function login(){
     const user = document.getElementById("usuario").value;
     const pass = document.getElementById("contraseña").value;
     const found = usuarios.find(u => u.usuario===user && u.contraseña===pass);
     if(found){
         alert("Bienvenido "+found.usuario);
-        document.getElementById("panel").style.display="block";
+        document.getElementById("login-section").style.display="none";
+        document.getElementById("dashboard").style.display="block";
         cargarUsuarios();
+        cargarGerencias();
+        cargarDepartamentos();
+        cargarSolicitudes();
     } else {
         alert("Usuario o contraseña incorrectos");
     }
 }
 
-// Crear usuario
-function crearUsuario(){
+// Crear Usuario
+async function crearUsuario(){
     const user = document.getElementById("nuevoUsuario").value;
     const pass = document.getElementById("nuevaContraseña").value;
     const correo = document.getElementById("nuevoCorreo").value;
+    const gerencia = document.getElementById("nuevoGerencia").value;
+    const departamento = document.getElementById("nuevoDepartamento").value;
+
     const permisos = [];
     if(document.getElementById("permSolicitudes").checked) permisos.push("Realizar solicitudes");
     if(document.getElementById("permVerPropias").checked) permisos.push("Ver solicitudes propias");
@@ -91,24 +143,73 @@ function crearUsuario(){
 
     if(!user || !pass) { alert("Usuario y contraseña obligatorios"); return; }
 
-    const nuevo = {usuario:user, contraseña:pass, correo:correo, permisos:permisos};
+    const nuevo = {usuario:user, contraseña:pass, correo, gerencia, departamento, permisos};
     usuarios.push(nuevo);
+    await db.collection("usuarios").add(nuevo);
     alert("Usuario creado: "+user);
     cargarUsuarios();
 }
 
-// Cargar lista de usuarios
-function cargarUsuarios(){
-    const lista = document.getElementById("listaUsuarios");
-    lista.innerHTML="";
-    usuarios.forEach(u=>{
+// Cargar Usuarios
+async function cargarUsuarios(){
+    const ul = document.getElementById("listaUsuarios");
+    ul.innerHTML="";
+    const snapshot = await db.collection("usuarios").get();
+    snapshot.forEach(doc=>{
+        const data = doc.data();
         const li = document.createElement("li");
-        li.innerText = u.usuario + " - Permisos: " + u.permisos.join(", ");
-        lista.appendChild(li);
+        li.innerText = `${data.usuario} - Gerencia: ${data.gerencia || "-"} - Departamento: ${data.departamento || "-"} - Permisos: ${data.permisos.join(", ")}`;
+        ul.appendChild(li);
     });
 }
 
-// Funciones de solicitudes (ejemplo)
+// Crear Gerencia
+async function crearGerencia(){
+    const nombre = document.getElementById("nuevaGerenciaNombre").value;
+    if(!nombre) return alert("Ingrese nombre de gerencia");
+    await db.collection("gerencias").add({nombre});
+    alert("Gerencia creada");
+    cargarGerencias();
+}
+
+// Cargar Gerencias
+async function cargarGerencias(){
+    const ul = document.getElementById("listaGerencias");
+    const select = document.getElementById("nuevoGerencia");
+    const selectDep = document.getElementById("departamentoGerencia");
+    ul.innerHTML=""; select.innerHTML='<option value="">Seleccione Gerencia</option>'; selectDep.innerHTML='<option value="">Seleccione Gerencia</option>';
+    const snapshot = await db.collection("gerencias").get();
+    snapshot.forEach(doc=>{
+        const data = doc.data();
+        ul.innerHTML += `<li>${data.nombre}</li>`;
+        select.innerHTML += `<option value="${data.nombre}">${data.nombre}</option>`;
+        selectDep.innerHTML += `<option value="${data.nombre}">${data.nombre}</option>`;
+    });
+}
+
+// Crear Departamento
+async function crearDepartamento(){
+    const nombre = document.getElementById("nuevoDepartamentoNombre").value;
+    const gerencia = document.getElementById("departamentoGerencia").value;
+    if(!nombre || !gerencia) return alert("Ingrese nombre y gerencia");
+    await db.collection("departamentos").add({nombre, gerencia});
+    alert("Departamento creado");
+    cargarDepartamentos();
+}
+
+// Cargar Departamentos
+async function cargarDepartamentos(){
+    const ul = document.getElementById("listaDepartamentos");
+    ul.innerHTML="";
+    const snapshot = await db.collection("departamentos").get();
+    snapshot.forEach(doc=>{
+        const data = doc.data();
+        ul.innerHTML += `<li>${data.nombre} - Gerencia: ${data.gerencia}</li>`;
+        document.getElementById("nuevoDepartamento").innerHTML += `<option value="${data.nombre}">${data.nombre}</option>`;
+    });
+}
+
+// Cargar Solicitudes
 async function cargarSolicitudes(){
     const ul = document.getElementById("listaSolicitudes");
     ul.innerHTML="";
@@ -116,11 +217,30 @@ async function cargarSolicitudes(){
     snapshot.forEach(doc=>{
         const data = doc.data();
         const li = document.createElement("li");
-        li.innerHTML = `Solicitud: ${data.nombreDocumento} - Tipo: ${data.tipo} - Acción: ${data.accion} - Estado: ${data.estado}`;
+        li.innerHTML = `
+            <b>${data.nombreDocumento}</b> | ${data.tipo} | ${data.accion} | Estado: ${data.estado || 'Pendiente'}<br>
+            Gerencia: ${data.gerencia || '-'} | Departamento: ${data.departamento || '-'} | Solicitante: ${data.usuario || '-'}<br>
+            Motivo: ${data.motivo || '-'}<br>
+            <button onclick="aprobarSolicitud('${doc.id}')">Aprobar</button>
+            <button onclick="rechazarSolicitud('${doc.id}')">Rechazar</button>
+        `;
         ul.appendChild(li);
     });
 }
 
+// Aprobar/Rechazar (Admin o gerente)
+async function aprobarSolicitud(id){
+    await db.collection("solicitudes").doc(id).update({estado:"Aprobada"});
+    alert("Solicitud aprobada");
+    cargarSolicitudes();
+}
+async function rechazarSolicitud(id){
+    const motivo = prompt("Motivo de rechazo:");
+    if(!motivo) return;
+    await db.collection("solicitudes").doc(id).update({estado:"Rechazada", motivoRechazo:motivo});
+    alert("Solicitud rechazada");
+    cargarSolicitudes();
+}
 </script>
 </body>
 </html>
