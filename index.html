@@ -2,347 +2,290 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Sistema Gestión Documental</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<!-- Firebase -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Gestión</title>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<!-- EmailJS -->
-<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
-
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 <style>
-body{font-family:Arial;background:#f3f4f6;margin:0}
-header{background:#111827;color:#fff;padding:15px}
-.card{background:#fff;padding:15px;margin:15px;border-radius:8px}
-input,select,textarea,button{width:100%;margin-top:8px;padding:8px;border-radius:4px}
-button{background:#2563eb;color:#fff;border:none;cursor:pointer}
-table{width:100%;border-collapse:collapse}
-td,th{border:1px solid #ccc;padding:6px;text-align:left}
-.hidden{display:none}
-h3{margin-top:0}
+body{font-family:sans-serif;padding:20px;}
+input, select, button, textarea{margin:5px; padding:5px;}
+.container{border:1px solid #ccc; padding:15px; margin-bottom:20px;}
+table{border-collapse:collapse;width:100%; margin-top:10px;}
+th, td{border:1px solid #ccc;padding:5px;text-align:left;}
+button{cursor:pointer;}
 </style>
 </head>
 <body>
 
-<header>
-<h2>📄 FCI – Sistema de Gestión Documental</h2>
-</header>
-
-<!-- LOGIN -->
-<section id="login-section" class="card">
-  <h3>🔐 Iniciar Sesión</h3>
-  <input id="inputUsuario" placeholder="Usuario">
-  <input id="inputPassword" type="password" placeholder="Contraseña">
+<h2>Login</h2>
+<div id="loginDiv">
+  <input type="text" id="loginUser" placeholder="Usuario">
+  <input type="password" id="loginPass" placeholder="Contraseña">
   <button onclick="login()">Ingresar</button>
-</section>
+</div>
 
-<!-- PANEL PRINCIPAL -->
-<section id="panel" class="card hidden">
-<h3>Usuario: <span id="usuarioActual"></span> | Rol: <span id="rolActual"></span></h3>
+<div id="appDiv" style="display:none;">
+  <h2>Bienvenido <span id="currentUser"></span> (<span id="currentRole"></span>)</h2>
+  <button onclick="logout()">Cerrar Sesión</button>
 
-<!-- PANEL ADMIN: Usuarios, Gerencias, Departamentos -->
-<div id="admin-panel" class="card hidden">
-  <h3>🛠 Panel de Administración</h3>
-
-  <div>
-    <h4>Usuarios</h4>
-    <input id="nuevoUsuario" placeholder="Usuario">
-    <input id="nuevoCorreo" placeholder="Correo">
-    <input id="nuevoPassword" type="password" placeholder="Contraseña">
-    <select id="nuevoRol">
-      <option>usuario</option>
-      <option>gerente</option>
-      <option>admin</option>
-    </select>
-    <select id="nuevoGerencia">
-      <option>Gerencia Demo</option>
+  <div class="container">
+    <h3>Usuarios</h3>
+    <input type="text" id="newUser" placeholder="Usuario">
+    <input type="email" id="newEmail" placeholder="Correo">
+    <input type="password" id="newPass" placeholder="Contraseña">
+    <select id="newRole">
+      <option value="user">Usuario</option>
+      <option value="gerente">Gerente</option>
+      <option value="admin">Admin</option>
     </select>
     <button onclick="crearUsuario()">Agregar Usuario</button>
-    <table id="tablaUsuarios"><thead><tr><th>Usuario</th><th>Correo</th><th>Rol</th><th>Gerencia</th><th>Acción</th></tr></thead><tbody></tbody></table>
+    <table id="usersTable">
+      <tr><th>Usuario</th><th>Correo</th><th>Rol</th><th>Acciones</th></tr>
+    </table>
   </div>
 
-  <div>
-    <h4>Gerencias</h4>
-    <input id="nuevaGerenciaInput" placeholder="Nueva Gerencia">
-    <button onclick="crearGerencia()">Agregar</button>
-    <table id="tablaGerencias"><thead><tr><th>Gerencia</th><th>Acción</th></tr></thead><tbody></tbody></table>
+  <div class="container">
+    <h3>Gerencias</h3>
+    <input type="text" id="newGerencia" placeholder="Nombre Gerencia">
+    <button onclick="crearGerencia()">Agregar Gerencia</button>
+    <table id="gerenciasTable"><tr><th>Gerencia</th><th>Acciones</th></tr></table>
   </div>
 
-  <div>
-    <h4>Departamentos</h4>
-    <input id="nuevoDepartamentoInput" placeholder="Nuevo Departamento">
-    <button onclick="crearDepartamento()">Agregar</button>
-    <table id="tablaDepartamentos"><thead><tr><th>Departamento</th><th>Acción</th></tr></thead><tbody></tbody></table>
+  <div class="container">
+    <h3>Departamentos</h3>
+    <input type="text" id="newDepartamento" placeholder="Nombre Departamento">
+    <button onclick="crearDepartamento()">Agregar Departamento</button>
+    <table id="departamentosTable"><tr><th>Departamento</th><th>Acciones</th></tr></table>
+  </div>
+
+  <div class="container">
+    <h3>Solicitudes</h3>
+    <select id="selectGerencia"></select>
+    <select id="selectDepartamento"></select>
+    <textarea id="solMotivo" placeholder="Motivo"></textarea><br>
+    <input type="file" id="solDocumento">
+    <button onclick="crearSolicitud()">Crear Solicitud</button>
+
+    <table id="solicitudesTable">
+      <tr><th>ID</th><th>Usuario</th><th>Correo</th><th>Gerencia</th><th>Departamento</th><th>Motivo</th><th>Documento</th><th>Estado</th><th>Acciones</th></tr>
+    </table>
   </div>
 </div>
-
-<!-- NUEVA SOLICITUD -->
-<div class="card">
-  <h3>➕ Nueva Solicitud</h3>
-  <select id="tipoAccion">
-    <option>Creación</option>
-    <option>Modificación</option>
-    <option>Inactivación</option>
-  </select>
-  <input id="nombreDocumento" placeholder="Nombre documento">
-  <select id="gerencia"></select>
-  <select id="departamento"></select>
-  <textarea id="motivo" placeholder="Motivo"></textarea>
-  <input id="codificacion" placeholder="Codificación actual">
-  <input id="ultimaVersion" placeholder="Última versión">
-  <input type="date" id="fechaUltimaVersion">
-  <input type="file" id="archivo">
-  <button onclick="crearSolicitud()">Enviar Solicitud</button>
-</div>
-
-<!-- LISTADO SOLICITUDES -->
-<div class="card">
-  <h3>📋 Solicitudes</h3>
-  <table>
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Documento</th>
-        <th>Estado</th>
-        <th>Solicitante</th>
-        <th>Acción</th>
-      </tr>
-    </thead>
-    <tbody id="tabla"></tbody>
-  </table>
-</div>
-
-<!-- DETALLES DE SOLICITUD -->
-<div class="card hidden" id="detalleSolicitudCard">
-  <h3>📝 Detalles de Solicitud</h3>
-  <div id="detalleContenido"></div>
-  <div id="accionesEstado" class="hidden">
-    <h4>Actualizar Estado</h4>
-    <select id="nuevoEstado">
-      <option value="pendiente">Pendiente</option>
-      <option value="consulta">Consulta</option>
-      <option value="solicitar_reunion">Solicitar Reunión</option>
-      <option value="aprobado_sistema">Aprobado Sistema</option>
-      <option value="solicitar_aprobacion_gerente">Solicitar Aprobación Gerente</option>
-      <option value="finalizado">Finalizado</option>
-    </select>
-    <textarea id="motivoEstado" placeholder="Motivo / Observación"></textarea>
-    <input type="file" id="archivoEstado">
-    <button onclick="cambiarEstado()">Actualizar Estado</button>
-  </div>
-  <button onclick="cerrarDetalle()">Cerrar</button>
-</div>
-
-</section>
 
 <script>
-// ================= CONFIG FIREBASE =================
+// 🔹 FIREBASE CONFIG
 const firebaseConfig = {
-  apiKey: "AIzaSyDdzCiachuhbE9jATz-TesPI2vUVIJrHjM",
-  authDomain: "sistemadegestion-7400d.firebaseapp.com",
-  projectId: "sistemadegestion-7400d",
-  storageBucket: "sistemadegestion-7400d.firebasestorage.app",
-  messagingSenderId: "709030283072",
-  appId: "1:709030283072:web:5997837b36a448e9515ca5"
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_AUTH_DOMAIN",
+  projectId: "TU_PROJECT_ID",
+  storageBucket: "TU_STORAGE_BUCKET",
+  messagingSenderId: "TU_MSG_SENDER_ID",
+  appId: "TU_APP_ID"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+const storage = firebase.storage();
 
-// ================= EMAILJS =================
-emailjs.init("2jVnfkJKKG0bpKN-U");
+// 🔹 VARIABLES
+let currentUserData = null;
 
-// ================= VARIABLES =================
-let usuarios = [{usuario:"Admin", correo:"admin@fcipty.com", password:"123456", rol:"admin", gerencia:"Todas"}];
-let usuarioActual = null;
-let gerencias = [];
-let departamentos = [];
-let solicitudActualId = "";
+// 🔹 LOGIN INTERNO
+async function login() {
+  const usuario = document.getElementById("loginUser").value;
+  const pass = document.getElementById("loginPass").value;
 
-// ================= LOGIN =================
-function login(){
-  const u = document.getElementById("inputUsuario").value;
-  const p = document.getElementById("inputPassword").value;
-  const user = usuarios.find(x=>x.usuario===u && x.password===p);
-  if(user){
-    usuarioActual=user;
-    document.getElementById("login-section").classList.add("hidden");
-    document.getElementById("panel").classList.remove("hidden");
-    document.getElementById("usuarioActual").innerText = user.usuario;
-    document.getElementById("rolActual").innerText = user.rol;
-    if(user.rol==="admin") document.getElementById("admin-panel").classList.remove("hidden");
-    cargarGerencias(); cargarDepartamentos(); cargarUsuarios(); cargarSolicitudes();
-  }else alert("Usuario o contraseña incorrectos");
+  if(usuario === "Admin" && pass === "123456") {
+    currentUserData = {usuario:"Admin", correo:"admin@correo.com", role:"admin"};
+    mostrarApp();
+    return;
+  }
+
+  const snapshot = await db.collection("users").where("usuario","==",usuario).where("password","==",pass).get();
+  if(!snapshot.empty){
+    const data = snapshot.docs[0].data();
+    currentUserData = {id:snapshot.docs[0].id,...data};
+    mostrarApp();
+  } else {
+    alert("Usuario o contraseña incorrectos");
+  }
 }
 
-// ================= FUNCIONES ADMIN =================
+// 🔹 MOSTRAR APP
+function mostrarApp() {
+  document.getElementById("loginDiv").style.display = "none";
+  document.getElementById("appDiv").style.display = "block";
+  document.getElementById("currentUser").innerText = currentUserData.usuario;
+  document.getElementById("currentRole").innerText = currentUserData.role;
+
+  cargarUsuarios();
+  cargarGerencias();
+  cargarDepartamentos();
+  cargarSolicitudes();
+}
+
+// 🔹 LOGOUT
+function logout(){
+  currentUserData = null;
+  document.getElementById("appDiv").style.display = "none";
+  document.getElementById("loginDiv").style.display = "block";
+}
+
+// 🔹 USUARIOS
 async function crearUsuario(){
-  const u=document.getElementById("nuevoUsuario").value;
-  const c=document.getElementById("nuevoCorreo").value;
-  const p=document.getElementById("nuevoPassword").value;
-  const r=document.getElementById("nuevoRol").value;
-  const g=document.getElementById("nuevoGerencia").value;
-  usuarios.push({usuario:u, correo:c, password:p, rol:r, gerencia:g});
+  const usuario = document.getElementById("newUser").value;
+  const correo = document.getElementById("newEmail").value;
+  const password = document.getElementById("newPass").value;
+  const role = document.getElementById("newRole").value;
+
+  if(!usuario || !correo || !password) { alert("Completa todos los campos"); return; }
+
+  await db.collection("users").add({usuario, correo, password, role});
   cargarUsuarios();
 }
-function cargarUsuarios(){
-  const tbody=document.querySelector("#tablaUsuarios tbody");
-  tbody.innerHTML="";
-  usuarios.forEach((u,i)=>{
-    tbody.innerHTML+=`<tr>
-      <td>${u.usuario}</td><td>${u.correo}</td><td>${u.rol}</td><td>${u.gerencia}</td>
-      <td><button onclick="usuarios.splice(${i},1);cargarUsuarios()">Eliminar</button></td>
+
+async function cargarUsuarios(){
+  const table = document.getElementById("usersTable");
+  table.innerHTML = `<tr><th>Usuario</th><th>Correo</th><th>Rol</th><th>Acciones</th></tr>`;
+  const snapshot = await db.collection("users").get();
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    table.innerHTML += `<tr>
+      <td>${data.usuario}</td>
+      <td>${data.correo}</td>
+      <td>${data.role}</td>
+      <td><button onclick="eliminarUsuario('${doc.id}')">Eliminar</button></td>
     </tr>`;
   });
 }
+
+async function eliminarUsuario(id){ await db.collection("users").doc(id).delete(); cargarUsuarios(); }
+
+// 🔹 GERENCIAS
 async function crearGerencia(){
-  const g=document.getElementById("nuevaGerenciaInput").value;
-  await db.collection("gerencias").add({nombre:g});
+  const nombre = document.getElementById("newGerencia").value;
+  if(!nombre) return;
+  await db.collection("gerencias").add({nombre});
   cargarGerencias();
 }
+
+async function cargarGerencias(){
+  const table = document.getElementById("gerenciasTable");
+  const select = document.getElementById("selectGerencia");
+  table.innerHTML = `<tr><th>Gerencia</th><th>Acciones</th></tr>`;
+  select.innerHTML = `<option value="">Seleccione Gerencia</option>`;
+  const snapshot = await db.collection("gerencias").get();
+  snapshot.forEach(doc=>{
+    const data=doc.data();
+    table.innerHTML += `<tr>
+      <td>${data.nombre}</td>
+      <td><button onclick="eliminarGerencia('${doc.id}')">Eliminar</button></td>
+    </tr>`;
+    select.innerHTML += `<option value="${doc.id}">${data.nombre}</option>`;
+  });
+}
+
+async function eliminarGerencia(id){ await db.collection("gerencias").doc(id).delete(); cargarGerencias(); }
+
+// 🔹 DEPARTAMENTOS
 async function crearDepartamento(){
-  const d=document.getElementById("nuevoDepartamentoInput").value;
-  await db.collection("departamentos").add({nombre:d});
+  const nombre = document.getElementById("newDepartamento").value;
+  if(!nombre) return;
+  await db.collection("departamentos").add({nombre});
   cargarDepartamentos();
 }
 
-// ================= FUNCIONES SOLICITUD =================
-async function generarID(){
-  const ref=db.collection("counters").doc("global");
-  return db.runTransaction(async t=>{
-    const d=await t.get(ref);
-    let n=(d.exists?d.data().solicitudes:0)+1;
-    t.set(ref,{solicitudes:n},{merge:true});
-    return "FCI-SOL-"+String(n).padStart(4,"0");
+async function cargarDepartamentos(){
+  const table = document.getElementById("departamentosTable");
+  const select = document.getElementById("selectDepartamento");
+  table.innerHTML = `<tr><th>Departamento</th><th>Acciones</th></tr>`;
+  select.innerHTML = `<option value="">Seleccione Departamento</option>`;
+  const snapshot = await db.collection("departamentos").get();
+  snapshot.forEach(doc=>{
+    const data=doc.data();
+    table.innerHTML += `<tr>
+      <td>${data.nombre}</td>
+      <td><button onclick="eliminarDepartamento('${doc.id}')">Eliminar</button></td>
+    </tr>`;
+    select.innerHTML += `<option value="${doc.id}">${data.nombre}</option>`;
   });
 }
-async function subirArchivo(file){
-  if(!file) return "";
-  const form=new FormData();
-  form.append("file",file);
-  form.append("upload_preset","fci_documentos");
-  const res=await fetch("https://api.cloudinary.com/v1_1/df79cjklp/auto/upload",{method:"POST",body:form});
-  const data=await res.json();
-  return data.secure_url;
-}
+
+async function eliminarDepartamento(id){ await db.collection("departamentos").doc(id).delete(); cargarDepartamentos(); }
+
+// 🔹 SOLICITUDES
 async function crearSolicitud(){
-  const id=await generarID();
-  const file=document.getElementById("archivo").files[0];
-  const url=await subirArchivo(file);
-  const s={
-    idSolicitud:id,
-    tipoAccion:document.getElementById("tipoAccion").value,
-    nombreDocumento:document.getElementById("nombreDocumento").value,
-    gerencia:document.getElementById("gerencia").value,
-    departamento:document.getElementById("departamento").value,
-    motivo:document.getElementById("motivo").value,
-    codificacionActual:document.getElementById("codificacion").value,
-    ultimaVersion:document.getElementById("ultimaVersion").value,
-    fechaUltimaVersion:document.getElementById("fechaUltimaVersion").value,
-    documento:url||"",
-    estado:"pendiente",
-    solicitante:{usuario:usuarioActual.usuario,correo:usuarioActual.correo},
-    fecha:firebase.firestore.FieldValue.serverTimestamp()
-  };
-  await db.collection("solicitudes").add(s);
-  enviarCorreo(usuarioActual.correo,id,"pendiente","Tu solicitud fue registrada correctamente.");
+  const gerenciaId = document.getElementById("selectGerencia").value;
+  const departamentoId = document.getElementById("selectDepartamento").value;
+  const motivo = document.getElementById("solMotivo").value;
+  const file = document.getElementById("solDocumento").files[0];
+
+  if(!gerenciaId || !departamentoId || !motivo){ alert("Completa todos los campos"); return; }
+
+  let documentoUrl = "";
+  if(file){
+    const ref = storage.ref('documentos/'+Date.now()+"_"+file.name);
+    await ref.put(file);
+    documentoUrl = await ref.getDownloadURL();
+  }
+
+  // Generar ID tipo FCI-SOL-0001
+  const counterRef = db.collection("counters").doc("solicitudes");
+  const counterDoc = await counterRef.get();
+  let numero = 1;
+  if(counterDoc.exists) numero = counterDoc.data().count+1;
+  await counterRef.set({count:numero});
+
+  const solId = "FCI-SOL-"+String(numero).padStart(4,"0");
+
+  await db.collection("solicitudes").doc(solId).set({
+    solId,
+    usuario: currentUserData.usuario,
+    correo: currentUserData.correo,
+    role: currentUserData.role,
+    gerenciaId,
+    departamentoId,
+    motivo,
+    documento: documentoUrl,
+    estado: "normal",
+    fecha: new Date()
+  });
+
   cargarSolicitudes();
 }
 
-// ================= CARGAR DATOS =================
-async function cargarGerencias(){
-  const sel=document.getElementById("gerencia");
-  sel.innerHTML="";
-  const snap=await db.collection("gerencias").get();
-  snap.forEach(d=>{
-    const g=d.data().nombre;
-    sel.innerHTML+=`<option>${g}</option>`;
-    if(!gerencias.includes(g)) gerencias.push(g);
-    const selNew=document.getElementById("nuevoGerencia");
-    if(selNew) selNew.innerHTML+=`<option>${g}</option>`;
-  });
-}
-async function cargarDepartamentos(){
-  const sel=document.getElementById("departamento");
-  sel.innerHTML="";
-  const snap=await db.collection("departamentos").get();
-  snap.forEach(d=>{
-    const dep=d.data().nombre;
-    sel.innerHTML+=`<option>${dep}</option>`;
-    if(!departamentos.includes(dep)) departamentos.push(dep);
-  });
-}
-
-// ================= CARGAR SOLICITUDES =================
 async function cargarSolicitudes(){
-  const tabla=document.getElementById("tabla");
-  tabla.innerHTML="";
-  const snap=await db.collection("solicitudes").orderBy("fecha","desc").get();
-  snap.forEach(d=>{
-    const s=d.data();
-    tabla.innerHTML+=`<tr>
-      <td>${s.idSolicitud}</td>
-      <td>${s.nombreDocumento}</td>
-      <td>${s.estado}</td>
-      <td>${s.solicitante.usuario}</td>
-      <td><button onclick="verSolicitud('${d.id}')">Ver Detalles</button></td>
+  const table = document.getElementById("solicitudesTable");
+  table.innerHTML = `<tr><th>ID</th><th>Usuario</th><th>Correo</th><th>Gerencia</th><th>Departamento</th><th>Motivo</th><th>Documento</th><th>Estado</th><th>Acciones</th></tr>`;
+
+  const snapshot = await db.collection("solicitudes").get();
+  const gerenciasSnap = await db.collection("gerencias").get();
+  const departamentosSnap = await db.collection("departamentos").get();
+  const gerencias = {}; gerenciasSnap.forEach(d=>gerencias[d.id]=d.data().nombre);
+  const departamentos = {}; departamentosSnap.forEach(d=>departamentos[d.id]=d.data().nombre);
+
+  snapshot.forEach(doc=>{
+    const data = doc.data();
+    table.innerHTML += `<tr>
+      <td>${data.solId}</td>
+      <td>${data.usuario}</td>
+      <td>${data.correo}</td>
+      <td>${gerencias[data.gerenciaId]||''}</td>
+      <td>${departamentos[data.departamentoId]||''}</td>
+      <td>${data.motivo}</td>
+      <td>${data.documento?`<a href="${data.documento}" target="_blank">Ver</a>`:""}</td>
+      <td>${data.estado}</td>
+      <td>${currentUserData.role=="admin"||currentUserData.role=="gerente"?`<button onclick="cambiarEstado('${doc.id}')">Cambiar Estado</button>`:""}</td>
     </tr>`;
   });
 }
 
-// ================= DETALLES =================
-async function verSolicitud(docId){
-  solicitudActualId=docId;
-  const doc=await db.collection("solicitudes").doc(docId).get();
-  const s=doc.data();
-  let html=`<p><b>ID:</b> ${s.idSolicitud}</p>
-  <p><b>Documento:</b> ${s.nombreDocumento}</p>
-  <p><b>Estado:</b> ${s.estado}</p>
-  <p><b>Solicitante:</b> ${s.solicitante.usuario} (${s.solicitante.correo})</p>
-  <p><b>Tipo acción:</b> ${s.tipoAccion}</p>
-  <p><b>Gerencia:</b> ${s.gerencia}</p>
-  <p><b>Departamento:</b> ${s.departamento}</p>
-  <p><b>Motivo:</b> ${s.motivo}</p>
-  <p><b>Codificación:</b> ${s.codificacionActual}</p>
-  <p><b>Última versión:</b> ${s.ultimaVersion}</p>
-  <p><b>Fecha última versión:</b> ${s.fechaUltimaVersion}</p>
-  <p><b>Documento adjunto:</b> <a href="${s.documento}" target="_blank">Ver archivo</a></p>`;
-  
-  document.getElementById("detalleContenido").innerHTML=html;
-  if(usuarioActual.rol==="admin" || (usuarioActual.rol==="gerente" && s.gerencia===usuarioActual.gerencia)){
-    document.getElementById("accionesEstado").classList.remove("hidden");
-  }else{
-    document.getElementById("accionesEstado").classList.add("hidden");
-  }
-  document.getElementById("detalleSolicitudCard").classList.remove("hidden");
-}
-
-function cerrarDetalle(){document.getElementById("detalleSolicitudCard").classList.add("hidden");}
-
-// ================= CAMBIAR ESTADO =================
-async function cambiarEstado(){
-  const estado=document.getElementById("nuevoEstado").value;
-  const motivo=document.getElementById("motivoEstado").value;
-  const file=document.getElementById("archivoEstado").files[0];
-  const url=await subirArchivo(file);
-
-  await db.collection("solicitudes").doc(solicitudActualId).update({
-    estado:estado,
-    motivoEstado:motivo,
-    documentoEstado:url||firebase.firestore.FieldValue.delete()
-  });
-  alert("Estado actualizado");
+// Cambiar estado de solicitud
+async function cambiarEstado(id){
+  const nuevo = prompt("Ingrese nuevo estado (normal, pendiente, aprobado, verificado, codificado, finalizado):");
+  if(!nuevo) return;
+  await db.collection("solicitudes").doc(id).update({estado:nuevo});
   cargarSolicitudes();
-  cerrarDetalle();
-}
-
-// ================= EMAIL =================
-function enviarCorreo(destino,id,estado,mensaje){
-  emailjs.send("service_a7yozqh","template_2sy0hqh",{
-    to_email: destino,
-    id_solicitud: id,
-    estado: estado,
-    mensaje: mensaje
-  }).catch(err=>console.log("Error email:",err));
 }
 </script>
 </body>
