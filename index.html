@@ -20,7 +20,8 @@ input,select,textarea,button{width:100%;margin-top:8px;padding:8px;border-radius
 button{background:#2563eb;color:#fff;border:none;cursor:pointer;margin-top:8px}
 table{width:100%;border-collapse:collapse}
 td,th{border:1px solid #ccc;padding:6px;text-align:left}
-h3{margin-top:0}
+h3,h4{margin-top:0}
+.hidden{display:none}
 </style>
 </head>
 
@@ -30,7 +31,17 @@ h3{margin-top:0}
 <h2>📄 FCI – Sistema de Solicitudes Documentales (Demo)</h2>
 </header>
 
-<section id="panel" class="card">
+<!-- LOGIN -->
+<div id="loginPanel" class="card">
+<h3>🔑 Login</h3>
+<input id="loginUser" placeholder="Usuario">
+<input type="password" id="loginPass" placeholder="Contraseña">
+<button onclick="login()">Ingresar</button>
+<p id="loginError" style="color:red"></p>
+</div>
+
+<!-- PANEL PRINCIPAL -->
+<section id="panel" class="card hidden">
 
 <!-- ➕ CREAR SOLICITUD -->
 <div class="card">
@@ -84,10 +95,16 @@ h3{margin-top:0}
 
 <h4>Usuarios</h4>
 <input id="userCorreo" placeholder="Correo">
-<input id="userRol" placeholder="Rol (usuario/gerente/admin)">
+<select id="userRol">
+  <option value="usuario">Usuario</option>
+  <option value="gerente">Gerente</option>
+  <option value="admin">Admin</option>
+</select>
+
 <select id="userGerencia">
   <option value="">Gerencia</option>
 </select>
+
 <button onclick="crearUsuario()">Agregar Usuario</button>
 <ul id="listaUsuarios"></ul>
 
@@ -118,16 +135,27 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-
-// Inicializar EmailJS
 emailjs.init("2jVnfkJKKG0bpKN-U");
 
-// Usuario demo admin
-const usuario = { uid:"demo-admin", correo:"admin@fcipty.com", rol:"admin", gerencia:"", activo:true };
+// ================= USUARIO DEMO =================
+let usuarioActual = null;
 
-// ================= FUNCIONES =================
+// Login simple
+function login(){
+  const user = document.getElementById("loginUser").value;
+  const pass = document.getElementById("loginPass").value;
 
-// ID único
+  if(user === "Admin" && pass === "123456"){
+    usuarioActual = { uid:"demo-admin", correo:"admin@fcipty.com", rol:"admin", gerencia:"" };
+    document.getElementById("loginPanel").classList.add("hidden");
+    document.getElementById("panel").classList.remove("hidden");
+    cargarUsuarios(); cargarGerencias(); cargarDepartamentos(); cargarSolicitudes();
+  } else {
+    document.getElementById("loginError").innerText="Usuario o contraseña incorrectos";
+  }
+}
+
+// ================= FUNCIONES SOLICITUD =================
 async function generarID(){
   const ref = db.collection("counters").doc("global");
   return db.runTransaction(async t=>{
@@ -138,20 +166,20 @@ async function generarID(){
   });
 }
 
-// Subir archivo Cloudinary
 async function subirArchivo(file){
   const form = new FormData();
   form.append("file", file);
   form.append("upload_preset", "fci_unsigned");
-  const res = await fetch("https://api.cloudinary.com/v1_1/df79cjklp/auto/upload", {method:"POST", body:form});
+  const res = await fetch("https://api.cloudinary.com/v1_1/df79cjklp/auto/upload",{method:"POST",body:form});
   const data = await res.json();
   return data.secure_url;
 }
 
-// Crear solicitud
 async function crearSolicitud(){
+  if(!usuarioActual){ alert("Debes iniciar sesión"); return; }
+
   const id = await generarID();
-  let url = "";
+  let url="";
   const archivoFile = document.getElementById("archivo").files[0];
   if(archivoFile) url = await subirArchivo(archivoFile);
 
@@ -167,14 +195,11 @@ async function crearSolicitud(){
     fechaUltimaVersion:document.getElementById("fechaUltimaVersion").value,
     documento:url,
     estado:"pendiente",
-    solicitante:{ uid:usuario.uid, correo:usuario.correo },
+    solicitante:{ uid:usuarioActual.uid, correo:usuarioActual.correo },
     fecha: firebase.firestore.FieldValue.serverTimestamp()
   };
 
   await db.collection("solicitudes").add(nuevaSolicitud);
-
-  enviarCorreo(usuario.correo,id,"Pendiente","Tu solicitud fue registrada correctamente.");
-  enviarCorreo("gerente@empresa.com",id,"Pendiente de aprobación","Tienes una solicitud pendiente de revisión.");
 
   alert("Solicitud creada: "+id);
   cargarSolicitudes();
@@ -182,103 +207,70 @@ async function crearSolicitud(){
 
 // Cargar solicitudes
 async function cargarSolicitudes(){
-  const tabla = document.getElementById("tabla");
+  const tabla=document.getElementById("tabla");
   tabla.innerHTML="";
-  const snap = await db.collection("solicitudes").get();
+  const snap=await db.collection("solicitudes").get();
   snap.forEach(d=>{
-    const s = d.data();
-    tabla.innerHTML+=`<tr>
-      <td>${s.idSolicitud}</td>
-      <td>${s.nombreDocumento}</td>
-      <td>${s.estado}</td>
-      <td>-</td>
-    </tr>`;
+    const s=d.data();
+    tabla.innerHTML+=`<tr><td>${s.idSolicitud}</td><td>${s.nombreDocumento}</td><td>${s.estado}</td><td>-</td></tr>`;
   });
 }
 
 // ================= ADMINISTRACIÓN =================
-
-// Usuarios
 async function crearUsuario(){
-  const correo = document.getElementById("userCorreo").value;
-  const rol = document.getElementById("userRol").value;
-  const gerencia = document.getElementById("userGerencia").value;
-
+  const correo=document.getElementById("userCorreo").value;
+  const rol=document.getElementById("userRol").value;
+  const gerencia=document.getElementById("userGerencia").value;
+  if(!correo || !rol){ alert("Correo y rol obligatorios"); return; }
   await db.collection("users").add({correo,rol,gerencia,activo:true});
-  alert("Usuario agregado");
   cargarUsuarios();
 }
 
 async function cargarUsuarios(){
-  const ul = document.getElementById("listaUsuarios");
-  ul.innerHTML="";
-  const snap = await db.collection("users").get();
-  snap.forEach(d=>{
-    const u = d.data();
-    ul.innerHTML+=`<li>${u.correo} - ${u.rol} - ${u.gerencia}</li>`;
-  });
+  const ul=document.getElementById("listaUsuarios"); ul.innerHTML="";
+  const snap=await db.collection("users").get();
+  snap.forEach(d=>{ const u=d.data();
+    ul.innerHTML+=`<li>${u.correo} - ${u.rol} - ${u.gerencia}</li>`; });
 }
 
-// Gerencias
 async function agregarGerencia(){
-  const nombre = document.getElementById("nuevaGerencia").value;
-  if(!nombre) return;
-  await db.collection("gerencias").add({nombre});
-  alert("Gerencia agregada");
-  cargarGerencias();
+  const nombre=document.getElementById("nuevaGerencia").value; if(!nombre)return;
+  await db.collection("gerencias").add({nombre}); cargarGerencias();
 }
-
+async function eliminarGerencia(id){ if(confirm("Eliminar gerencia?")){ await db.collection("gerencias").doc(id).delete(); cargarGerencias(); } }
 async function cargarGerencias(){
-  const ul = document.getElementById("listaGerencias");
-  ul.innerHTML="";
-  const select = document.getElementById("gerenciaSelect");
-  select.innerHTML=`<option value="">Selecciona gerencia</option>`;
-  const snap = await db.collection("gerencias").get();
+  const ul=document.getElementById("listaGerencias");
+  const selectUsuario=document.getElementById("userGerencia");
+  const selectSolicitud=document.getElementById("gerenciaSelect");
+  ul.innerHTML=""; selectUsuario.innerHTML=`<option value="">Selecciona gerencia</option>`; selectSolicitud.innerHTML=`<option value="">Selecciona gerencia</option>`;
+  const snap=await db.collection("gerencias").get();
   snap.forEach(d=>{
-    const g = d.data();
-    ul.innerHTML+=`<li>${g.nombre}</li>`;
-    select.innerHTML+=`<option value="${g.nombre}">${g.nombre}</option>`;
+    const g=d.data();
+    ul.innerHTML+=`<li>${g.nombre} <button onclick="eliminarGerencia('${d.id}')">Eliminar</button></li>`;
+    selectUsuario.innerHTML+=`<option value="${g.nombre}">${g.nombre}</option>`;
+    selectSolicitud.innerHTML+=`<option value="${g.nombre}">${g.nombre}</option>`;
   });
 }
 
-// Departamentos
 async function agregarDepartamento(){
-  const nombre = document.getElementById("nuevoDepartamento").value;
-  if(!nombre) return;
-  await db.collection("departamentos").add({nombre});
-  alert("Departamento agregado");
-  cargarDepartamentos();
+  const nombre=document.getElementById("nuevoDepartamento").value; if(!nombre)return;
+  await db.collection("departamentos").add({nombre}); cargarDepartamentos();
 }
-
+async function eliminarDepartamento(id){ if(confirm("Eliminar departamento?")){ await db.collection("departamentos").doc(id).delete(); cargarDepartamentos(); } }
 async function cargarDepartamentos(){
-  const ul = document.getElementById("listaDepartamentos");
-  ul.innerHTML="";
-  const select = document.getElementById("departamentoSelect");
-  select.innerHTML=`<option value="">Selecciona departamento</option>`;
-  const snap = await db.collection("departamentos").get();
+  const ul=document.getElementById("listaDepartamentos");
+  const selectSolicitud=document.getElementById("departamentoSelect");
+  ul.innerHTML=""; selectSolicitud.innerHTML=`<option value="">Selecciona departamento</option>`;
+  const snap=await db.collection("departamentos").get();
   snap.forEach(d=>{
-    const dep = d.data();
-    ul.innerHTML+=`<li>${dep.nombre}</li>`;
-    select.innerHTML+=`<option value="${dep.nombre}">${dep.nombre}</option>`;
+    const dep=d.data();
+    ul.innerHTML+=`<li>${dep.nombre} <button onclick="eliminarDepartamento('${d.id}')">Eliminar</button></li>`;
+    selectSolicitud.innerHTML+=`<option value="${dep.nombre}">${dep.nombre}</option>`;
   });
-}
-
-// EmailJS
-function enviarCorreo(destino,id,estado,mensaje){
-  emailjs.send("service_a7yozqh","template_2sy0hqh",{
-    to_email: destino,
-    id_solicitud:id,
-    estado:estado,
-    mensaje:mensaje
-  }).catch(err=>console.log("Error email:",err));
 }
 
 // Cargar listas al inicio
-cargarUsuarios();
-cargarGerencias();
-cargarDepartamentos();
-cargarSolicitudes();
-
+// solo se cargan luego del login
 </script>
 </body>
 </html>
