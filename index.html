@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>FCI | Gestión Documental</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+<!-- EmailJS -->
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+
+<style>
+body{font-family:Arial;background:#f3f4f6;margin:0}
+header{background:#111827;color:#fff;padding:15px}
+.card{background:#fff;padding:15px;margin:15px;border-radius:8px}
+input,select,textarea,button{width:100%;margin-top:8px;padding:8px}
+button{background:#2563eb;color:#fff;border:none}
+table{width:100%;border-collapse:collapse}
+td,th{border:1px solid #ccc;padding:6px}
+.hidden{display:none}
+</style>
+</head>
+
+<body>
+
+<header>
+<h2>📄 FCI – Sistema de Solicitudes Documentales</h2>
+</header>
+
+<section id="login" class="card">
+<input id="email" placeholder="Correo">
+<input id="password" type="password" placeholder="Contraseña">
+<button onclick="login()">Ingresar</button>
+</section>
+
+<section id="panel" class="hidden">
+
+<div class="card">
+<h3>Nueva Solicitud</h3>
+<select id="tipoAccion">
+<option>Creación</option>
+<option>Modificación</option>
+<option>Inactivación</option>
+</select>
+
+<input id="nombreDocumento" placeholder="Nombre documento">
+<input id="gerencia" placeholder="Gerencia">
+<input id="departamento" placeholder="Departamento">
+<textarea id="motivo" placeholder="Motivo"></textarea>
+
+<input id="codificacion" placeholder="Codificación actual">
+<input id="ultimaVersion" placeholder="Última versión">
+<input type="date" id="fechaUltimaVersion">
+
+<input type="file" id="archivo">
+<button onclick="crearSolicitud()">Enviar</button>
+</div>
+
+<div class="card">
+<h3>Solicitudes</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Documento</th>
+<th>Estado</th>
+<th>Acción</th>
+</tr>
+</thead>
+<tbody id="tabla"></tbody>
+</table>
+</div>
+
+</section>
+
+<script>
+// ================= CONFIG =================
+firebase.initializeApp({
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_PROYECTO.firebaseapp.com",
+  projectId: "TU_PROYECTO"
+});
+
+emailjs.init("EMAILJS_PUBLIC_KEY");
+
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+let usuario = {};
+// ========================================
+
+function login(){
+  auth.signInWithEmailAndPassword(email.value,password.value);
+}
+
+auth.onAuthStateChanged(async u=>{
+  if(!u) return;
+  const snap = await db.collection("users").doc(u.uid).get();
+  usuario = snap.data();
+  usuario.uid = u.uid;
+
+  login.classList.add("hidden");
+  panel.classList.remove("hidden");
+
+  cargarSolicitudes();
+});
+
+async function generarID(){
+  const ref = db.collection("counters").doc("global");
+  return db.runTransaction(async t=>{
+    const d = await t.get(ref);
+    let n = (d.exists ? d.data().solicitudes : 0) + 1;
+    t.set(ref,{solicitudes:n},{merge:true});
+    return "FCI-SOL-" + String(n).padStart(4,"0");
+  });
+}
+
+async function subirArchivo(file){
+  const form = new FormData();
+  form.append("file",file);
+  form.append("upload_preset","UPLOAD_PRESET");
+  const res = await fetch(
+    "https://api.cloudinary.com/v1_1/CLOUD_NAME/auto/upload",
+    {method:"POST",body:form}
+  );
+  const data = await res.json();
+  return data.secure_url;
+}
+
+async function crearSolicitud(){
+  const id = await generarID();
+  let url = "";
+
+  if(archivo.files[0]){
+    url = await subirArchivo(archivo.files[0]);
+  }
+
+  await db.collection("solicitudes").add({
+    idSolicitud:id,
+    tipoAccion:tipoAccion.value,
+    nombreDocumento:nombreDocumento.value,
+    gerencia:gerencia.value,
+    departamento:departamento.value,
+    motivo:motivo.value,
+    codificacionActual:codificacion.value,
+    ultimaVersion:ultimaVersion.value,
+    fechaUltimaVersion:fechaUltimaVersion.value,
+    documento:url,
+    estado:"pendiente",
+    solicitante:{
+      uid:usuario.uid,
+      correo:usuario.correo
+    },
+    fecha:firebase.firestore.FieldValue.serverTimestamp()
+  });
+
+  alert("Solicitud creada: "+id);
+  cargarSolicitudes();
+}
+
+async function cargarSolicitudes(){
+  tabla.innerHTML="";
+  let q;
+
+  if(usuario.rol==="usuario"){
+    q = db.collection("solicitudes")
+      .where("solicitante.uid","==",usuario.uid);
+  }else if(usuario.rol==="gerente"){
+    q = db.collection("solicitudes")
+      .where("gerencia","==",usuario.gerencia);
+  }else{
+    q = db.collection("solicitudes");
+  }
+
+  const snap = await q.get();
+  snap.forEach(d=>{
+    const s = d.data();
+    tabla.innerHTML+=`
+    <tr>
+      <td>${s.idSolicitud}</td>
+      <td>${s.nombreDocumento}</td>
+      <td>${s.estado}</td>
+      <td>
+        ${usuario.rol==="gerente" ? 
+          `<button onclick="finalizar('${d.id}')">Finalizar</button>` : ""}
+      </td>
+    </tr>`;
+  });
+}
+
+async function finalizar(id){
+  await db.collection("solicitudes").doc(id).update({
+    estado:"finalizado",
+    "gerente.aprobado":true,
+    "gerente.nombre":usuario.correo
+  });
+  cargarSolicitudes();
+}
+</script>
+
+</body>
+</html>
