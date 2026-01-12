@@ -43,6 +43,17 @@ let rolActual = null;
 function login() {
   const usuario = document.getElementById('loginUsuario').value;
   const pass = document.getElementById('loginPassword').value;
+
+  // acceso directo Admin
+  if(usuario==='Admin' && pass==='1130'){
+    usuarioActual='Admin';
+    rolActual='Admin';
+    document.getElementById('loginPanel').style.display='none';
+    document.getElementById('dashboard').style.display='block';
+    cargarDashboard();
+    return;
+  }
+
   db.collection('usuarios').doc(usuario).get().then(doc=>{
     if(doc.exists && doc.data().password===pass){
       usuarioActual = usuario;
@@ -58,7 +69,6 @@ function login() {
 
 // DASHBOARD
 function cargarDashboard() {
-  // Mostrar tabs según rol
   const adminTabs = ['usuariosTab','gerenciasTab','departamentosTab','solicitudesTab'];
   const gerenteTabs = ['solicitudesTab'];
   const usuarioTabs = ['solicitudesTab'];
@@ -156,10 +166,11 @@ function crearDepartamento(){
 
 // SUBIR A CLOUDINARY
 async function subirDocumento(file){
+  if(!file) return '';
   const form = new FormData();
   form.append('file',file);
-  form.append('upload_preset','documentos');
-  const res = await axios.post('https://api.cloudinary.com/v1_1/demo12345/upload',form);
+  form.append('upload_preset','documentos'); // Cambiar por tu preset
+  const res = await axios.post('https://api.cloudinary.com/v1_1/demo12345/upload',form); // Cambiar demo12345
   return res.data.secure_url;
 }
 
@@ -198,9 +209,10 @@ function cargarSolicitudes(){
   db.collection('solicitudes').get().then(snapshot=>{
     snapshot.forEach(doc=>{
       const s = doc.data();
-      // Filtro según rol
+      // Filtrado según rol
       if(rolActual==='Usuario' && s.usuario!==usuarioActual) return;
       if(rolActual==='Gerente' && s.gerencia!==getGerencia(usuarioActual)) return;
+
       tbody.innerHTML+=`<tr>
         <td>${doc.id}</td>
         <td>${s.usuario}</td>
@@ -214,24 +226,27 @@ function cargarSolicitudes(){
   });
 }
 
-// SIMPLIFICAMOS FUNCION GET GERENCIA DEL USUARIO
-function getGerencia(userId){
-  return ''; // Se puede extender para traer de db si es necesario
-}
-
-// VER DETALLES DE SOLICITUD
+// VER DETALLES DE SOLICITUD Y CAMBIAR ESTADOS
 function verDetalles(id){
   db.collection('solicitudes').doc(id).get().then(doc=>{
     if(doc.exists){
       const s = doc.data();
-      let detalles='';
-      s.estados.forEach(e=>{
-        detalles+=`Estado: ${e.estado}, Comentario: ${e.comentario}, Fecha: ${new Date(e.fecha.seconds*1000).toLocaleString()} \n`;
+      let estadosHtml='';
+      s.estados.forEach((e,index)=>{
+        estadosHtml+=`Estado: ${e.estado}, Comentario: ${e.comentario || ''}, Fecha: ${new Date(e.fecha.seconds*1000 || e.fecha).toLocaleString()}\n`;
       });
-      alert(`Solicitud: ${s.nombre}\nUsuario: ${s.usuario}\nGerencia: ${s.gerencia}\nDepartamento: ${s.departamento}\nMotivo: ${s.motivo}\nArchivo: ${s.archivo}\n\nHistorial de estados:\n${detalles}`);
+      const nuevoEstado = prompt(`Detalles de solicitud:\nNombre: ${s.nombre}\nUsuario: ${s.usuario}\nGerencia: ${s.gerencia}\nDepartamento: ${s.departamento}\nMotivo: ${s.motivo}\nArchivo: ${s.archivo}\n\nHistorial de estados:\n${estadosHtml}\n\nIngrese nuevo estado si desea cambiar (Pendiente, Solicitud de reunión, Realizar consulta, Solicitud de 3 firmas, Solicitud de aprobación del gerente, Finalizado)`);
+      if(nuevoEstado){
+        const comentario = prompt('Ingrese comentario para este estado:');
+        s.estados.push({estado:nuevoEstado, comentario:comentario, fecha:new Date()});
+        db.collection('solicitudes').doc(id).set(s).then(()=>{ alert('Estado actualizado'); cargarSolicitudes(); });
+      }
     }
   });
 }
+
+// Simulación getGerencia
+function getGerencia(userId){ return ''; }
 </script>
 </head>
 <body>
