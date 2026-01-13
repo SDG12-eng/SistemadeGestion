@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Sistema de Gestión Documental</title>
+<title>Sistema de Gestión Documental - Admin</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -14,35 +14,56 @@ header { background:#1f2937; color:white; padding:15px; }
 .card { background:white; padding:15px; border-radius:8px; margin-bottom:20px; box-shadow:0 2px 5px rgba(0,0,0,0.1);}
 button { padding:6px 12px; cursor:pointer; margin-top:5px; }
 select, input, textarea { width:100%; margin:5px 0; padding:6px; }
-.grid { display:grid; grid-template-columns: repeat(3,1fr); gap:15px; }
+.grid { display:grid; grid-template-columns: repeat(2,1fr); gap:15px; }
 h3 { margin-top:0; }
+table { width:100%; border-collapse: collapse; }
+th, td { border:1px solid #ddd; padding:8px; text-align:left; }
+th { background:#f3f4f6; }
 </style>
 </head>
 
 <body>
 
 <header>
-<h2>📊 Dashboard - Sistema de Gestión Documental</h2>
+<h2>📊 Dashboard Admin - Sistema de Gestión Documental</h2>
 </header>
 
 <div class="container">
 
 <div class="grid">
-  <!-- Gráfica Estados -->
+  <!-- Crear Usuario -->
   <div class="card">
-    <h3>Solicitudes por Estado</h3>
-    <canvas id="chartEstados"></canvas>
-  </div>
-
-  <!-- Gráfica Gerencias -->
-  <div class="card">
-    <h3>Solicitudes por Gerencia</h3>
-    <canvas id="chartGerencias"></canvas>
+    <h3>➕ Crear Usuario</h3>
+    <input id="uNombre" placeholder="Nombre">
+    <input id="uCorreo" placeholder="Correo">
+    <input id="uPass" placeholder="Contraseña">
+    <select id="uGerencia">
+      <option value="Finanzas">Finanzas</option>
+      <option value="RRHH">RRHH</option>
+      <option value="Compras">Compras</option>
+      <option value="IT">IT</option>
+      <option value="General">General</option>
+    </select>
+    <select id="uDepartamento">
+      <option value="Archivos">Archivos</option>
+      <option value="Contabilidad">Contabilidad</option>
+      <option value="Operaciones">Operaciones</option>
+      <option value="Compras">Compras</option>
+      <option value="IT">IT</option>
+    </select>
+    <select id="uPermisos" multiple>
+      <option value="realizar_solicitudes">Realizar solicitudes</option>
+      <option value="ver_solicitudes_propias">Ver solicitudes propias</option>
+      <option value="ver_solicitudes_gerencia">Ver solicitudes de gerencia</option>
+      <option value="aprobar_solicitudes">Aprobar/Rechazar solicitudes</option>
+      <option value="gestionar_usuarios">Gestionar usuarios</option>
+    </select>
+    <button onclick="crearUsuario()">Crear Usuario</button>
   </div>
 
   <!-- Crear Solicitud -->
   <div class="card">
-    <h3>Crear Nueva Solicitud</h3>
+    <h3>➕ Crear Solicitud</h3>
     <input id="titulo" placeholder="Título">
     <textarea id="descripcion" placeholder="Descripción"></textarea>
     <input type="file" id="archivo">
@@ -57,12 +78,30 @@ h3 { margin-top:0; }
   </div>
 </div>
 
+<!-- Lista de usuarios -->
+<div class="card">
+<h3>👤 Usuarios</h3>
+<div id="listaUsuarios"></div>
+</div>
+
 <!-- Lista de solicitudes -->
 <div class="card">
 <h3>📋 Solicitudes</h3>
 <div id="listaSolicitudes"></div>
 </div>
 
+<div class="grid">
+  <!-- Gráfica Estados -->
+  <div class="card">
+    <h3>Solicitudes por Estado</h3>
+    <canvas id="chartEstados"></canvas>
+  </div>
+
+  <!-- Gráfica Gerencias -->
+  <div class="card">
+    <h3>Solicitudes por Gerencia</h3>
+    <canvas id="chartGerencias"></canvas>
+  </div>
 </div>
 
 <script>
@@ -103,7 +142,56 @@ async function subirArchivo(file){
   return data.secure_url;
 }
 
-// 🔹 Crear solicitud
+// 🔹 Crear Usuario
+async function crearUsuario(){
+  let nombre = document.getElementById("uNombre").value;
+  let correo = document.getElementById("uCorreo").value;
+  let pass = document.getElementById("uPass").value;
+  let gerencia = document.getElementById("uGerencia").value;
+  let departamento = document.getElementById("uDepartamento").value;
+  let permisos = Array.from(document.getElementById("uPermisos").selectedOptions).map(o=>o.value);
+
+  if(!nombre || !correo || !pass) { alert("Completa todos los campos"); return; }
+
+  await db.collection("usuarios").add({nombre, correo, pass, gerencia, departamento, permisos});
+  document.getElementById("uNombre").value="";
+  document.getElementById("uCorreo").value="";
+  document.getElementById("uPass").value="";
+  cargarUsuarios();
+}
+
+// 🔹 Cargar Usuarios
+async function cargarUsuarios(){
+  const lista = document.getElementById("listaUsuarios");
+  lista.innerHTML = "";
+  let snap = await db.collection("usuarios").get();
+  lista.innerHTML = "<table><tr><th>Nombre</th><th>Correo</th><th>Contraseña</th><th>Gerencia</th><th>Departamento</th><th>Permisos</th><th>Acciones</th></tr>";
+  snap.forEach(doc=>{
+    let u = doc.data();
+    lista.innerHTML += `<tr>
+      <td>${u.nombre}</td>
+      <td>${u.correo}</td>
+      <td>${u.pass}</td>
+      <td>${u.gerencia}</td>
+      <td>${u.departamento}</td>
+      <td>${u.permisos.join(", ")}</td>
+      <td>
+        <button onclick="eliminarUsuario('${doc.id}')">Eliminar</button>
+      </td>
+    </tr>`;
+  });
+  lista.innerHTML += "</table>";
+}
+
+// 🔹 Eliminar Usuario
+async function eliminarUsuario(id){
+  let motivo = prompt("Motivo de eliminación:");
+  if(!motivo) return;
+  await db.collection("usuarios").doc(id).delete();
+  cargarUsuarios();
+}
+
+// 🔹 Crear Solicitud
 async function crearSolicitud(){
   let url = "";
   let file = document.getElementById("archivo").files[0];
@@ -132,13 +220,15 @@ async function crearSolicitud(){
   cargarSolicitudes();
 }
 
-// 🔹 Cargar solicitudes
+// 🔹 Cargar Solicitudes
 async function cargarSolicitudes(){
   const lista = document.getElementById("listaSolicitudes");
   lista.innerHTML = "";
   let snap = await db.collection("solicitudes").orderBy("fecha","desc").get();
   let estadosGrafica = {};
   let gerenciasGrafica = {};
+
+  lista.innerHTML = "<table><tr><th>Título</th><th>Usuario</th><th>Gerencia</th><th>Estado</th><th>Documentos</th><th>Acciones</th></tr>";
 
   snap.forEach(doc=>{
     let d = doc.data();
@@ -147,32 +237,33 @@ async function cargarSolicitudes(){
     estadosGrafica[d.estado] = (estadosGrafica[d.estado]||0)+1;
     gerenciasGrafica[d.gerencia] = (gerenciasGrafica[d.gerencia]||0)+1;
 
-    // Lista
-    let comentariosHtml = d.comentarios.map(c=>`<li>${c}</li>`).join("");
-    let historialHtml = d.historial.map(h=>`<li>${h.estado} - ${new Date(h.fecha.seconds*1000 || h.fecha).toLocaleString()}</li>`).join("");
+    // Documentos
+    let docsHtml = d.documentos.map(u=>`<a href="${u}" target="_blank">📎</a>`).join(" ");
 
-    lista.innerHTML += `
-    <div class="card">
-      <b>${d.titulo}</b> (${d.estado})<br>
-      <i>Gerencia:</i> ${d.gerencia} | <i>Usuario:</i> ${d.usuario}<br>
-      ${d.descripcion}<br>
-      ${d.documentos.map(u=>`<a href="${u}" target="_blank">📎 Documento</a>`).join(" ")}<br><br>
-
+    // Acciones
+    let acciones = `
       <select onchange="cambiarEstado('${doc.id}', this.value)">
         ${ESTADOS.map(e=>`<option ${d.estado==e?"selected":""}>${e}</option>`).join("")}
       </select>
-      <textarea placeholder="Comentario" id="c${doc.id}"></textarea>
-      <button onclick="comentar('${doc.id}')">Comentar</button>
+      <button onclick="eliminarSolicitud('${doc.id}')">Eliminar</button>
+      <button onclick="verDetalles('${doc.id}')">Ver Detalles</button>
+    `;
 
-      <h4>Historial</h4><ul>${historialHtml}</ul>
-      <h4>Comentarios</h4><ul>${comentariosHtml}</ul>
-    </div>`;
+    lista.innerHTML += `<tr>
+      <td>${d.titulo}</td>
+      <td>${d.usuario}</td>
+      <td>${d.gerencia}</td>
+      <td>${d.estado}</td>
+      <td>${docsHtml}</td>
+      <td>${acciones}</td>
+    </tr>`;
   });
+  lista.innerHTML += "</table>";
 
   generarGraficas(estadosGrafica, gerenciasGrafica);
 }
 
-// 🔹 Cambiar estado
+// 🔹 Cambiar Estado
 async function cambiarEstado(id, estado){
   await db.collection("solicitudes").doc(id).update({
     estado,
@@ -181,14 +272,27 @@ async function cambiarEstado(id, estado){
   cargarSolicitudes();
 }
 
-// 🔹 Comentar
-async function comentar(id){
-  let txt = document.getElementById("c"+id).value;
-  if(!txt) return;
-  await db.collection("solicitudes").doc(id).update({
-    comentarios: firebase.firestore.FieldValue.arrayUnion(txt)
-  });
-  document.getElementById("c"+id).value="";
+// 🔹 Ver Detalles Solicitud
+async function verDetalles(id){
+  let doc = await db.collection("solicitudes").doc(id).get();
+  let d = doc.data();
+  alert(`
+Título: ${d.titulo}
+Usuario: ${d.usuario}
+Gerencia: ${d.gerencia}
+Estado: ${d.estado}
+Descripción: ${d.descripcion}
+Documentos: ${d.documentos.join(", ")}
+Historial: ${d.historial.map(h=>h.estado+" ("+new Date(h.fecha.seconds*1000||h.fecha)+")").join("\n")}
+Comentarios: ${d.comentarios.join("\n")}
+  `);
+}
+
+// 🔹 Eliminar Solicitud
+async function eliminarSolicitud(id){
+  let motivo = prompt("Motivo de eliminación de la solicitud:");
+  if(!motivo) return;
+  await db.collection("solicitudes").doc(id).delete();
   cargarSolicitudes();
 }
 
@@ -212,6 +316,7 @@ function generarGraficas(estados, gerencias){
 }
 
 // 🔹 Inicial
+cargarUsuarios();
 cargarSolicitudes();
 </script>
 
