@@ -2,294 +2,54 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>FCI | Sistema de Gestión Documental</title>
+<title>Sistema de Gestión Documental</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
-<!-- Cloudinary -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.7/axios.min.js"></script>
-
-<!-- PDF -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-<!-- Firma -->
-<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
-
 <style>
-body{font-family:Arial;background:#f4f6f8;margin:0}
-header{background:#1e293b;color:#fff;padding:15px}
-nav button{margin:5px;padding:8px}
-section{padding:15px}
-.card{background:#fff;padding:15px;margin-bottom:15px;border-radius:6px}
-input,select,textarea,button{width:100%;padding:8px;margin-top:5px}
-table{width:100%;border-collapse:collapse}
-th,td{border:1px solid #ccc;padding:6px;text-align:left}
-canvas{border:1px solid #ccc}
-.hidden{display:none}
+body { font-family: Arial; margin:0; background:#f4f6f8; }
+header { background:#1f2937; color:white; padding:15px; }
+.container { padding:20px; }
+.card { background:white; padding:15px; border-radius:8px; margin-bottom:20px; }
+button { padding:6px 12px; cursor:pointer; }
+select, input, textarea { width:100%; margin:5px 0; padding:6px; }
+.grid { display:grid; grid-template-columns: repeat(3,1fr); gap:15px; }
 </style>
 </head>
 
 <body>
 
 <header>
-<h2>📂 Sistema de Gestión Documental FCI</h2>
-<nav>
-<button onclick="show('usuarios')">Usuarios</button>
-<button onclick="show('gerencias')">Gerencias</button>
-<button onclick="show('departamentos')">Departamentos</button>
-<button onclick="show('solicitudes')">Solicitudes</button>
-<button onclick="show('detalle')">Detalle</button>
-</nav>
+<h2>📊 Dashboard - Sistema de Gestión</h2>
 </header>
 
-<section id="usuarios" class="card">
-<h3>👤 Usuarios</h3>
-<input id="u_nombre" placeholder="Usuario">
-<input id="u_pass" placeholder="Contraseña">
-<input id="u_correo" placeholder="Correo">
-<select id="u_gerencia"></select>
-<select id="u_departamento"></select>
-<button onclick="crearUsuario()">Crear</button>
-<div id="listaUsuarios"></div>
-</section>
+<div class="container">
 
-<section id="gerencias" class="card hidden">
-<h3>🏢 Gerencias</h3>
-<input id="g_nombre" placeholder="Nombre">
-<button onclick="crearGerencia()">Crear</button>
-<div id="listaGerencias"></div>
-</section>
+<div class="grid">
+  <div class="card">
+    <h3>Solicitudes por Estado</h3>
+    <canvas id="chartEstados"></canvas>
+  </div>
 
-<section id="departamentos" class="card hidden">
-<h3>📁 Departamentos</h3>
-<input id="d_nombre" placeholder="Nombre">
-<select id="d_gerencia"></select>
-<button onclick="crearDepartamento()">Crear</button>
-<div id="listaDepartamentos"></div>
-</section>
+  <div class="card">
+    <h3>Solicitudes por Gerencia</h3>
+    <canvas id="chartGerencias"></canvas>
+  </div>
 
-<section id="solicitudes" class="card hidden">
-<h3>📝 Nueva Solicitud</h3>
+  <div class="card">
+    <h3>Crear Solicitud</h3>
+    <input id="titulo" placeholder="Título">
+    <textarea id="descripcion" placeholder="Descripción"></textarea>
+    <input type="file" id="archivo">
+    <button onclick="crearSolicitud()">Crear</button>
+  </div>
+</div>
 
-<input id="s_doc" placeholder="Nombre del documento">
-<select id="s_tipo">
-<option>Procedimiento</option>
-<option>Guía</option>
-<option>Instructivo</option>
-<option>Manual</option>
-<option>Formato</option>
-</select>
-
-<select id="s_accion">
-<option>Creación</option>
-<option>Modificación</option>
-<option>Inactivación</option>
-</select>
-
-<select id="s_gerencia"></select>
-<select id="s_departamento"></select>
-
-<textarea id="s_motivo" placeholder="Motivo"></textarea>
-<input type="file" id="s_archivo">
-
-<button onclick="crearSolicitud()">Crear Solicitud</button>
-
-<h4>📋 Listado</h4>
+<div class="card">
+<h3>📋 Solicitudes</h3>
 <div id="listaSolicitudes"></div>
-</section>
+</div>
 
-<section id="detalle" class="card hidden">
-<h3>🔍 Detalle Solicitud</h3>
-<div id="detalleSolicitud"></div>
-
-<h4>💬 Comentario</h4>
-<textarea id="comentario"></textarea>
-<button onclick="agregarComentario()">Agregar</button>
-
-<h4>🔄 Estado</h4>
-<select id="estadoSolicitud">
-<option>Pendiente</option>
-<option>Solicitud de reunión</option>
-<option>Consulta</option>
-<option>Documentado</option>
-<option>Verificado</option>
-<option>Codificado</option>
-<option>Solicitud aprobación gerente</option>
-<option>Finalizado</option>
-<option>Rechazado</option>
-</select>
-<button onclick="cambiarEstado()">Actualizar Estado</button>
-
-<h4>✍️ Firma</h4>
-<select id="tipoFirma">
-<option>documentado</option>
-<option>verificado</option>
-<option>codificado</option>
-<option>gerente</option>
-</select>
-<input id="nombreFirma" placeholder="Nombre">
-<canvas id="firmaCanvas" width="300" height="120"></canvas>
-<button onclick="limpiarFirma()">Limpiar</button>
-<button onclick="guardarFirma()">Guardar Firma</button>
-
-<button onclick="generarPDF()">📄 Generar PDF</button>
-</section>
-
-<script>
-// FIREBASE
-firebase.initializeApp({
- apiKey:"AIzaSyDdzCiachuhbE9jATz-TesPI2vUVIJrHjM",
- authDomain:"sistemadegestion-7400d.firebaseapp.com",
- projectId:"sistemadegestion-7400d"
-});
-const db = firebase.firestore();
-
-// VARIABLES
-let solicitudActiva=null;
-const firmaPad = new SignaturePad(document.getElementById("firmaCanvas"));
-
-// UI
-function show(id){
- document.querySelectorAll("section").forEach(s=>s.classList.add("hidden"));
- document.getElementById(id).classList.remove("hidden");
-}
-
-// CRUD BÁSICO
-async function crearGerencia(){
- await db.collection("gerencias").add({nombre:g_nombre.value});
- cargarTodo();
-}
-async function crearDepartamento(){
- await db.collection("departamentos").add({
-  nombre:d_nombre.value,
-  gerencia:d_gerencia.value
- });
- cargarTodo();
-}
-async function crearUsuario(){
- await db.collection("usuarios").add({
-  usuario:u_nombre.value,
-  pass:u_pass.value,
-  correo:u_correo.value,
-  gerencia:u_gerencia.value,
-  departamento:u_departamento.value
- });
- cargarTodo();
-}
-
-async function crearSolicitud(){
- let url="";
- if(s_archivo.files[0]){
-  const f=new FormData();
-  f.append("file",s_archivo.files[0]);
-  f.append("upload_preset","fci_documentos");
-  const r=await fetch("https://api.cloudinary.com/v1_1/df79cjklp/upload",{method:"POST",body:f});
-  url=(await r.json()).secure_url;
- }
- await db.collection("solicitudes").add({
-  documento:s_doc.value,
-  tipo:s_tipo.value,
-  accion:s_accion.value,
-  gerencia:s_gerencia.value,
-  departamento:s_departamento.value,
-  motivo:s_motivo.value,
-  archivo:url,
-  estado:"Pendiente",
-  comentarios:[],
-  firmas:{},
-  fecha:new Date().toLocaleString()
- });
- cargarSolicitudes();
-}
-
-// DETALLE
-function verSolicitud(id){
- solicitudActiva=id;
- show("detalle");
- db.collection("solicitudes").doc(id).get().then(d=>{
-  detalleSolicitud.innerHTML="<pre>"+JSON.stringify(d.data(),null,2)+"</pre>";
- });
-}
-
-// ESTADOS
-async function cambiarEstado(){
- await db.collection("solicitudes").doc(solicitudActiva)
- .update({estado:estadoSolicitud.value});
- verSolicitud(solicitudActiva);
-}
-
-// COMENTARIOS
-async function agregarComentario(){
- await db.collection("solicitudes").doc(solicitudActiva)
- .update({comentarios:firebase.firestore.FieldValue.arrayUnion({
-  texto:comentario.value,
-  fecha:new Date().toLocaleString()
- })});
- comentario.value="";
- verSolicitud(solicitudActiva);
-}
-
-// FIRMA
-function limpiarFirma(){firmaPad.clear();}
-async function guardarFirma(){
- const data=firmaPad.toDataURL();
- const f=new FormData();
- f.append("file",data);
- f.append("upload_preset","fci_documentos");
- const r=await fetch("https://api.cloudinary.com/v1_1/df79cjklp/image/upload",{method:"POST",body:f});
- const img=(await r.json()).secure_url;
- await db.collection("solicitudes").doc(solicitudActiva)
- .update({[`firmas.${tipoFirma.value}`]:{
-  nombre:nombreFirma.value,
-  firma:img,
-  fecha:new Date().toLocaleString()
- }});
-}
-
-// PDF
-async function generarPDF(){
- const d=(await db.collection("solicitudes").doc(solicitudActiva).get()).data();
- const {jsPDF}=window.jspdf;
- const pdf=new jsPDF();
- pdf.text("Solicitud FCI",10,10);
- pdf.text(JSON.stringify(d,null,2),10,20);
- pdf.save("solicitud.pdf");
-}
-
-// CARGAS
-function cargarTodo(){
- cargarSelects(); cargarUsuarios(); cargarSolicitudes();
-}
-function cargarSelects(){
- ["gerencias","departamentos"].forEach(c=>{
-  db.collection(c).onSnapshot(s=>{
-   document.querySelectorAll(`#u_${c.slice(0,-1)},#d_${c.slice(0,-1)},#s_${c.slice(0,-1)}`)
-   .forEach(sel=>{
-    sel.innerHTML="";
-    s.forEach(d=>sel.innerHTML+=`<option>${d.data().nombre}</option>`);
-   });
-  });
- });
-}
-function cargarUsuarios(){
- db.collection("usuarios").onSnapshot(s=>{
-  listaUsuarios.innerHTML="";
-  s.forEach(d=>listaUsuarios.innerHTML+=`<div>${d.data().usuario}</div>`);
- });
-}
-function cargarSolicitudes(){
- db.collection("solicitudes").onSnapshot(s=>{
-  listaSolicitudes.innerHTML="";
-  s.forEach(d=>listaSolicitudes.innerHTML+=
-   `<div onclick="verSolicitud('${d.id}')">${d.data().documento} - ${d.data().estado}</div>`);
- });
-}
-
-cargarTodo();
-</script>
-</body>
-</html>
+</div>
