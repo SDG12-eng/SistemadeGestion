@@ -2,320 +2,304 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Sistema de Gestión Documental - Admin</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Gestión de Documentos</title>
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+<!-- Cloudinary Upload Widget -->
+<script src="https://widget.cloudinary.com/v2.0/global/all.js" type="text/javascript"></script>
+<!-- jsPDF para PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-body { font-family: Arial; margin:0; background:#f4f6f8; }
-header { background:#1f2937; color:white; padding:15px; }
-.container { padding:20px; }
-.card { background:white; padding:15px; border-radius:8px; margin-bottom:20px; box-shadow:0 2px 5px rgba(0,0,0,0.1);}
-button { padding:6px 12px; cursor:pointer; margin-top:5px; }
-select, input, textarea { width:100%; margin:5px 0; padding:6px; }
-.grid { display:grid; grid-template-columns: repeat(2,1fr); gap:15px; }
-h3 { margin-top:0; }
-table { width:100%; border-collapse: collapse; }
-th, td { border:1px solid #ddd; padding:8px; text-align:left; }
-th { background:#f3f4f6; }
+body{font-family:sans-serif;margin:0;padding:0;background:#f4f4f4}
+h2{margin-top:0}
+.container{width:95%;max-width:1200px;margin:auto;padding:20px;background:#fff;border-radius:10px;box-shadow:0 0 10px rgba(0,0,0,0.1)}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{border:1px solid #ccc;padding:8px;text-align:left}
+th{background:#eee}
+button{padding:5px 10px;margin:2px;cursor:pointer}
+input,select,textarea{padding:5px;margin:2px;width:95%}
+section{margin-bottom:30px;padding-bottom:20px;border-bottom:1px solid #ddd}
 </style>
 </head>
-
 <body>
 
-<header>
-<h2>📊 Dashboard Admin - Sistema de Gestión Documental</h2>
-</header>
-
 <div class="container">
+<h1>Sistema de Gestión de Documentos</h1>
 
-<div class="grid">
-  <!-- Crear Usuario -->
-  <div class="card">
-    <h3>➕ Crear Usuario</h3>
-    <input id="uNombre" placeholder="Nombre">
-    <input id="uCorreo" placeholder="Correo">
-    <input id="uPass" placeholder="Contraseña">
-    <select id="uGerencia">
-      <option value="Finanzas">Finanzas</option>
-      <option value="RRHH">RRHH</option>
-      <option value="Compras">Compras</option>
-      <option value="IT">IT</option>
-      <option value="General">General</option>
-    </select>
-    <select id="uDepartamento">
-      <option value="Archivos">Archivos</option>
-      <option value="Contabilidad">Contabilidad</option>
-      <option value="Operaciones">Operaciones</option>
-      <option value="Compras">Compras</option>
-      <option value="IT">IT</option>
-    </select>
-    <select id="uPermisos" multiple>
-      <option value="realizar_solicitudes">Realizar solicitudes</option>
-      <option value="ver_solicitudes_propias">Ver solicitudes propias</option>
-      <option value="ver_solicitudes_gerencia">Ver solicitudes de gerencia</option>
-      <option value="aprobar_solicitudes">Aprobar/Rechazar solicitudes</option>
-      <option value="gestionar_usuarios">Gestionar usuarios</option>
-    </select>
-    <button onclick="crearUsuario()">Crear Usuario</button>
-  </div>
+<!-- Crear Gerencia -->
+<section>
+<h2>Crear Gerencia</h2>
+<input type="text" id="gerenciaNombre" placeholder="Nombre de Gerencia">
+<button onclick="crearGerencia()">Crear Gerencia</button>
+<table id="tablaGerencias"><thead><tr><th>Nombre</th><th>Eliminar</th></tr></thead><tbody></tbody></table>
+</section>
 
-  <!-- Crear Solicitud -->
-  <div class="card">
-    <h3>➕ Crear Solicitud</h3>
-    <input id="titulo" placeholder="Título">
-    <textarea id="descripcion" placeholder="Descripción"></textarea>
-    <input type="file" id="archivo">
-    <select id="gerenciaSelect">
-      <option value="Finanzas">Finanzas</option>
-      <option value="RRHH">RRHH</option>
-      <option value="Compras">Compras</option>
-      <option value="IT">IT</option>
-      <option value="General">General</option>
-    </select>
-    <button onclick="crearSolicitud()">Crear Solicitud</button>
-  </div>
-</div>
+<!-- Crear Departamento -->
+<section>
+<h2>Crear Departamento</h2>
+<input type="text" id="departamentoNombre" placeholder="Nombre de Departamento">
+<select id="departamentoGerencia"></select>
+<button onclick="crearDepartamento()">Crear Departamento</button>
+<table id="tablaDepartamentos"><thead><tr><th>Departamento</th><th>Gerencia</th><th>Eliminar</th></tr></thead><tbody></tbody></table>
+</section>
 
-<!-- Lista de usuarios -->
-<div class="card">
-<h3>👤 Usuarios</h3>
-<div id="listaUsuarios"></div>
-</div>
+<!-- Crear Usuario -->
+<section>
+<h2>Crear Usuario</h2>
+<input type="text" id="usuarioNombre" placeholder="Nombre de Usuario">
+<input type="text" id="usuarioCorreo" placeholder="Correo">
+<input type="password" id="usuarioPassword" placeholder="Contraseña">
+<select id="usuarioGerencia"></select>
+<select id="usuarioDepartamento"></select>
+<label>Permisos:</label>
+<label><input type="checkbox" value="solicitar" class="usuarioPermiso"> Realizar Solicitudes</label>
+<label><input type="checkbox" value="verPropias" class="usuarioPermiso"> Ver Solicitudes Propias</label>
+<label><input type="checkbox" value="verGerencia" class="usuarioPermiso"> Ver Solicitudes Gerencia</label>
+<label><input type="checkbox" value="aprobar" class="usuarioPermiso"> Aprobar/Rechazar</label>
+<label><input type="checkbox" value="gestionar" class="usuarioPermiso"> Gestionar Usuarios</label>
+<button onclick="crearUsuario()">Crear Usuario</button>
+<table id="tablaUsuarios"><thead><tr><th>Nombre</th><th>Correo</th><th>Gerencia</th><th>Departamento</th><th>Permisos</th><th>Eliminar</th></tr></thead><tbody></tbody></table>
+</section>
 
-<!-- Lista de solicitudes -->
-<div class="card">
-<h3>📋 Solicitudes</h3>
-<div id="listaSolicitudes"></div>
-</div>
+<!-- Crear Solicitud -->
+<section>
+<h2>Crear Solicitud</h2>
+<input type="text" id="solTitulo" placeholder="Nombre del Documento">
+<select id="solTipo">
+  <option>Procedimiento</option>
+  <option>Guía</option>
+  <option>Instructivo</option>
+  <option>Manual</option>
+  <option>Formato</option>
+</select>
+<select id="solAccion">
+  <option>Creación</option>
+  <option>Modificación</option>
+  <option>Inactivación</option>
+</select>
+<select id="solGerencia"></select>
+<select id="solDepartamento"></select>
+<input type="text" id="solMotivo" placeholder="Motivo">
+<input type="text" id="solUltimaVersion" placeholder="Última versión (solo si es modificación/inactivación)">
+<input type="text" id="solCodificacion" placeholder="Codificación del documento">
+<textarea id="solDescripcion" placeholder="Descripción"></textarea>
+<input type="file" id="solArchivos" multiple>
+<button onclick="crearSolicitud()">Crear Solicitud</button>
+<table id="tablaSolicitudes"><thead><tr><th>Título</th><th>Tipo</th><th>Acción</th><th>Gerencia</th><th>Departamento</th><th>Estado</th><th>Acciones</th></tr></thead><tbody></tbody></table>
+</section>
 
-<div class="grid">
-  <!-- Gráfica Estados -->
-  <div class="card">
-    <h3>Solicitudes por Estado</h3>
-    <canvas id="chartEstados"></canvas>
-  </div>
-
-  <!-- Gráfica Gerencias -->
-  <div class="card">
-    <h3>Solicitudes por Gerencia</h3>
-    <canvas id="chartGerencias"></canvas>
-  </div>
 </div>
 
 <script>
-// 🔥 FIREBASE
-firebase.initializeApp({
+// --- FIREBASE CONFIG ---
+const firebaseConfig = {
   apiKey: "AIzaSyDdzCiachuhbE9jATz-TesPI2vUVIJrHjM",
   authDomain: "sistemadegestion-7400d.firebaseapp.com",
   projectId: "sistemadegestion-7400d",
-  storageBucket: "sistemadegestion-7400d.appspot.com"
-});
+  storageBucket: "sistemadegestion-7400d.appspot.com",
+  messagingSenderId: "709030283072",
+  appId: "1:709030283072:web:5997837b36a448e9515ca5"
+};
+firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+const storage = firebase.storage();
 
-// ☁️ CLOUDINARY
-const CLOUDINARY_CLOUD = "df79cjklp";
-const UPLOAD_PRESET = "fci_documentos";
+// --- CLOUDINARY ---
+const cloudName = "df79cjklp"; // tu cloud_name
+const uploadPreset = "fci_documentos"; // tu preset
 
-// 🔹 Estados
-const ESTADOS = [
-  "pendiente",
-  "solicitud de reunión",
-  "consulta",
-  "documentado",
-  "verificado",
-  "codificado",
-  "aprobación de gerente",
-  "finalizado",
-  "rechazado"
-];
+// --- ESTADOS ---
+const ESTADOS = ["Pendiente","Solicitud de Reunión","Realizar Consultas","Solicitud 3 Firmas","Solicitud Aprobación Gerente","Finalizado"];
 
-// 🔹 Subir archivo a Cloudinary
-async function subirArchivo(file){
-  if(!file) return "";
-  let form = new FormData();
-  form.append("file", file);
-  form.append("upload_preset", UPLOAD_PRESET);
-  let res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/upload`, { method:"POST", body:form });
-  let data = await res.json();
-  return data.secure_url;
+// --- GERENCIAS ---
+function crearGerencia(){
+  let nombre = document.getElementById("gerenciaNombre").value;
+  if(!nombre) return alert("Ingrese nombre");
+  db.collection("gerencias").add({nombre});
+  document.getElementById("gerenciaNombre").value="";
+  cargarGerencias();
 }
+async function cargarGerencias(){
+  let tbody = document.querySelector("#tablaGerencias tbody");
+  let select1 = document.getElementById("departamentoGerencia");
+  let select2 = document.getElementById("usuarioGerencia");
+  let select3 = document.getElementById("solGerencia");
+  tbody.innerHTML=""; select1.innerHTML=""; select2.innerHTML=""; select3.innerHTML="";
+  let snapshot = await db.collection("gerencias").get();
+  snapshot.forEach(doc=>{
+    let g = doc.data();
+    tbody.innerHTML+=`<tr><td>${g.nombre}</td><td><button onclick="eliminarGerencia('${doc.id}')">Eliminar</button></td></tr>`;
+    let opt = `<option value="${doc.id}">${g.nombre}</option>`;
+    select1.innerHTML+=opt; select2.innerHTML+=opt; select3.innerHTML+=opt;
+  });
+}
+function eliminarGerencia(id){db.collection("gerencias").doc(id).delete(); cargarGerencias();}
 
-// 🔹 Crear Usuario
+// --- DEPARTAMENTOS ---
+function crearDepartamento(){
+  let nombre=document.getElementById("departamentoNombre").value;
+  let gerId=document.getElementById("departamentoGerencia").value;
+  if(!nombre||!gerId) return alert("Ingrese datos");
+  db.collection("departamentos").add({nombre,gerencia:gerId});
+  document.getElementById("departamentoNombre").value="";
+  cargarDepartamentos();
+}
+async function cargarDepartamentos(){
+  let tbody=document.querySelector("#tablaDepartamentos tbody");
+  let select=document.getElementById("usuarioDepartamento");
+  let selectSol=document.getElementById("solDepartamento");
+  tbody.innerHTML=""; select.innerHTML=""; selectSol.innerHTML="";
+  let snapshot=await db.collection("departamentos").get();
+  snapshot.forEach(doc=>{
+    let d=doc.data();
+    tbody.innerHTML+=`<tr><td>${d.nombre}</td><td>${d.gerencia}</td><td><button onclick="eliminarDepartamento('${doc.id}')">Eliminar</button></td></tr>`;
+    let opt=`<option value="${doc.id}">${d.nombre}</option>`;
+    select.innerHTML+=opt; selectSol.innerHTML+=opt;
+  });
+}
+function eliminarDepartamento(id){db.collection("departamentos").doc(id).delete(); cargarDepartamentos();}
+
+// --- USUARIOS ---
 async function crearUsuario(){
-  let nombre = document.getElementById("uNombre").value;
-  let correo = document.getElementById("uCorreo").value;
-  let pass = document.getElementById("uPass").value;
-  let gerencia = document.getElementById("uGerencia").value;
-  let departamento = document.getElementById("uDepartamento").value;
-  let permisos = Array.from(document.getElementById("uPermisos").selectedOptions).map(o=>o.value);
-
-  if(!nombre || !correo || !pass) { alert("Completa todos los campos"); return; }
-
-  await db.collection("usuarios").add({nombre, correo, pass, gerencia, departamento, permisos});
-  document.getElementById("uNombre").value="";
-  document.getElementById("uCorreo").value="";
-  document.getElementById("uPass").value="";
+  let nombre=document.getElementById("usuarioNombre").value;
+  let correo=document.getElementById("usuarioCorreo").value;
+  let password=document.getElementById("usuarioPassword").value;
+  let ger=document.getElementById("usuarioGerencia").value;
+  let dep=document.getElementById("usuarioDepartamento").value;
+  let permisos=[...document.querySelectorAll(".usuarioPermiso:checked")].map(e=>e.value);
+  if(!nombre||!correo||!password||!ger||!dep) return alert("Ingrese datos completos");
+  await db.collection("usuarios").add({nombre,correo,password,gerencia:ger,departamento:dep,permisos});
+  document.getElementById("usuarioNombre").value="";
+  document.getElementById("usuarioCorreo").value="";
+  document.getElementById("usuarioPassword").value="";
+  document.querySelectorAll(".usuarioPermiso").forEach(c=>c.checked=false);
   cargarUsuarios();
 }
-
-// 🔹 Cargar Usuarios
 async function cargarUsuarios(){
-  const lista = document.getElementById("listaUsuarios");
-  lista.innerHTML = "";
-  let snap = await db.collection("usuarios").get();
-  lista.innerHTML = "<table><tr><th>Nombre</th><th>Correo</th><th>Contraseña</th><th>Gerencia</th><th>Departamento</th><th>Permisos</th><th>Acciones</th></tr>";
-  snap.forEach(doc=>{
-    let u = doc.data();
-    lista.innerHTML += `<tr>
-      <td>${u.nombre}</td>
-      <td>${u.correo}</td>
-      <td>${u.pass}</td>
-      <td>${u.gerencia}</td>
-      <td>${u.departamento}</td>
-      <td>${u.permisos.join(", ")}</td>
-      <td>
-        <button onclick="eliminarUsuario('${doc.id}')">Eliminar</button>
-      </td>
+  let tbody=document.querySelector("#tablaUsuarios tbody");
+  tbody.innerHTML="";
+  let snapshot=await db.collection("usuarios").get();
+  snapshot.forEach(doc=>{
+    let u=doc.data();
+    tbody.innerHTML+=`<tr>
+      <td>${u.nombre}</td><td>${u.correo}</td><td>${u.gerencia}</td><td>${u.departamento}</td><td>${u.permisos.join(", ")}</td>
+      <td><button onclick="eliminarUsuario('${doc.id}')">Eliminar</button></td>
     </tr>`;
   });
-  lista.innerHTML += "</table>";
 }
+function eliminarUsuario(id){db.collection("usuarios").doc(id).delete(); cargarUsuarios();}
 
-// 🔹 Eliminar Usuario
-async function eliminarUsuario(id){
-  let motivo = prompt("Motivo de eliminación:");
-  if(!motivo) return;
-  await db.collection("usuarios").doc(id).delete();
-  cargarUsuarios();
-}
-
-// 🔹 Crear Solicitud
+// --- SOLICITUDES ---
 async function crearSolicitud(){
-  let url = "";
-  let file = document.getElementById("archivo").files[0];
-  if(file) url = await subirArchivo(file);
-
-  let titulo = document.getElementById("titulo").value;
-  let descripcion = document.getElementById("descripcion").value;
-  let gerencia = document.getElementById("gerenciaSelect").value;
+  let titulo=document.getElementById("solTitulo").value;
+  let tipo=document.getElementById("solTipo").value;
+  let accion=document.getElementById("solAccion").value;
+  let ger=document.getElementById("solGerencia").value;
+  let dep=document.getElementById("solDepartamento").value;
+  let motivo=document.getElementById("solMotivo").value;
+  let ultVersion=document.getElementById("solUltimaVersion").value;
+  let codificacion=document.getElementById("solCodificacion").value;
+  let descripcion=document.getElementById("solDescripcion").value;
+  if(!titulo||!tipo||!accion||!ger||!dep) return alert("Faltan datos");
+  
+  // Subir archivos a Cloudinary
+  let archivos=document.getElementById("solArchivos").files;
+  let urls=[];
+  for(let i=0;i<archivos.length;i++){
+    let fd=new FormData();
+    fd.append("file",archivos[i]);
+    fd.append("upload_preset",uploadPreset);
+    let res=await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload`,{method:"POST",body:fd});
+    let data=await res.json();
+    urls.push(data.secure_url);
+  }
 
   await db.collection("solicitudes").add({
-    titulo,
-    descripcion,
-    usuario: "Admin",
-    gerencia,
-    estado: "pendiente",
-    fechaReunion: "",
-    documentos: url ? [url] : [],
-    comentarios: [],
-    historial: [{estado:"pendiente", fecha:new Date()}],
-    fecha: new Date()
+    titulo,tipo,accion,gerencia:ger,departamento:dep,motivo,ultVersion,codificacion,descripcion,
+    documentos:urls,estado:"Pendiente",fecha:new Date(),historial:[],comentarios:[]
   });
-
-  document.getElementById("titulo").value="";
-  document.getElementById("descripcion").value="";
-  document.getElementById("archivo").value="";
+  document.getElementById("solTitulo").value="";
+  document.getElementById("solMotivo").value="";
+  document.getElementById("solUltimaVersion").value="";
+  document.getElementById("solCodificacion").value="";
+  document.getElementById("solDescripcion").value="";
+  document.getElementById("solArchivos").value="";
   cargarSolicitudes();
 }
 
-// 🔹 Cargar Solicitudes
 async function cargarSolicitudes(){
-  const lista = document.getElementById("listaSolicitudes");
-  lista.innerHTML = "";
-  let snap = await db.collection("solicitudes").orderBy("fecha","desc").get();
-  let estadosGrafica = {};
-  let gerenciasGrafica = {};
-
-  lista.innerHTML = "<table><tr><th>Título</th><th>Usuario</th><th>Gerencia</th><th>Estado</th><th>Documentos</th><th>Acciones</th></tr>";
-
-  snap.forEach(doc=>{
-    let d = doc.data();
-
-    // Graficas
-    estadosGrafica[d.estado] = (estadosGrafica[d.estado]||0)+1;
-    gerenciasGrafica[d.gerencia] = (gerenciasGrafica[d.gerencia]||0)+1;
-
-    // Documentos
-    let docsHtml = d.documentos.map(u=>`<a href="${u}" target="_blank">📎</a>`).join(" ");
-
-    // Acciones
+  let tbody=document.querySelector("#tablaSolicitudes tbody");
+  tbody.innerHTML="";
+  let snapshot=await db.collection("solicitudes").get();
+  snapshot.forEach(doc=>{
+    let s=doc.data();
     let acciones = `
       <select onchange="cambiarEstado('${doc.id}', this.value)">
-        ${ESTADOS.map(e=>`<option ${d.estado==e?"selected":""}>${e}</option>`).join("")}
+        ${ESTADOS.map(e=>`<option ${s.estado==e?"selected":""}>${e}</option>`).join("")}
       </select>
       <button onclick="eliminarSolicitud('${doc.id}')">Eliminar</button>
       <button onclick="verDetalles('${doc.id}')">Ver Detalles</button>
+      <button onclick="generarPDF('${doc.id}')">📄 PDF</button>
     `;
-
-    lista.innerHTML += `<tr>
-      <td>${d.titulo}</td>
-      <td>${d.usuario}</td>
-      <td>${d.gerencia}</td>
-      <td>${d.estado}</td>
-      <td>${docsHtml}</td>
-      <td>${acciones}</td>
+    tbody.innerHTML+=`<tr>
+      <td>${s.titulo}</td><td>${s.tipo}</td><td>${s.accion}</td><td>${s.gerencia}</td><td>${s.departamento}</td><td>${s.estado}</td><td>${acciones}</td>
     </tr>`;
   });
-  lista.innerHTML += "</table>";
-
-  generarGraficas(estadosGrafica, gerenciasGrafica);
 }
 
-// 🔹 Cambiar Estado
-async function cambiarEstado(id, estado){
-  await db.collection("solicitudes").doc(id).update({
-    estado,
-    historial: firebase.firestore.FieldValue.arrayUnion({estado, fecha:new Date()})
-  });
+function eliminarSolicitud(id){db.collection("solicitudes").doc(id).delete(); cargarSolicitudes();}
+function verDetalles(id){alert("Se puede implementar modal con todos los detalles, comentarios e historial.");}
+async function cambiarEstado(id,estado){
+  let docRef=db.collection("solicitudes").doc(id);
+  await docRef.update({estado});
+  let docSnap=await docRef.get();
+  let historial=docSnap.data().historial||[];
+  historial.push({estado,fecha:new Date()});
+  await docRef.update({historial});
   cargarSolicitudes();
 }
 
-// 🔹 Ver Detalles Solicitud
-async function verDetalles(id){
-  let doc = await db.collection("solicitudes").doc(id).get();
-  let d = doc.data();
-  alert(`
-Título: ${d.titulo}
-Usuario: ${d.usuario}
-Gerencia: ${d.gerencia}
-Estado: ${d.estado}
-Descripción: ${d.descripcion}
-Documentos: ${d.documentos.join(", ")}
-Historial: ${d.historial.map(h=>h.estado+" ("+new Date(h.fecha.seconds*1000||h.fecha)+")").join("\n")}
-Comentarios: ${d.comentarios.join("\n")}
-  `);
+// --- PDF ---
+async function generarPDF(id){
+  const { jsPDF } = window.jspdf;
+  let docRef=await db.collection("solicitudes").doc(id).get();
+  let s=docRef.data();
+  if(!s){ alert("No se encontró la solicitud"); return; }
+  const pdf=new jsPDF();
+  pdf.setFontSize(16);
+  pdf.text("Reporte de Solicitud",105,15,{align:"center"});
+  pdf.setFontSize(12);
+  pdf.text(`Título: ${s.titulo}`,10,30);
+  pdf.text(`Usuario: ${s.usuario||"N/A"}`,10,40);
+  pdf.text(`Gerencia: ${s.gerencia}`,10,50);
+  pdf.text(`Estado: ${s.estado}`,10,60);
+  pdf.text(`Fecha: ${new Date(s.fecha.seconds*1000||s.fecha).toLocaleString()}`,10,70);
+  pdf.text("Descripción:",10,80);
+  pdf.text(s.descripcion,10,90,{maxWidth:190});
+  if(s.documentos && s.documentos.length){
+    pdf.text("Documentos:",10,120);
+    s.documentos.forEach((u,i)=>pdf.text(`${i+1}. ${u}`,10,130+i*10));
+  }
+  if(s.historial && s.historial.length){
+    pdf.text("Historial de estados:",10,160);
+    s.historial.forEach((h,i)=>{
+      let fecha=new Date(h.fecha.seconds*1000||h.fecha).toLocaleString();
+      pdf.text(`${i+1}. ${h.estado} - ${fecha}`,10,170+i*10);
+    });
+  }
+  if(s.comentarios && s.comentarios.length){
+    pdf.text("Comentarios:",10,220);
+    s.comentarios.forEach((c,i)=>pdf.text(`${i+1}. ${c}`,10,230+i*10));
+  }
+  pdf.save(`${s.titulo}.pdf`);
 }
 
-// 🔹 Eliminar Solicitud
-async function eliminarSolicitud(id){
-  let motivo = prompt("Motivo de eliminación de la solicitud:");
-  if(!motivo) return;
-  await db.collection("solicitudes").doc(id).delete();
-  cargarSolicitudes();
-}
-
-// 🔹 Generar gráficas
-function generarGraficas(estados, gerencias){
-  new Chart(document.getElementById("chartEstados"), {
-    type:"pie",
-    data:{
-      labels:Object.keys(estados),
-      datasets:[{data:Object.values(estados), backgroundColor:["#f87171","#fb923c","#facc15","#4ade80","#22d3ee","#818cf8","#a78bfa","#f472b6","#cbd5e1"]}]
-    }
-  });
-
-  new Chart(document.getElementById("chartGerencias"), {
-    type:"bar",
-    data:{
-      labels:Object.keys(gerencias),
-      datasets:[{label:"Solicitudes por Gerencia", data:Object.values(gerencias), backgroundColor:"#60a5fa"}]
-    }
-  });
-}
-
-// 🔹 Inicial
+// --- CARGAR INICIAL ---
+cargarGerencias();
+cargarDepartamentos();
 cargarUsuarios();
 cargarSolicitudes();
 </script>
