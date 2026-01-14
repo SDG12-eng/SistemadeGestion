@@ -21,7 +21,7 @@
         label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 12px; color: #555; }
         input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
         .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .btn-p { background: var(--primary); color: white; width: 100%; }
+        .btn-p { background: var(--primary); color: white; }
         .btn-s { background: var(--success); color: white; }
         .btn-d { background: var(--danger); color: white; }
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 2000; }
@@ -29,16 +29,18 @@
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
         .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; }
+        .st-pendiente { background: #fff3e0; color: #ef6c00; }
+        .st-finalizado { background: #e8f5e9; color: #2e7d32; }
     </style>
 </head>
 <body>
 
-<div id="view-login" class="login-screen" style="height:100vh; display:flex; align-items:center; justify-content:center; background: linear-gradient(135deg, var(--primary), var(--secondary));">
+<div id="view-login" style="height:100vh; display:flex; align-items:center; justify-content:center; background: linear-gradient(135deg, var(--primary), var(--secondary));">
     <div class="card" style="width:350px; text-align:center;">
         <h2 style="color:var(--primary)">FCI LOGISTIX</h2>
         <input type="text" id="logUser" placeholder="Usuario" style="margin-bottom:10px;">
         <input type="password" id="logPass" placeholder="Contraseña" style="margin-bottom:20px;">
-        <button class="btn btn-p" onclick="handleLogin()">INGRESAR</button>
+        <button class="btn btn-p" style="width:100%" onclick="handleLogin()">INGRESAR</button>
         <button onclick="setupSystem()" style="margin-top:20px; background:none; border:none; color:#bbb; font-size:10px; cursor:pointer;">⚡ Inicializar Base de Datos</button>
     </div>
 </div>
@@ -57,17 +59,9 @@
     </nav>
 
     <main class="content">
-        <div id="tab-dash" class="tab-content">
-            <div class="form-grid" style="grid-template-columns: repeat(3, 1fr);">
-                <div class="card" style="text-align:center;"><h3>Total</h3><p id="c-total" style="font-size:24px;">0</p></div>
-                <div class="card" style="text-align:center; color:orange;"><h3>Pendientes</h3><p id="c-pend" style="font-size:24px;">0</p></div>
-                <div class="card" style="text-align:center; color:green;"><h3>Finalizados</h3><p id="c-fin" style="font-size:24px;">0</p></div>
-            </div>
-        </div>
-
         <div id="tab-sol" class="tab-content hidden">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                <h2>Solicitudes</h2>
+                <h2>Gestión de Solicitudes</h2>
                 <button class="btn btn-s" onclick="openModal('modal-req')">+ Nueva Solicitud</button>
             </div>
             <div class="card">
@@ -79,20 +73,20 @@
         </div>
 
         <div id="tab-users" class="tab-content hidden">
-            <h2>Gestión de Usuarios</h2>
+            <h2>Usuarios del Sistema</h2>
             <div class="card">
                 <div class="form-grid">
                     <div><label>Nombre Completo</label><input type="text" id="u-nom"></div>
-                    <div><label>Usuario (Login)</label><input type="text" id="u-user"></div>
-                    <div><label>Contraseña</label><input type="password" id="u-pass"></div>
+                    <div><label>Login</label><input type="text" id="u-user"></div>
+                    <div><label>Pass</label><input type="password" id="u-pass"></div>
                     <div><label>Rol</label><select id="u-rol"><option>Solicitante</option><option>Gerente</option><option>Admin</option></select></div>
                     <div class="full"><label>Gerencia</label><select id="u-ger"></select></div>
-                    <button class="btn btn-p full" onclick="saveUser()">Crear Usuario</button>
+                    <button class="btn btn-p full" onclick="saveUser()">Guardar Usuario</button>
                 </div>
             </div>
             <div class="card">
                 <table id="table-u">
-                    <thead><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Acción</th></tr></thead>
+                    <thead><tr><th>Nombre</th><th>Rol</th><th>Gerencia</th><th>Borrar</th></tr></thead>
                     <tbody></tbody>
                 </table>
             </div>
@@ -102,13 +96,13 @@
             <div class="form-grid">
                 <div class="card">
                     <h3>Gerencias</h3>
-                    <div style="display:flex; gap:10px;"><input type="text" id="o-ger" placeholder="Nombre..."><button class="btn btn-p" onclick="addOrg('gerencias', 'o-ger')">+</button></div>
+                    <div style="display:flex; gap:10px;"><input type="text" id="o-ger"><button class="btn btn-p" onclick="addOrg('gerencias', 'o-ger')">+</button></div>
                     <ul id="list-ger" style="margin-top:15px; list-style:none; padding:0;"></ul>
                 </div>
                 <div class="card">
                     <h3>Departamentos</h3>
                     <label>Gerencia Padre</label><select id="o-parent" style="margin-bottom:10px;"></select>
-                    <div style="display:flex; gap:10px;"><input type="text" id="o-dep" placeholder="Nombre..."><button class="btn btn-p" onclick="addOrg('departamentos', 'o-dep', 'o-parent')">+</button></div>
+                    <div style="display:flex; gap:10px;"><input type="text" id="o-dep"><button class="btn btn-p" onclick="addOrg('departamentos', 'o-dep', 'o-parent')">+</button></div>
                     <ul id="list-dep" style="margin-top:15px; list-style:none; padding:0;"></ul>
                 </div>
             </div>
@@ -122,21 +116,36 @@
         <div class="form-grid">
             <div class="full"><label>Título del Documento</label><input type="text" id="s-tit"></div>
             <div><label>Tipo</label><select id="s-tipo"><option>Procedimiento</option><option>Manual</option><option>Instructivo</option></select></div>
-            <div><label>Acción</label><select id="s-acc"><option>Creación</option><option>Modificación</option><option>Inactivación</option></select></div>
-            
-            <div><label>Última Versión</label><input type="text" id="s-ver" placeholder="Ej: v1.2"></div>
+            <div><label>Acción</label><select id="s-acc"><option>Creación</option><option>Modificación</option></select></div>
+            <div><label>Última Versión</label><input type="text" id="s-ver"></div>
             <div><label>Fecha Última Versión</label><input type="date" id="s-fver"></div>
-            
             <div><label>Gerencia Destino</label><select id="s-ger" onchange="loadDepsForForm(this.value)"></select></div>
             <div><label>Departamento</label><select id="s-dep"></select></div>
-            
-            <div class="full"><label>Justificación del Cambio</label><textarea id="s-just" rows="2"></textarea></div>
-            <div class="full"><label>Descripción Detallada</label><textarea id="s-desc" rows="4"></textarea></div>
+            <div class="full"><label>Justificación</label><textarea id="s-just" rows="2"></textarea></div>
+            <div class="full"><label>Descripción</label><textarea id="s-desc" rows="3"></textarea></div>
+            <div class="full"><label>Adjuntar Documento (URL/Ref)</label><input type="text" id="s-file" placeholder="Enlace al borrador o archivo"></div>
         </div>
         <div style="margin-top:20px; display:flex; gap:10px;">
-            <button class="btn btn-s" onclick="submitSol()">🚀 Enviar</button>
-            <button class="btn" onclick="closeModal()" style="background:#eee;">Cancelar</button>
+            <button class="btn btn-s" onclick="submitSol()">Enviar Solicitud</button>
+            <button class="btn" onclick="closeModal()" style="background:#eee;">Cerrar</button>
         </div>
+    </div>
+</div>
+
+<div id="modal-view" class="modal hidden">
+    <div class="modal-body">
+        <h2 id="v-title" style="margin-top:0;">Detalles de Solicitud</h2>
+        <div id="v-details" style="font-size:14px; line-height:1.6; background:#f9f9f9; padding:15px; border-radius:8px;"></div>
+        <hr>
+        <div id="v-admin-panel" class="hidden">
+            <label>Cambiar Estado:</label>
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button class="btn btn-s" onclick="updateStatus('Aprobado')">Aprobar</button>
+                <button class="btn btn-p" onclick="updateStatus('Finalizado')">Finalizar</button>
+                <button class="btn btn-d" onclick="updateStatus('Rechazado')">Rechazar</button>
+            </div>
+        </div>
+        <button class="btn" onclick="closeModal()" style="margin-top:20px; width:100%; background:#666; color:white;">Cerrar</button>
     </div>
 </div>
 
@@ -151,19 +160,18 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-
 let currentUser = null;
+let activeDocId = null;
 
 async function setupSystem() {
-    await db.collection("Users").doc("admin").set({ nombre: "Admin Maestro", user: "admin", pass: "123456", rol: "Admin", gerencia: "SGC" });
+    await db.collection("Users").doc("admin").set({ nombre: "Administrador Maestro", user: "admin", pass: "123456", rol: "Admin", gerencia: "SGC" });
     await db.collection("Config").doc("counts").set({ val: 0 });
-    alert("Admin: admin / 123456");
+    alert("Inicializado: admin / 123456");
 }
 
 async function handleLogin() {
     const u = document.getElementById("logUser").value;
     const p = document.getElementById("logPass").value;
-    // Búsqueda exacta para evitar errores de credenciales
     const snap = await db.collection("Users").where("user","==",u).where("pass","==",p).get();
     if(!snap.empty) {
         currentUser = { id: snap.docs[0].id, ...snap.docs[0].data() };
@@ -172,58 +180,75 @@ async function handleLogin() {
         document.getElementById("userDisplay").innerText = currentUser.nombre;
         if(currentUser.rol === "Admin") document.querySelectorAll(".admin-only").forEach(e => e.classList.remove("hidden"));
         loadData();
-    } else alert("Credenciales incorrectas");
+    } else alert("Error de acceso");
 }
 
 function loadData() {
-    // Sincronización de Gerencias
     db.collection("gerencias").onSnapshot(s => {
         let opt = '<option value="">Seleccione...</option>';
-        s.forEach(doc => opt += `<option value="${doc.data().nombre}">${doc.data().nombre}</option>`);
+        const list = document.getElementById("list-ger"); list.innerHTML = "";
+        s.forEach(doc => {
+            opt += `<option value="${doc.data().nombre}">${doc.data().nombre}</option>`;
+            list.innerHTML += `<li>${doc.data().nombre} <button onclick="delDoc('gerencias','${doc.id}')">x</button></li>`;
+        });
         ["u-ger", "o-parent", "s-ger"].forEach(id => document.getElementById(id).innerHTML = opt);
     });
 
-    // Sincronización de Solicitudes
-    db.collection("Solicitudes").onSnapshot(s => {
+    db.collection("departamentos").onSnapshot(s => {
+        const list = document.getElementById("list-dep"); list.innerHTML = "";
+        s.forEach(doc => list.innerHTML += `<li>${doc.data().nombre} (${doc.data().parent}) <button onclick="delDoc('departamentos','${doc.id}')">x</button></li>`);
+    });
+
+    db.collection("Solicitudes").orderBy("fecha", "desc").onSnapshot(s => {
         const tbody = document.getElementById("tbody-sol"); tbody.innerHTML = "";
         s.forEach(doc => {
             const d = doc.data();
-            tbody.innerHTML += `<tr><td>${d.fciId}</td><td>${d.titulo}</td><td>${d.tipo}</td><td>${d.estado}</td><td><button onclick="alert('Detalles pronto')">Ver</button></td></tr>`;
+            tbody.innerHTML += `<tr><td>${d.fciId}</td><td>${d.titulo}</td><td>${d.tipo}</td><td><span class="badge st-${d.estado.toLowerCase()}">${d.estado}</span></td><td><button onclick="viewDoc('${doc.id}')">Ver</button></td></tr>`;
         });
     });
 
-    // Lista de Usuarios para Admin
-    if(currentUser.rol === "Admin") {
-        db.collection("Users").onSnapshot(s => {
-            const tb = document.querySelector("#table-u tbody"); tb.innerHTML = "";
-            s.forEach(doc => {
-                const u = doc.data();
-                tb.innerHTML += `<tr><td>${u.nombre}</td><td>${u.user}</td><td>${u.rol}</td><td><button onclick="db.collection('Users').doc('${doc.id}').delete()">x</button></td></tr>`;
-            });
+    db.collection("Users").onSnapshot(s => {
+        const tb = document.querySelector("#table-u tbody"); tb.innerHTML = "";
+        s.forEach(doc => {
+            const u = doc.data();
+            tb.innerHTML += `<tr><td>${u.nombre || u.name}</td><td>${u.rol}</td><td>${u.gerencia}</td><td><button onclick="delDoc('Users','${doc.id}')">x</button></td></tr>`;
         });
-    }
+    });
 }
 
 async function submitSol() {
     const idFci = await getNextID();
     await db.collection("Solicitudes").add({
-        fciId: idFci,
-        titulo: document.getElementById("s-tit").value,
-        tipo: document.getElementById("s-tipo").value,
-        accion: document.getElementById("s-acc").value,
-        version: document.getElementById("s-ver").value,
-        fechaVersion: document.getElementById("s-fver").value,
-        gerencia: document.getElementById("s-ger").value,
-        departamento: document.getElementById("s-dep").value,
-        justificacion: document.getElementById("s-just").value,
-        descripcion: document.getElementById("s-desc").value,
-        estado: "Pendiente",
-        uid: currentUser.id,
-        userName: currentUser.nombre,
-        fecha: new Date()
+        fciId: idFci, titulo: document.getElementById("s-tit").value, tipo: document.getElementById("s-tipo").value,
+        accion: document.getElementById("s-acc").value, version: document.getElementById("s-ver").value,
+        fechaVersion: document.getElementById("s-fver").value, gerencia: document.getElementById("s-ger").value,
+        departamento: document.getElementById("s-dep").value, justificacion: document.getElementById("s-just").value,
+        descripcion: document.getElementById("s-desc").value, file: document.getElementById("s-file").value,
+        estado: "Pendiente", uid: currentUser.id, userName: currentUser.nombre, fecha: new Date()
     });
     closeModal();
-    alert("Solicitud Enviada");
+}
+
+async function viewDoc(id) {
+    activeDocId = id;
+    const doc = await db.collection("Solicitudes").doc(id).get();
+    const d = doc.data();
+    document.getElementById("v-title").innerText = d.fciId + " - " + d.titulo;
+    document.getElementById("v-details").innerHTML = `
+        <p><strong>Tipo:</strong> ${d.tipo} | <strong>Acción:</strong> ${d.accion}</p>
+        <p><strong>Versión Actual:</strong> ${d.version} (${d.fechaVersion})</p>
+        <p><strong>Área:</strong> ${d.gerencia} / ${d.departamento}</p>
+        <p><strong>Justificación:</strong> ${d.justificacion}</p>
+        <p><strong>Descripción:</strong> ${d.descripcion}</p>
+        <p><strong>Archivo:</strong> <a href="${d.file}" target="_blank">Ver Adjunto</a></p>
+    `;
+    if(currentUser.rol !== "Solicitante") document.getElementById("v-admin-panel").classList.remove("hidden");
+    openModal("modal-view");
+}
+
+async function updateStatus(st) {
+    await db.collection("Solicitudes").doc(activeDocId).update({ estado: st });
+    closeModal();
 }
 
 async function loadDepsForForm(ger) {
@@ -240,7 +265,7 @@ function saveUser() {
         rol: document.getElementById("u-rol").value,
         gerencia: document.getElementById("u-ger").value
     });
-    alert("Usuario Creado con Éxito");
+    alert("Usuario Creado");
 }
 
 async function getNextID() {
@@ -251,12 +276,11 @@ async function getNextID() {
     return "FCI-SGD-" + n.toString().padStart(4, '0');
 }
 
-function addOrg(col, inpId, parentId = null) {
+function addOrg(col, inpId, pId=null) {
     const val = document.getElementById(inpId).value;
     const data = { nombre: val };
-    if(parentId) data.parent = document.getElementById(parentId).value;
+    if(pId) data.parent = document.getElementById(pId).value;
     db.collection(col).add(data);
-    document.getElementById(inpId).value = "";
 }
 
 function switchTab(e, id) {
@@ -267,6 +291,7 @@ function switchTab(e, id) {
 }
 function openModal(id) { document.getElementById(id).classList.remove("hidden"); }
 function closeModal() { document.querySelectorAll(".modal").forEach(m => m.classList.add("hidden")); }
+function delDoc(c,i) { if(confirm("¿Eliminar?")) db.collection(c).doc(i).delete(); }
 </script>
 </body>
 </html>
