@@ -3,116 +3,134 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistema de Gestión de Documentos - Dashboard</title>
+<title>Sistema de Gestión de Documentos - FCI</title>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 <script src="https://widget.cloudinary.com/v2.0/global/all.js" type="text/javascript"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-body{font-family:sans-serif;margin:0;padding:0;background:#f4f4f4}
-.container{width:95%;max-width:1200px;margin:auto;padding:20px;background:#fff;border-radius:10px;box-shadow:0 0 10px rgba(0,0,0,0.1)}
-table{width:100%;border-collapse:collapse;margin-top:10px}
-th,td{border:1px solid #ccc;padding:8px;text-align:left}
-th{background:#eee}
-button{padding:5px 10px;margin:2px;cursor:pointer; background: #007bff; color: white; border: none; border-radius: 3px;}
-input,select,textarea{padding:5px;margin:2px;width:95%}
+body{font-family:sans-serif;margin:0;padding:0;background:#f4f4f4;color:#333}
+.container{width:95%;max-width:1200px;margin:auto;padding:15px;background:#fff;border-radius:10px;box-shadow:0 0 10px rgba(0,0,0,0.1)}
+h1, h2{color:#0056b3}
 section{margin-bottom:30px;padding-bottom:20px;border-bottom:1px solid #ddd}
 
-/* Estilos Dashboard */
+/* Tablas Responsivas */
+.table-container { width: 100%; overflow-x: auto; margin-top: 10px; border: 1px solid #ccc; }
+table{width:100%; border-collapse:collapse; min-width: 600px;}
+th,td{border:1px solid #eee;padding:10px;text-align:left; font-size: 14px;}
+th{background:#0056b3; color: white;}
+
+/* Formularios */
+input,select,textarea{padding:8px;margin:5px 0;width:100%;box-sizing:border-box;border:1px solid #ccc;border-radius:4px}
+button{padding:10px 15px;cursor:pointer; background:#007bff; color:white; border:none; border-radius:4px; font-weight:bold}
+button:hover{background:#0056b3}
+.btn-delete{background:#dc3545}
+
+/* Dashboard */
 .dashboard{display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;}
-.card{flex: 1; min-width: 150px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 8px; text-align: center;}
-.card h3{margin: 0; font-size: 0.9em; color: #666;}
-.card p{margin: 5px 0 0; font-size: 1.5em; font-weight: bold; color: #007bff;}
+.card{flex: 1; min-width: 140px; padding: 15px; background: #ebf5ff; border-radius: 8px; text-align: center; border: 1px solid #b3d7ff;}
+.card p{margin: 5px 0 0; font-size: 1.5em; font-weight: bold; color: #0056b3;}
+.id-badge { background: #333; color: #fff; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
 </style>
 </head>
 <body>
 
 <div class="container">
-<h1>Sistema de Gestión de Documentos</h1>
+    <h1>FCI - Gestión de Documentos</h1>
 
-<section>
-    <h2>Dashboard de Control</h2>
-    <div class="dashboard" id="statsContainer">
-        <div class="card"><h3>Total</h3><p id="stat-total">0</p></div>
-        <div class="card"><h3>Pendientes</h3><p id="stat-Pendiente">0</p></div>
-        <div class="card"><h3>En Revisión</h3><p id="stat-Revision">0</p></div>
-        <div class="card"><h3>Finalizados</h3><p id="stat-Finalizado">0</p></div>
-    </div>
-</section>
-
-<section>
-    <h2>Configuración de Organización</h2>
-    <input type="text" id="gerenciaNombre" placeholder="Nueva Gerencia">
-    <button onclick="crearGerencia()">+ Gerencia</button>
-    <hr>
-    <input type="text" id="departamentoNombre" placeholder="Nuevo Departamento">
-    <select id="departamentoGerencia"></select>
-    <button onclick="crearDepartamento()">+ Departamento</button>
-</section>
-
-<section style="display: flex; gap: 20px;">
-    <div style="flex:1">
-        <h3>Gerencias</h3>
-        <table id="tablaGerencias"><thead><tr><th>Nombre</th><th>Acción</th></tr></thead><tbody></tbody></table>
-    </div>
-    <div style="flex:1">
-        <h3>Departamentos</h3>
-        <table id="tablaDepartamentos"><thead><tr><th>Depto</th><th>ID Gerencia</th><th>Acción</th></tr></thead><tbody></tbody></table>
-    </div>
-</section>
-
-<section>
-    <h2>Gestión de Usuarios</h2>
-    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-        <input type="text" id="usuarioNombre" placeholder="Nombre Completo">
-        <input type="text" id="usuarioCorreo" placeholder="Correo electrónico">
-        <input type="password" id="usuarioPassword" placeholder="Contraseña">
-        <div>
-            <select id="usuarioGerencia"></select>
-            <select id="usuarioDepartamento"></select>
+    <section>
+        <div class="dashboard">
+            <div class="card"><h3>Total</h3><p id="stat-total">0</p></div>
+            <div class="card"><h3>Pendientes</h3><p id="stat-Pendiente">0</p></div>
+            <div class="card"><h3>En Proceso</h3><p id="stat-Revision">0</p></div>
+            <div class="card"><h3>Finalizados</h3><p id="stat-Finalizado">0</p></div>
         </div>
-    </div>
-    <div style="margin: 10px 0;">
-        <label><input type="checkbox" value="solicitar" class="usuarioPermiso"> Solicitar</label>
-        <label><input type="checkbox" value="aprobar" class="usuarioPermiso"> Aprobar</label>
-        <label><input type="checkbox" value="gestionar" class="usuarioPermiso"> Admin</label>
-    </div>
-    <button onclick="crearUsuario()">Registrar Usuario</button>
-    <table id="tablaUsuarios"><thead><tr><th>Nombre</th><th>Correo</th><th>Permisos</th><th>Eliminar</th></tr></thead><tbody></tbody></table>
-</section>
+    </section>
 
-<section>
-    <h2>Nueva Solicitud de Documento</h2>
-    <p><small>Ejemplo: Modificación del "Manual de Seguridad" por actualización de norma ISO.</small></p>
-    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-        <input type="text" id="solTitulo" placeholder="Ej: Manual de Operaciones Logísticas">
+    <section>
+        <h2>Configuración</h2>
+        <input type="text" id="gerenciaNombre" placeholder="Nombre de Gerencia">
+        <button onclick="crearGerencia()">Agregar Gerencia</button>
+        <div class="table-container">
+            <table id="tablaGerencias"><thead><tr><th>Gerencias</th><th>Eliminar</th></tr></thead><tbody></tbody></table>
+        </div>
+        <br>
+        <input type="text" id="departamentoNombre" placeholder="Nombre de Departamento">
+        <select id="departamentoGerencia"></select>
+        <button onclick="crearDepartamento()">Agregar Departamento</button>
+        <div class="table-container">
+            <table id="tablaDepartamentos"><thead><tr><th>Departamento</th><th>Gerencia</th><th>Eliminar</th></tr></thead><tbody></tbody></table>
+        </div>
+    </section>
+
+    <section>
+        <h2>Gestión de Usuarios</h2>
+        <input type="text" id="usuarioNombre" placeholder="Nombre Completo">
+        <input type="email" id="usuarioCorreo" placeholder="Correo electrónico">
+        <input type="password" id="usuarioPassword" placeholder="Contraseña">
+        <select id="usuarioGerencia"></select>
+        <select id="usuarioDepartamento"></select>
+        <div>
+            <label><input type="checkbox" value="solicitar" class="usuarioPermiso"> Solicitar</label>
+            <label><input type="checkbox" value="aprobar" class="usuarioPermiso"> Aprobar</label>
+        </div>
+        <button onclick="crearUsuario()">Registrar Usuario</button>
+
+        <div class="table-container">
+            <table id="tablaUsuarios">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Correo</th>
+                        <th>Creado el</th>
+                        <th>Permisos</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section>
+        <h2>Nueva Solicitud de Documento</h2>
+        <input type="text" id="solTitulo" placeholder="Título del Documento">
         <select id="solTipo">
             <option>Procedimiento</option><option>Guía</option><option>Instructivo</option><option>Manual</option><option>Formato</option>
         </select>
         <select id="solAccion">
             <option>Creación</option><option>Modificación</option><option>Inactivación</option>
         </select>
-        <div>
-            <select id="solGerencia"></select>
-            <select id="solDepartamento"></select>
+        <select id="solGerencia"></select>
+        <select id="solDepartamento"></select>
+        <input type="text" id="solMotivo" placeholder="Motivo">
+        <textarea id="solDescripcion" placeholder="Descripción detallada..."></textarea>
+        <input type="file" id="solArchivos" multiple>
+        <button onclick="crearSolicitud()" style="background:#28a745">Enviar Solicitud</button>
+    </section>
+
+    <section>
+        <h2>Listado de Solicitudes</h2>
+        <div class="table-container">
+            <table id="tablaSolicitudes">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Título</th>
+                        <th>Tipo</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
         </div>
-        <input type="text" id="solMotivo" placeholder="Motivo de la solicitud">
-        <input type="text" id="solCodificacion" placeholder="Código (ej: P-LOG-001)">
-    </div>
-    <textarea id="solDescripcion" rows="3" placeholder="Detalle los cambios o el contenido del nuevo documento..."></textarea>
-    <input type="file" id="solArchivos" multiple>
-    <button onclick="crearSolicitud()" style="background: #28a745;">Enviar Solicitud</button>
-</section>
-
-<section>
-    <h2>Listado de Solicitudes</h2>
-    <table id="tablaSolicitudes"><thead><tr><th>Título</th><th>Tipo</th><th>Gerencia</th><th>Estado</th><th>Acciones</th></tr></thead><tbody></tbody></table>
-</section>
-
+    </section>
 </div>
 
 <script>
+// --- CONFIGURACIÓN FIREBASE ---
 const firebaseConfig = {
   apiKey: "AIzaSyDdzCiachuhbE9jATz-TesPI2vUVIJrHjM",
   authDomain: "sistemadegestion-7400d.firebaseapp.com",
@@ -128,34 +146,29 @@ const cloudName = "df79cjklp";
 const uploadPreset = "fci_documentos"; 
 const ESTADOS = ["Pendiente","Solicitud de Reunión","Realizar Consultas","Solicitud 3 Firmas","Solicitud Aprobación Gerente","Finalizado"];
 
-// --- LÓGICA DE DASHBOARD ---
-function actualizarDashboard(solicitudes) {
-    let stats = { total: 0, Pendiente: 0, Revision: 0, Finalizado: 0 };
-    solicitudes.forEach(s => {
-        stats.total++;
-        if(s.estado === "Pendiente") stats.Pendiente++;
-        else if(s.estado === "Finalizado") stats.Finalizado++;
-        else stats.Revision++; // Cualquier otro estado intermedio
+// --- ID CORRELATIVO ---
+async function obtenerSiguienteID() {
+    const docRef = db.collection("configuracion").doc("contadores");
+    return db.runTransaction(async (transaction) => {
+        const doc = await transaction.get(docRef);
+        let nuevoNumero = doc.exists ? doc.data().solicitudActual + 1 : 1;
+        transaction.set(docRef, { solicitudActual: nuevoNumero });
+        return "FCI-SGD-" + nuevoNumero.toString().padStart(4, '0');
     });
-    document.getElementById("stat-total").innerText = stats.total;
-    document.getElementById("stat-Pendiente").innerText = stats.Pendiente;
-    document.getElementById("stat-Revision").innerText = stats.Revision;
-    document.getElementById("stat-Finalizado").innerText = stats.Finalizado;
 }
 
-// --- FUNCIONES CORE ---
+// --- ACCIONES ---
 function crearGerencia(){
     let nombre = document.getElementById("gerenciaNombre").value;
-    if(!nombre) return;
-    db.collection("gerencias").add({nombre});
+    if(nombre) db.collection("gerencias").add({nombre});
     document.getElementById("gerenciaNombre").value="";
 }
 
 function crearDepartamento(){
     let nombre = document.getElementById("departamentoNombre").value;
-    let gerId = document.getElementById("departamentoGerencia").value;
-    if(!nombre || !gerId) return;
-    db.collection("departamentos").add({nombre, gerencia: gerId});
+    let ger = document.getElementById("departamentoGerencia").value;
+    if(nombre) db.collection("departamentos").add({nombre, gerencia: ger});
+    document.getElementById("departamentoNombre").value="";
 }
 
 async function crearUsuario(){
@@ -165,24 +178,24 @@ async function crearUsuario(){
     let ger = document.getElementById("usuarioGerencia").value;
     let dep = document.getElementById("usuarioDepartamento").value;
     let permisos = [...document.querySelectorAll(".usuarioPermiso:checked")].map(e=>e.value);
-    if(!nombre || !correo) return alert("Faltan datos");
-    await db.collection("usuarios").add({nombre, correo, password: pass, gerencia: ger, departamento: dep, permisos});
-    alert("Usuario Creado");
+    
+    if(!nombre || !correo) return alert("Complete los datos");
+    
+    await db.collection("usuarios").add({
+        nombre, correo, password: pass, gerencia: ger, departamento: dep, permisos,
+        fechaRegistro: new Date() // Columna de fecha agregada
+    });
+    alert("Usuario registrado");
 }
 
 async function crearSolicitud(){
     let titulo = document.getElementById("solTitulo").value;
-    let tipo = document.getElementById("solTipo").value;
-    let accion = document.getElementById("solAccion").value;
-    let ger = document.getElementById("solGerencia").value;
-    let dep = document.getElementById("solDepartamento").value;
-    let motivo = document.getElementById("solMotivo").value;
-    let desc = document.getElementById("solDescripcion").value;
+    if(!titulo) return alert("Título obligatorio");
     
-    if(!titulo) return alert("Indique el título");
-
+    const fciId = await obtenerSiguienteID();
     let archivos = document.getElementById("solArchivos").files;
     let urls = [];
+    
     for(let f of archivos){
         let fd = new FormData();
         fd.append("file", f); fd.append("upload_preset", uploadPreset);
@@ -190,23 +203,26 @@ async function crearSolicitud(){
         let d = await res.json(); urls.push(d.secure_url);
     }
 
-    // Registro detallado con historial inicial
     await db.collection("solicitudes").add({
-        titulo, tipo, accion, gerencia: ger, departamento: dep, motivo, 
-        descripcion: desc, documentos: urls, estado: "Pendiente",
-        fecha: new Date(),
-        historial: [{estado: "Pendiente", fecha: new Date(), nota: "Solicitud iniciada"}]
+        fciId, titulo, tipo: document.getElementById("solTipo").value,
+        accion: document.getElementById("solAccion").value,
+        gerencia: document.getElementById("solGerencia").value,
+        departamento: document.getElementById("solDepartamento").value,
+        motivo: document.getElementById("solMotivo").value,
+        descripcion: document.getElementById("solDescripcion").value,
+        documentos: urls, estado: "Pendiente", fecha: new Date()
     });
-    alert("Solicitud registrada con éxito");
+    alert("Solicitud Enviada: " + fciId);
 }
 
-// --- CARGA DE DATOS EN TIEMPO REAL ---
-function iniciarSincronizacion(){
+// --- SINCRONIZACIÓN EN TIEMPO REAL ---
+function iniciar() {
+    // Gerencias
     db.collection("gerencias").onSnapshot(snap => {
         let h="", opt="";
         snap.forEach(doc => {
-            h+=`<tr><td>${doc.data().nombre}</td><td><button onclick="eliminar('gerencias','${doc.id}')">X</button></td></tr>`;
-            opt+=`<option value="${doc.id}">${doc.data().nombre}</option>`;
+            h+=`<tr><td>${doc.data().nombre}</td><td><button class="btn-delete" onclick="eliminar('gerencias','${doc.id}')">Eliminar</button></td></tr>`;
+            opt+=`<option value="${doc.data().nombre}">${doc.data().nombre}</option>`;
         });
         document.querySelector("#tablaGerencias tbody").innerHTML=h;
         document.getElementById("departamentoGerencia").innerHTML=opt;
@@ -214,33 +230,43 @@ function iniciarSincronizacion(){
         document.getElementById("solGerencia").innerHTML=opt;
     });
 
+    // Departamentos
     db.collection("departamentos").onSnapshot(snap => {
         let h="", opt="";
         snap.forEach(doc => {
-            h+=`<tr><td>${doc.data().nombre}</td><td>${doc.data().gerencia}</td><td><button onclick="eliminar('departamentos','${doc.id}')">X</button></td></tr>`;
-            opt+=`<option value="${doc.id}">${doc.data().nombre}</option>`;
+            h+=`<tr><td>${doc.data().nombre}</td><td>${doc.data().gerencia}</td><td><button class="btn-delete" onclick="eliminar('departamentos','${doc.id}')">Eliminar</button></td></tr>`;
+            opt+=`<option value="${doc.data().nombre}">${doc.data().nombre}</option>`;
         });
         document.querySelector("#tablaDepartamentos tbody").innerHTML=h;
         document.getElementById("usuarioDepartamento").innerHTML=opt;
         document.getElementById("solDepartamento").innerHTML=opt;
     });
 
-    db.collection("usuarios").onSnapshot(snap => {
+    // Usuarios (Con Fecha de Creación)
+    db.collection("usuarios").orderBy("fechaRegistro", "desc").onSnapshot(snap => {
         let h="";
         snap.forEach(doc => {
             let u = doc.data();
-            h+=`<tr><td>${u.nombre}</td><td>${u.correo}</td><td>${u.permisos.join(", ")}</td><td><button onclick="eliminar('usuarios','${doc.id}')">X</button></td></tr>`;
+            let fecha = u.fechaRegistro ? new Date(u.fechaRegistro.seconds*1000).toLocaleDateString() : "---";
+            h+=`<tr>
+                <td>${u.nombre}</td>
+                <td>${u.correo}</td>
+                <td>${fecha}</td>
+                <td>${u.permisos.join(", ")}</td>
+                <td><button class="btn-delete" onclick="eliminar('usuarios','${doc.id}')">Eliminar</button></td>
+            </tr>`;
         });
         document.querySelector("#tablaUsuarios tbody").innerHTML=h;
     });
 
+    // Solicitudes
     db.collection("solicitudes").orderBy("fecha", "desc").onSnapshot(snap => {
-        let h=""; let lista = [];
+        let h="", lista=[];
         snap.forEach(doc => {
             let s = doc.data(); lista.push(s);
             h+=`<tr>
-                <td>${s.titulo}</td><td>${s.tipo}</td><td>${s.gerencia}</td>
-                <td><strong>${s.estado}</strong></td>
+                <td><span class="id-badge">${s.fciId}</span></td>
+                <td>${s.titulo}</td><td>${s.tipo}</td><td><strong>${s.estado}</strong></td>
                 <td>
                     <select onchange="cambiarEstado('${doc.id}', this.value)">
                         ${ESTADOS.map(e=>`<option ${s.estado==e?"selected":""}>${e}</option>`).join("")}
@@ -253,17 +279,24 @@ function iniciarSincronizacion(){
     });
 }
 
-function eliminar(col, id){ if(confirm("¿Eliminar?")) db.collection(col).doc(id).delete(); }
+function eliminar(col, id){ if(confirm("¿Seguro?")) db.collection(col).doc(id).delete(); }
 
-async function cambiarEstado(id, nuevoEstado){
-    let ref = db.collection("solicitudes").doc(id);
-    let snap = await ref.get();
-    let hist = snap.data().historial || [];
-    hist.push({estado: nuevoEstado, fecha: new Date(), nota: "Cambio de estado manual"});
-    await ref.update({estado: nuevoEstado, historial: hist});
+function cambiarEstado(id, nuevo){ db.collection("solicitudes").doc(id).update({estado: nuevo}); }
+
+function actualizarDashboard(solicitudes) {
+    let stats = { total: solicitudes.length, Pendiente: 0, Revision: 0, Finalizado: 0 };
+    solicitudes.forEach(s => {
+        if(s.estado === "Pendiente") stats.Pendiente++;
+        else if(s.estado === "Finalizado") stats.Finalizado++;
+        else stats.Revision++;
+    });
+    document.getElementById("stat-total").innerText = stats.total;
+    document.getElementById("stat-Pendiente").innerText = stats.Pendiente;
+    document.getElementById("stat-Revision").innerText = stats.Revision;
+    document.getElementById("stat-Finalizado").innerText = stats.Finalizado;
 }
 
-iniciarSincronizacion();
+iniciar();
 </script>
 </body>
 </html>
