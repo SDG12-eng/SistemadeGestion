@@ -3,17 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistema de Gestión Documental</title>
+<title>Sistema de Gestión Documental - Final</title>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-body {font-family: Arial; margin: 20px; background:#f5f5f5;}
-table {width:100%;border-collapse:collapse;margin-bottom:20px;}
+body{font-family:Arial;margin:20px;background:#f5f5f5;}
+h2{margin-top:40px;}
+table{width:100%;border-collapse:collapse;margin-bottom:20px;}
 th,td{border:1px solid #ccc;padding:8px;text-align:left;}
 button{margin:2px;padding:5px 10px;}
 #modalSolicitud{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);}
-#detalleContenido{background:#fff;margin:50px auto;padding:20px;width:80%;border-radius:8px;}
+#detalleContenido{background:#fff;margin:30px auto;padding:20px;width:90%;border-radius:8px;overflow:auto;max-height:90vh;}
+textarea{width:100%;height:60px;margin-bottom:5px;}
+input,select{margin-bottom:5px;}
 </style>
 </head>
 <body>
@@ -90,13 +92,14 @@ const uploadPreset = "fci_documentos";
 // Usuario admin fijo
 const adminID = "admin";
 
-async function cargarUsuarios() {
-  let tbody = document.querySelector("#tablaUsuarios tbody");
-  tbody.innerHTML = "";
-  let snap = await db.collection("Usuarios").get();
-  snap.forEach(doc => {
-    let u = doc.data();
-    tbody.innerHTML += `<tr>
+// Cargar usuarios
+async function cargarUsuarios(){
+  let tbody=document.querySelector("#tablaUsuarios tbody");
+  tbody.innerHTML="";
+  let snap=await db.collection("Usuarios").get();
+  snap.forEach(doc=>{
+    let u=doc.data();
+    tbody.innerHTML+=`<tr>
       <td>${u.nombre}</td>
       <td>${u.correo}</td>
       <td>${u.gerencia}</td>
@@ -107,6 +110,7 @@ async function cargarUsuarios() {
   });
 }
 
+// Crear usuario
 async function crearUsuario(e){
   e.preventDefault();
   let nombre=document.getElementById("usuarioNombre").value;
@@ -120,9 +124,11 @@ async function crearUsuario(e){
   e.target.reset();
 }
 
+// Eliminar usuario
 function eliminarUsuario(id){ db.collection("Usuarios").doc(id).delete().then(cargarUsuarios); }
 
-async function cargarSolicitudes() {
+// Cargar solicitudes
+async function cargarSolicitudes(){
   let tbody=document.querySelector("#tablaSolicitudes tbody");
   tbody.innerHTML="";
   let snap=await db.collection("solicitudes").get();
@@ -138,6 +144,7 @@ async function cargarSolicitudes() {
   });
 }
 
+// Crear solicitud
 async function crearSolicitud(e){
   e.preventDefault();
   let titulo=document.getElementById("solTitulo").value;
@@ -151,8 +158,10 @@ async function crearSolicitud(e){
   let descripcion=document.getElementById("solDescripcion").value;
   let archivos=document.getElementById("solArchivos").files;
 
+  // Usuario admin
   let usuarioActual=await db.collection("Usuarios").doc(adminID).get();
-  let u=usuarioActual.data();
+  let u=usuarioActual.exists?usuarioActual.data():{nombre:"Admin",correo:"admin@admin.com",gerencia:"General",departamento:"General"};
+
   let urls=[];
   for(let i=0;i<archivos.length;i++){
     let fd=new FormData();
@@ -176,6 +185,7 @@ async function crearSolicitud(e){
   e.target.reset();
 }
 
+// Modal detalles
 async function abrirModal(id){
   let modal=document.getElementById("modalSolicitud");
   let contenido=document.getElementById("detalleContenido");
@@ -189,36 +199,30 @@ async function abrirModal(id){
     <p><strong>Departamento:</strong> ${s.departamento}</p>
     <p><strong>Motivo:</strong> ${s.motivo}</p>
     <p><strong>Documentos:</strong> ${s.documentos.map(u=>`<a href="${u}" target="_blank">Abrir</a>`).join(" | ")}</p>
-    <p><strong>Historial:</strong><br>${s.historial.map(h=>`${h.estado} - ${new Date(h.fecha.seconds*1000||h.fecha).toLocaleString()} - ${h.comentario||""}`).join("<br>")}</p>`;
-
-  let usuarioActual=await db.collection("Usuarios").doc(adminID).get();
-  let permisos=usuarioActual.data().permisos;
-  if(permisos.includes("aprobar")){
-    contenido.innerHTML+=`<button onclick="aprobarSolicitud('${id}')">Aprobar</button>
-    <button onclick="rechazarSolicitud('${id}')">Rechazar</button>`;
-  }
+    <p><strong>Historial:</strong><br>${s.historial.map(h=>`${h.estado} - ${new Date(h.fecha.seconds*1000||h.fecha).toLocaleString()} - ${h.comentario||""}`).join("<br>")}</p>
+    <p><strong>Comentarios:</strong><br>${s.comentarios.join("<br>")}</p>
+    <button onclick="agregarEstado('${id}')">Agregar Estado/Comentario</button>`;
+  modal.style.display="block";
 }
 
+// Cerrar modal
 function cerrarModal(){document.getElementById("modalSolicitud").style.display="none";}
 
-async function aprobarSolicitud(id){
-  let comentario=prompt("Comentario al aprobar:");
+// Agregar estado/comentario
+async function agregarEstado(id){
+  let estado=prompt("Nuevo estado (Pendiente, Solicitud de reunión, Realizar consultas, 3 firmas, Solicitud aprobación gerente, Finalizado):");
+  let comentario=prompt("Comentario:");
+  if(!estado) return;
   await db.collection("solicitudes").doc(id).update({
-    estado:"Finalizado",
-    historial:firebase.firestore.FieldValue.arrayUnion({estado:"Finalizado",fecha:new Date(),comentario})
+    estado,
+    historial:firebase.firestore.FieldValue.arrayUnion({estado,fecha:new Date(),comentario}),
+    comentarios:firebase.firestore.FieldValue.arrayUnion(comentario)
   });
-  cargarSolicitudes(); cerrarModal();
+  cargarSolicitudes();
+  abrirModal(id);
 }
 
-async function rechazarSolicitud(id){
-  let comentario=prompt("Motivo de rechazo:");
-  await db.collection("solicitudes").doc(id).update({
-    estado:"Rechazado",
-    historial:firebase.firestore.FieldValue.arrayUnion({estado:"Rechazado",fecha:new Date(),comentario})
-  });
-  cargarSolicitudes(); cerrarModal();
-}
-
+// Eventos
 document.getElementById("formUsuario").addEventListener("submit",crearUsuario);
 document.getElementById("formSolicitud").addEventListener("submit",crearSolicitud);
 
