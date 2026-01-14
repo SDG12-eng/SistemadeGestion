@@ -3,112 +3,75 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistema de Gestión de Documentos - Mejorado</title>
-<!-- Firebase -->
+<title>Sistema de Gestión Documental</title>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
-<!-- Cloudinary Upload Widget -->
-<script src="https://widget.cloudinary.com/v2.0/global/all.js" type="text/javascript"></script>
-<!-- jsPDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-body{font-family:sans-serif;margin:0;padding:0;background:#f4f4f4}
-h2{margin-top:0}
-.container{width:95%;max-width:1200px;margin:auto;padding:20px;background:#fff;border-radius:10px;box-shadow:0 0 10px rgba(0,0,0,0.1)}
-table{width:100%;border-collapse:collapse;margin-top:10px}
-th,td{border:1px solid #ccc;padding:8px;text-align:left}
-th{background:#eee}
-button{padding:5px 10px;margin:2px;cursor:pointer}
-input,select,textarea{padding:5px;margin:2px;width:95%}
-section{margin-bottom:30px;padding-bottom:20px;border-bottom:1px solid #ddd}
-
-/* Modal */
-.modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;overflow:auto;background-color:rgba(0,0,0,0.5)}
-.modal-content{background:#fff;margin:5% auto;padding:20px;border-radius:10px;width:80%;max-width:800px;position:relative}
-.close{position:absolute;right:10px;top:10px;font-size:20px;font-weight:bold;cursor:pointer}
+body {font-family: Arial; margin: 20px; background:#f5f5f5;}
+table {width:100%;border-collapse:collapse;margin-bottom:20px;}
+th,td{border:1px solid #ccc;padding:8px;text-align:left;}
+button{margin:2px;padding:5px 10px;}
+#modalSolicitud{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);}
+#detalleContenido{background:#fff;margin:50px auto;padding:20px;width:80%;border-radius:8px;}
 </style>
 </head>
 <body>
 
-<div class="container">
-<h1>Sistema de Gestión de Documentos</h1>
+<h1>Dashboard Sistema de Gestión Documental</h1>
 
-<!-- Crear Gerencia -->
-<section>
-<h2>Crear Gerencia</h2>
-<input type="text" id="gerenciaNombre" placeholder="Nombre de Gerencia">
-<button onclick="crearGerencia()">Crear Gerencia</button>
-<table id="tablaGerencias"><thead><tr><th>Nombre</th><th>Eliminar</th></tr></thead><tbody></tbody></table>
-</section>
+<h2>Usuarios</h2>
+<form id="formUsuario">
+  <input type="text" id="usuarioNombre" placeholder="Nombre" required>
+  <input type="email" id="usuarioCorreo" placeholder="Correo" required>
+  <input type="password" id="usuarioClave" placeholder="Contraseña" required>
+  <input type="text" id="usuarioGerencia" placeholder="Gerencia" required>
+  <input type="text" id="usuarioDepartamento" placeholder="Departamento" required>
+  <select id="usuarioPermisos" multiple>
+    <option value="solicitudes">Realizar Solicitudes</option>
+    <option value="verPropias">Ver Solicitudes Propias</option>
+    <option value="verGerencia">Ver Solicitudes Gerencia</option>
+    <option value="aprobar">Aprobar/Rechazar Solicitudes</option>
+    <option value="gestionUsuarios">Gestionar Usuarios</option>
+  </select>
+  <button type="submit">Crear Usuario</button>
+</form>
+<table id="tablaUsuarios">
+  <thead>
+    <tr><th>Nombre</th><th>Correo</th><th>Gerencia</th><th>Departamento</th><th>Permisos</th><th>Acciones</th></tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
-<!-- Crear Departamento -->
-<section>
-<h2>Crear Departamento</h2>
-<input type="text" id="departamentoNombre" placeholder="Nombre de Departamento">
-<select id="departamentoGerencia"></select>
-<button onclick="crearDepartamento()">Crear Departamento</button>
-<table id="tablaDepartamentos"><thead><tr><th>Departamento</th><th>Gerencia</th><th>Eliminar</th></tr></thead><tbody></tbody></table>
-</section>
+<h2>Solicitudes</h2>
+<form id="formSolicitud">
+  <input type="text" id="solTitulo" placeholder="Nombre Documento" required>
+  <input type="text" id="solTipo" placeholder="Tipo (Procedimiento, Manual, etc)" required>
+  <input type="text" id="solAccion" placeholder="Acción (Creación, Modificación, Inactivación)" required>
+  <input type="text" id="solGerencia" placeholder="Gerencia" required>
+  <input type="text" id="solDepartamento" placeholder="Departamento" required>
+  <input type="text" id="solMotivo" placeholder="Motivo">
+  <input type="text" id="solUltimaVersion" placeholder="Última versión">
+  <input type="text" id="solCodificacion" placeholder="Codificación">
+  <textarea id="solDescripcion" placeholder="Descripción"></textarea>
+  <input type="file" id="solArchivos" multiple>
+  <button type="submit">Crear Solicitud</button>
+</form>
 
-<!-- Crear Usuario -->
-<section>
-<h2>Crear Usuario</h2>
-<input type="text" id="usuarioNombre" placeholder="Nombre de Usuario">
-<input type="text" id="usuarioCorreo" placeholder="Correo">
-<input type="password" id="usuarioPassword" placeholder="Contraseña">
-<select id="usuarioGerencia"></select>
-<select id="usuarioDepartamento"></select>
-<label>Permisos:</label>
-<label><input type="checkbox" value="solicitar" class="usuarioPermiso"> Realizar Solicitudes</label>
-<label><input type="checkbox" value="verPropias" class="usuarioPermiso"> Ver Solicitudes Propias</label>
-<label><input type="checkbox" value="verGerencia" class="usuarioPermiso"> Ver Solicitudes Gerencia</label>
-<label><input type="checkbox" value="aprobar" class="usuarioPermiso"> Aprobar/Rechazar</label>
-<label><input type="checkbox" value="gestionar" class="usuarioPermiso"> Gestionar Usuarios</label>
-<button onclick="crearUsuario()">Crear Usuario</button>
-<table id="tablaUsuarios"><thead><tr><th>Nombre</th><th>Correo</th><th>Gerencia</th><th>Departamento</th><th>Permisos</th><th>Eliminar</th></tr></thead><tbody></tbody></table>
-</section>
+<table id="tablaSolicitudes">
+  <thead>
+    <tr><th>Título</th><th>Tipo</th><th>Acción</th><th>Estado</th><th>Acciones</th></tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
-<!-- Crear Solicitud -->
-<section>
-<h2>Crear Solicitud</h2>
-<input type="text" id="solTitulo" placeholder="Nombre del Documento">
-<select id="solTipo">
-  <option>Procedimiento</option>
-  <option>Guía</option>
-  <option>Instructivo</option>
-  <option>Manual</option>
-  <option>Formato</option>
-</select>
-<select id="solAccion">
-  <option>Creación</option>
-  <option>Modificación</option>
-  <option>Inactivación</option>
-</select>
-<select id="solGerencia"></select>
-<select id="solDepartamento"></select>
-<input type="text" id="solMotivo" placeholder="Motivo">
-<input type="text" id="solUltimaVersion" placeholder="Última versión (solo si es modificación/inactivación)">
-<input type="text" id="solCodificacion" placeholder="Codificación del documento">
-<textarea id="solDescripcion" placeholder="Descripción"></textarea>
-<input type="file" id="solArchivos" multiple>
-<button onclick="crearSolicitud()">Crear Solicitud</button>
-<table id="tablaSolicitudes"><thead><tr><th>Título</th><th>Tipo</th><th>Acción</th><th>Gerencia</th><th>Departamento</th><th>Estado</th><th>Acciones</th></tr></thead><tbody></tbody></table>
-</section>
-
-</div>
-
-<!-- Modal Detalles Solicitud -->
-<div id="modalSolicitud" class="modal">
-  <div class="modal-content">
-    <span class="close" onclick="cerrarModal()">&times;</span>
-    <h2>Detalles de Solicitud</h2>
-    <div id="detalleContenido"></div>
+<div id="modalSolicitud">
+  <div id="detalleContenido">
+    <button onclick="cerrarModal()">Cerrar</button>
   </div>
 </div>
 
 <script>
-// --- FIREBASE CONFIG ---
 const firebaseConfig = {
   apiKey: "AIzaSyDdzCiachuhbE9jATz-TesPI2vUVIJrHjM",
   authDomain: "sistemadegestion-7400d.firebaseapp.com",
@@ -119,30 +82,64 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-const storage = firebase.storage();
 
-// --- CLOUDINARY ---
-const cloudName = "df79cjklp"; // tu cloud_name
-const uploadPreset = "fci_documentos"; // tu preset
+// Cloudinary
+const cloudName = "df79cjklp";
+const uploadPreset = "fci_documentos";
 
-// --- ESTADOS ---
-const ESTADOS = ["Pendiente","Solicitud de Reunión","Realizar Consultas","Solicitud 3 Firmas","Solicitud Aprobación Gerente","Finalizado"];
+// Usuario admin fijo
+const adminID = "admin";
 
-// --- FUNCIONES GERENCIAS / DEPARTAMENTOS / USUARIOS ---
-async function crearGerencia(){let n=document.getElementById("gerenciaNombre").value;if(!n)return alert("Ingrese nombre");await db.collection("gerencias").add({nombre:n});document.getElementById("gerenciaNombre").value="";cargarGerencias();}
-async function cargarGerencias(){let tbody=document.querySelector("#tablaGerencias tbody");let sel1=document.getElementById("departamentoGerencia");let sel2=document.getElementById("usuarioGerencia");let sel3=document.getElementById("solGerencia");tbody.innerHTML="";sel1.innerHTML="";sel2.innerHTML="";sel3.innerHTML="";let snap=await db.collection("gerencias").get();snap.forEach(doc=>{let g=doc.data();tbody.innerHTML+=`<tr><td>${g.nombre}</td><td><button onclick="eliminarGerencia('${doc.id}')">Eliminar</button></td></tr>`;let opt=`<option value="${doc.id}">${g.nombre}</option>`;sel1.innerHTML+=opt;sel2.innerHTML+=opt;sel3.innerHTML+=opt;});}
-function eliminarGerencia(id){db.collection("gerencias").doc(id).delete();cargarGerencias();}
+async function cargarUsuarios() {
+  let tbody = document.querySelector("#tablaUsuarios tbody");
+  tbody.innerHTML = "";
+  let snap = await db.collection("Usuarios").get();
+  snap.forEach(doc => {
+    let u = doc.data();
+    tbody.innerHTML += `<tr>
+      <td>${u.nombre}</td>
+      <td>${u.correo}</td>
+      <td>${u.gerencia}</td>
+      <td>${u.departamento}</td>
+      <td>${u.permisos.join(", ")}</td>
+      <td><button onclick="eliminarUsuario('${doc.id}')">Eliminar</button></td>
+    </tr>`;
+  });
+}
 
-async function crearDepartamento(){let n=document.getElementById("departamentoNombre").value;let g=document.getElementById("departamentoGerencia").value;if(!n||!g)return alert("Ingrese datos");await db.collection("departamentos").add({nombre:n,gerencia:g});document.getElementById("departamentoNombre").value="";cargarDepartamentos();}
-async function cargarDepartamentos(){let tbody=document.querySelector("#tablaDepartamentos tbody");let sel1=document.getElementById("usuarioDepartamento");let sel2=document.getElementById("solDepartamento");tbody.innerHTML="";sel1.innerHTML="";sel2.innerHTML="";let snap=await db.collection("departamentos").get();snap.forEach(doc=>{let d=doc.data();tbody.innerHTML+=`<tr><td>${d.nombre}</td><td>${d.gerencia}</td><td><button onclick="eliminarDepartamento('${doc.id}')">Eliminar</button></td></tr>`;let opt=`<option value="${doc.id}">${d.nombre}</option>`;sel1.innerHTML+=opt;sel2.innerHTML+=opt;});}
-function eliminarDepartamento(id){db.collection("departamentos").doc(id).delete();cargarDepartamentos();}
+async function crearUsuario(e){
+  e.preventDefault();
+  let nombre=document.getElementById("usuarioNombre").value;
+  let correo=document.getElementById("usuarioCorreo").value;
+  let clave=document.getElementById("usuarioClave").value;
+  let ger=document.getElementById("usuarioGerencia").value;
+  let dep=document.getElementById("usuarioDepartamento").value;
+  let permisos=[...document.getElementById("usuarioPermisos").selectedOptions].map(o=>o.value);
+  await db.collection("Usuarios").add({nombre,correo,clave,gerencia:ger,departamento:dep,permisos});
+  cargarUsuarios();
+  e.target.reset();
+}
 
-async function crearUsuario(){let nombre=document.getElementById("usuarioNombre").value;let correo=document.getElementById("usuarioCorreo").value;let pass=document.getElementById("usuarioPassword").value;let ger=document.getElementById("usuarioGerencia").value;let dep=document.getElementById("usuarioDepartamento").value;let permisos=[...document.querySelectorAll(".usuarioPermiso:checked")].map(e=>e.value);if(!nombre||!correo||!pass||!ger||!dep)return alert("Ingrese datos completos");await db.collection("usuarios").add({nombre,correo,password:pass,gerencia:ger,departamento:dep,permisos});document.getElementById("usuarioNombre").value="";document.getElementById("usuarioCorreo").value="";document.getElementById("usuarioPassword").value="";document.querySelectorAll(".usuarioPermiso").forEach(c=>c.checked=false);cargarUsuarios();}
-async function cargarUsuarios(){let tbody=document.querySelector("#tablaUsuarios tbody");tbody.innerHTML="";let snap=await db.collection("usuarios").get();snap.forEach(doc=>{let u=doc.data();tbody.innerHTML+=`<tr><td>${u.nombre}</td><td>${u.correo}</td><td>${u.gerencia}</td><td>${u.departamento}</td><td>${u.permisos.join(", ")}</td><td><button onclick="eliminarUsuario('${doc.id}')">Eliminar</button></td></tr>`;});}
-function eliminarUsuario(id){db.collection("usuarios").doc(id).delete();cargarUsuarios();}
+function eliminarUsuario(id){ db.collection("Usuarios").doc(id).delete().then(cargarUsuarios); }
 
-// --- FUNCIONES SOLICITUDES ---
-async function crearSolicitud(){
+async function cargarSolicitudes() {
+  let tbody=document.querySelector("#tablaSolicitudes tbody");
+  tbody.innerHTML="";
+  let snap=await db.collection("solicitudes").get();
+  snap.forEach(doc=>{
+    let s=doc.data();
+    tbody.innerHTML+=`<tr>
+      <td>${s.titulo}</td>
+      <td>${s.tipo}</td>
+      <td>${s.accion}</td>
+      <td>${s.estado}</td>
+      <td><button onclick="abrirModal('${doc.id}')">Detalles</button></td>
+    </tr>`;
+  });
+}
+
+async function crearSolicitud(e){
+  e.preventDefault();
   let titulo=document.getElementById("solTitulo").value;
   let tipo=document.getElementById("solTipo").value;
   let accion=document.getElementById("solAccion").value;
@@ -152,10 +149,10 @@ async function crearSolicitud(){
   let ultVersion=document.getElementById("solUltimaVersion").value;
   let codificacion=document.getElementById("solCodificacion").value;
   let descripcion=document.getElementById("solDescripcion").value;
-  if(!titulo||!tipo||!accion||!ger||!dep)return alert("Faltan datos");
-
-  // Subir archivos a Cloudinary
   let archivos=document.getElementById("solArchivos").files;
+
+  let usuarioActual=await db.collection("Usuarios").doc(adminID).get();
+  let u=usuarioActual.data();
   let urls=[];
   for(let i=0;i<archivos.length;i++){
     let fd=new FormData();
@@ -168,74 +165,63 @@ async function crearSolicitud(){
 
   await db.collection("solicitudes").add({
     titulo,tipo,accion,gerencia:ger,departamento:dep,motivo,ultVersion,codificacion,descripcion,
-    documentos:urls,estado:"Pendiente",fecha:new Date(),historial:[],comentarios:[]
+    creador:{nombre:u.nombre,correo:u.correo,gerencia:u.gerencia,departamento:u.departamento},
+    documentos:urls,
+    estado:"Pendiente",
+    historial:[],
+    comentarios:[],
+    fecha:new Date()
   });
-
-  document.getElementById("solTitulo").value="";
-  document.getElementById("solMotivo").value="";
-  document.getElementById("solUltimaVersion").value="";
-  document.getElementById("solCodificacion").value="";
-  document.getElementById("solDescripcion").value="";
-  document.getElementById("solArchivos").value="";
   cargarSolicitudes();
+  e.target.reset();
 }
 
-async function cargarSolicitudes(){
-  let tbody=document.querySelector("#tablaSolicitudes tbody");
-  tbody.innerHTML="";
-  let snap=await db.collection("solicitudes").get();
-  snap.forEach(doc=>{
-    let s=doc.data();
-    let acciones=`<select onchange="cambiarEstado('${doc.id}',this.value)">${ESTADOS.map(e=>`<option ${s.estado==e?"selected":""}>${e}</option>`).join("")}</select>
-    <button onclick="eliminarSolicitud('${doc.id}')">Eliminar</button>
-    <button onclick="abrirModal('${doc.id}')">Ver Detalles</button>`;
-    tbody.innerHTML+=`<tr>
-      <td>${s.titulo}</td><td>${s.tipo}</td><td>${s.accion}</td><td>${s.gerencia}</td><td>${s.departamento}</td><td>${s.estado}</td><td>${acciones}</td>
-    </tr>`;
-  });
-}
-
-function eliminarSolicitud(id){db.collection("solicitudes").doc(id).delete();cargarSolicitudes();}
-async function cambiarEstado(id,estado){
-  let docRef=db.collection("solicitudes").doc(id);
-  await docRef.update({estado});
-  let docSnap=await docRef.get();
-  let historial=docSnap.data().historial||[];
-  historial.push({estado,fecha:new Date()});
-  await docRef.update({historial});
-  cargarSolicitudes();
-}
-
-// --- MODAL DETALLES ---
 async function abrirModal(id){
   let modal=document.getElementById("modalSolicitud");
   let contenido=document.getElementById("detalleContenido");
   let doc=await db.collection("solicitudes").doc(id).get();
   let s=doc.data();
-  if(!s){alert("Solicitud no encontrada");return;}
-  contenido.innerHTML=`
+  contenido.innerHTML=`<button onclick="cerrarModal()">Cerrar</button>
     <p><strong>Título:</strong> ${s.titulo}</p>
     <p><strong>Tipo:</strong> ${s.tipo}</p>
     <p><strong>Acción:</strong> ${s.accion}</p>
     <p><strong>Gerencia:</strong> ${s.gerencia}</p>
     <p><strong>Departamento:</strong> ${s.departamento}</p>
     <p><strong>Motivo:</strong> ${s.motivo}</p>
-    <p><strong>Última Versión:</strong> ${s.ultVersion || "N/A"}</p>
-    <p><strong>Codificación:</strong> ${s.codificacion || "N/A"}</p>
-    <p><strong>Descripción:</strong> ${s.descripcion}</p>
-    <p><strong>Estado:</strong> ${s.estado}</p>
     <p><strong>Documentos:</strong> ${s.documentos.map(u=>`<a href="${u}" target="_blank">Abrir</a>`).join(" | ")}</p>
-    <p><strong>Historial:</strong><br>${s.historial.map(h=>`${h.estado} - ${new Date(h.fecha.seconds*1000||h.fecha).toLocaleString()}`).join("<br>")}</p>
-    <p><strong>Comentarios:</strong><br>${s.comentarios.join("<br>")}</p>
-  `;
-  modal.style.display="block";
+    <p><strong>Historial:</strong><br>${s.historial.map(h=>`${h.estado} - ${new Date(h.fecha.seconds*1000||h.fecha).toLocaleString()} - ${h.comentario||""}`).join("<br>")}</p>`;
+
+  let usuarioActual=await db.collection("Usuarios").doc(adminID).get();
+  let permisos=usuarioActual.data().permisos;
+  if(permisos.includes("aprobar")){
+    contenido.innerHTML+=`<button onclick="aprobarSolicitud('${id}')">Aprobar</button>
+    <button onclick="rechazarSolicitud('${id}')">Rechazar</button>`;
+  }
 }
 
 function cerrarModal(){document.getElementById("modalSolicitud").style.display="none";}
 
-// --- CARGAR INICIAL ---
-cargarGerencias();
-cargarDepartamentos();
+async function aprobarSolicitud(id){
+  let comentario=prompt("Comentario al aprobar:");
+  await db.collection("solicitudes").doc(id).update({
+    estado:"Finalizado",
+    historial:firebase.firestore.FieldValue.arrayUnion({estado:"Finalizado",fecha:new Date(),comentario})
+  });
+  cargarSolicitudes(); cerrarModal();
+}
+
+async function rechazarSolicitud(id){
+  let comentario=prompt("Motivo de rechazo:");
+  await db.collection("solicitudes").doc(id).update({
+    estado:"Rechazado",
+    historial:firebase.firestore.FieldValue.arrayUnion({estado:"Rechazado",fecha:new Date(),comentario})
+  });
+  cargarSolicitudes(); cerrarModal();
+}
+
+document.getElementById("formUsuario").addEventListener("submit",crearUsuario);
+document.getElementById("formSolicitud").addEventListener("submit",crearSolicitud);
+
 cargarUsuarios();
 cargarSolicitudes();
 </script>
