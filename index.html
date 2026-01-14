@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FCI - Sistema de Gestión Documental Avanzado</title>
+<title>FCI - Sistema de Gestión Documental</title>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
@@ -12,52 +12,55 @@
 
 <style>
 /* --- ESTILOS GENERALES --- */
-body{font-family:'Segoe UI', sans-serif; margin:0; padding:0; background:#f0f2f5; color:#333; font-size:14px;}
+body{font-family:'Segoe UI', sans-serif; margin:0; padding:0; background:#f0f2f5; color:#333;}
 .hidden { display: none !important; }
-.btn-action { padding: 8px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-.btn-delete { background: #dc3545; }
-.btn-view { background: #17a2b8; }
-.btn-login { width: 100%; padding: 12px; background: #5142E6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-input, select, textarea { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
 
-/* LOGIN */
+/* --- LOGIN ESTILOS --- */
 .login-container { display: flex; justify-content: center; align-items: center; height: 100vh; background: #2D336B; }
-.login-card { background: white; padding: 40px; border-radius: 15px; width: 350px; text-align: center; }
+.login-card { background: white; padding: 40px; border-radius: 15px; width: 90%; max-width: 350px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+.login-card h1 { color: #2D336B; margin-bottom: 20px; font-size: 24px; }
+.login-input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+.btn-login { width: 100%; padding: 12px; background: #5142E6; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; }
+.btn-login:hover { background: #3b2cb8; }
+.error-msg { color: red; font-size: 14px; margin-top: 10px; display: none; }
 
-/* APP LAYOUT */
+/* --- DASHBOARD ESTILOS --- */
 .app-container { max-width: 1200px; margin: 20px auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.05); }
 header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; margin-bottom: 20px; }
-h2 { color: #0056b3; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 30px; }
+h2 { color: #0056b3; margin-top: 30px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+.btn-logout { background: #dc3545; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; }
 
-/* TABLAS */
+/* Tablas y Forms */
 .table-responsive { overflow-x: auto; margin-top: 15px; }
-table { width: 100%; border-collapse: collapse; min-width: 800px; }
-th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; font-size: 13px; }
+table { width: 100%; border-collapse: collapse; min-width: 700px; }
+th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
 th { background: #0056b3; color: white; }
-.tag { padding: 2px 6px; border-radius: 4px; font-size: 0.85em; display: inline-block; margin: 1px; }
-.tag-admin { background: #343a40; color: white; }
-.tag-user { background: #6c757d; color: white; }
+input, select, textarea { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+button.btn-action { padding: 8px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+button.btn-delete { background: #dc3545; }
+.id-badge { background: #333; color: white; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
+.permiso-tag { background: #e9ecef; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; margin-right: 3px; }
 
-/* LISTAS DE GESTIÓN (GERENCIAS/DEPTOS) */
-.list-item { display: flex; justify-content: space-between; padding: 5px 10px; background: #f8f9fa; border-bottom: 1px solid #ddd; align-items: center; }
-
-/* GRID FORMULARIOS */
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-.full-width { grid-column: span 2; }
-.section-box { border: 1px solid #e0e0e0; padding: 15px; border-radius: 6px; margin-bottom: 15px; background: #fafafa; }
+/* Dashboard Cards */
+.stats-grid { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px; }
+.stat-card { flex: 1; min-width: 150px; background: #e7f1ff; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #b3d7ff; }
+.stat-card h3 { margin: 0; font-size: 14px; color: #555; }
+.stat-card p { margin: 5px 0 0; font-size: 24px; font-weight: bold; color: #0056b3; }
 </style>
 </head>
 <body>
 
-<button onclick="crearPrimerAdmin()" style="position:fixed; top:10px; right:10px; z-index:9999; background:red; color:white; padding:5px;">ADMIN RESET</button>
+<button onclick="crearPrimerAdmin()" style="position:fixed; top:10px; right:10px; z-index:9999; background:red; color:white; padding:10px; border:none; border-radius:5px; cursor:pointer;">
+    CREAR ADMIN DE EMERGENCIA
+</button>
 
 <div id="view-login" class="login-container">
     <div class="login-card">
-        <h1 style="color:#2D336B">FCI System</h1>
-        <p>Gestión Documental v2.0</p>
-        <input type="text" id="loginUser" placeholder="Usuario">
-        <input type="password" id="loginPass" placeholder="Contraseña">
-        <p id="loginError" style="color:red; display:none">Error de credenciales</p>
+        <h1>FCI System</h1>
+        <p>Gestión de Documentos</p>
+        <input type="text" id="loginUser" class="login-input" placeholder="Usuario (Ej: Admin)">
+        <input type="password" id="loginPass" class="login-input" placeholder="Contraseña">
+        <p id="loginError" class="error-msg">Credenciales incorrectas</p>
         <button onclick="login()" class="btn-login">Ingresar</button>
     </div>
 </div>
@@ -66,143 +69,81 @@ th { background: #0056b3; color: white; }
     <header>
         <div>
             <h1 style="margin:0; color:#2D336B;">Panel de Control</h1>
-            <small>Usuario: <strong id="userNameDisplay"></strong> | Rol: <span id="userRoleDisplay"></span></small>
+            <small>Bienvenido, <span id="userNameDisplay" style="font-weight:bold;">Usuario</span></small>
         </div>
-        <button onclick="logout()" class="btn-delete" style="padding:8px 15px;">Cerrar Sesión</button>
+        <button onclick="logout()" class="btn-logout">Cerrar Sesión</button>
     </header>
 
-    <div id="adminSection" class="hidden">
-        <h2>Administración del Sistema</h2>
+    <section>
+        <div class="stats-grid">
+            <div class="stat-card"><h3>Total Solicitudes</h3><p id="stat-total">0</p></div>
+            <div class="stat-card"><h3>Pendientes</h3><p id="stat-Pendiente">0</p></div>
+            <div class="stat-card"><h3>En Proceso</h3><p id="stat-Proceso">0</p></div>
+            <div class="stat-card"><h3>Finalizados</h3><p id="stat-Finalizado">0</p></div>
+        </div>
+    </section>
+
+    <div id="adminSection">
+        <h2>Gestión de Organización (Admin)</h2>
         
-        <div class="form-grid">
-            <div>
-                <h3>1. Estructura Organizacional</h3>
-                <div class="section-box">
-                    <strong>Gerencias</strong>
-                    <div style="display:flex; gap:5px;">
-                        <input type="text" id="gerenciaNombre" placeholder="Nueva Gerencia">
-                        <button onclick="crearGerencia()" class="btn-action">+</button>
-                    </div>
-                    <div id="listaGerencias" style="max-height:100px; overflow-y:auto; margin-top:5px;"></div>
-                </div>
-
-                <div class="section-box">
-                    <strong>Departamentos</strong>
-                    <div style="display:flex; gap:5px;">
-                        <input type="text" id="departamentoNombre" placeholder="Nuevo Depto">
-                        <select id="departamentoGerencia" style="width:150px;"></select>
-                        <button onclick="crearDepartamento()" class="btn-action">+</button>
-                    </div>
-                    <div id="listaDepartamentos" style="max-height:100px; overflow-y:auto; margin-top:5px;"></div>
-                </div>
-            </div>
-
-            <div>
-                <h3>2. Gestión de Usuarios</h3>
-                <div class="section-box">
-                    <input type="text" id="usuarioNombre" placeholder="Usuario (Login)">
-                    <input type="text" id="usuarioCorreo" placeholder="Correo Electrónico">
-                    <input type="password" id="usuarioPassword" placeholder="Contraseña">
-                    <div style="display:flex; gap:5px;">
-                        <select id="usuarioGerencia"></select>
-                        <select id="usuarioDepartamento"></select>
-                    </div>
-                    
-                    <strong style="display:block; margin-top:10px;">Permisos:</strong>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; font-size:12px;">
-                        <label><input type="checkbox" id="perm_admin"> 🔴 ADMIN TOTAL</label>
-                        <label><input type="checkbox" id="perm_crear" checked> Realizar Solicitudes</label>
-                        <label><input type="checkbox" id="perm_ver_ger"> Ver toda Gerencia</label>
-                        <label><input type="checkbox" id="perm_aprobar"> Aprobar/Rechazar</label>
-                    </div>
-                    <button onclick="crearUsuario()" class="btn-action" style="width:100%; margin-top:10px;">Registrar Usuario</button>
-                </div>
-            </div>
+        <div style="display:flex; gap:10px; margin-bottom:10px;">
+            <input type="text" id="gerenciaNombre" placeholder="Nueva Gerencia">
+            <button onclick="crearGerencia()" class="btn-action">Crear</button>
         </div>
         
-        <div class="table-responsive section-box">
-            <h4>Usuarios Registrados</h4>
+        <div style="display:flex; gap:10px; margin-bottom:10px;">
+            <input type="text" id="departamentoNombre" placeholder="Nuevo Departamento">
+            <select id="departamentoGerencia"></select>
+            <button onclick="crearDepartamento()" class="btn-action">Crear</button>
+        </div>
+
+        <h3>Registrar Usuario</h3>
+        <div style="background:#f8f9fa; padding:15px; border-radius:8px; border:1px solid #ddd;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <input type="text" id="usuarioNombre" placeholder="Nombre Usuario (Login)">
+                <input type="text" id="usuarioCorreo" placeholder="Correo">
+                <input type="password" id="usuarioPassword" placeholder="Contraseña">
+                <select id="usuarioGerencia"></select>
+                <select id="usuarioDepartamento"></select>
+            </div>
+            <div style="margin-top:10px;">
+                <label><input type="checkbox" id="perm_sol"> Solicitar</label>
+                <label><input type="checkbox" id="perm_apr"> Aprobar</label>
+                <label><input type="checkbox" id="perm_ges"> Gestionar (Admin)</label>
+            </div>
+            <button onclick="crearUsuario()" class="btn-action" style="margin-top:10px;">Guardar Usuario</button>
+        </div>
+        
+        <div class="table-responsive">
             <table id="tablaUsuarios">
-                <thead><tr><th>Nombre</th><th>Ubicación</th><th>Permisos</th><th>Acción</th></tr></thead>
+                <thead><tr><th>Nombre</th><th>Correo</th><th>Permisos</th><th>Acción</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
     </div>
 
-    <section id="seccionCrearSolicitud">
-        <h2>Nueva Solicitud de Documento</h2>
-        <div class="section-box">
-            <div class="form-grid">
-                <div class="full-width">
-                    <label>Título del Documento:</label>
-                    <input type="text" id="solTitulo" placeholder="Ej: Procedimiento de Ventas">
-                </div>
-                
-                <div>
-                    <label>Tipo:</label>
-                    <select id="solTipo"><option>Procedimiento</option><option>Guía</option><option>Instructivo</option><option>Manual</option><option>Formato</option></select>
-                </div>
-
-                <div>
-                    <label>Acción a Realizar:</label>
-                    <select id="solAccion" onchange="toggleCamposTecnicos()">
-                        <option value="Creación">Creación</option>
-                        <option value="Modificación">Modificación</option>
-                        <option value="Inactivación">Inactivación</option>
-                    </select>
-                </div>
-                
-                <div id="camposTecnicos" class="full-width hidden" style="background:#fff3cd; padding:10px; border:1px solid #ffeeba;">
-                    <strong>Detalles de Versión Anterior (Requerido para Modif/Inactivar)</strong>
-                    <div class="form-grid">
-                        <input type="text" id="solCodigo" placeholder="Código (Ej: FCI-PRO-001)">
-                        <input type="text" id="solVersionActual" placeholder="Versión Actual (Ej: v1.0)">
-                        <input type="date" id="solFechaVersion">
-                    </div>
-                </div>
-
-                <div>
-                    <label>Ubicación:</label>
-                    <select id="solGerencia"></select>
-                </div>
-                <div>
-                    <label>Departamento:</label>
-                    <select id="solDepartamento"></select>
-                </div>
+    <section>
+        <h2>Nueva Solicitud</h2>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            <input type="text" id="solTitulo" placeholder="Título Documento">
+            <select id="solTipo"><option>Procedimiento</option><option>Guía</option><option>Instructivo</option><option>Manual</option><option>Formato</option></select>
+            <select id="solAccion"><option>Creación</option><option>Modificación</option><option>Inactivación</option></select>
+            <div>
+                <select id="solGerencia"></select>
+                <select id="solDepartamento"></select>
             </div>
-            
-            <label style="margin-top:10px; display:block;">Motivo:</label>
-            <input type="text" id="solMotivo" placeholder="Resumen corto del motivo">
-            
-            <label>Descripción Detallada:</label>
-            <textarea id="solDescripcion" rows="3" placeholder="Explique los cambios o el requerimiento..."></textarea>
-            
-            <label>Documento Adjunto:</label>
-            <input type="file" id="solArchivos">
-
-            <button onclick="crearSolicitud()" class="btn-action" style="background:#28a745; margin-top:15px; width:100%; font-size:16px;">🚀 Enviar Solicitud</button>
         </div>
+        <input type="text" id="solMotivo" placeholder="Motivo del cambio">
+        <textarea id="solDescripcion" placeholder="Descripción detallada" rows="2"></textarea>
+        <input type="file" id="solArchivos" multiple>
+        <button onclick="crearSolicitud()" class="btn-action" style="background:#28a745; margin-top:10px; width:100%;">Enviar Solicitud</button>
     </section>
 
     <section>
-        <h2>Bandeja de Solicitudes</h2>
-        <div style="display:flex; gap:10px; margin-bottom:15px;">
-            <div style="background:#e7f1ff; padding:10px; border-radius:5px; flex:1; text-align:center;">Pendientes: <b id="stat-Pendiente">0</b></div>
-            <div style="background:#fff3cd; padding:10px; border-radius:5px; flex:1; text-align:center;">En Proceso: <b id="stat-Proceso">0</b></div>
-            <div style="background:#d4edda; padding:10px; border-radius:5px; flex:1; text-align:center;">Finalizados: <b id="stat-Finalizado">0</b></div>
-        </div>
-
+        <h2>Listado de Solicitudes</h2>
         <div class="table-responsive">
             <table id="tablaSolicitudes">
-                <thead>
-                    <tr>
-                        <th>ID / Fecha</th>
-                        <th>Documento</th>
-                        <th>Solicitante</th>
-                        <th>Estado</th>
-                        <th>Gestión</th>
-                    </tr>
-                </thead>
+                <thead><tr><th>ID</th><th>Título</th><th>Estado</th><th>Acciones</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
@@ -210,7 +151,7 @@ th { background: #0056b3; color: white; }
 </div>
 
 <script>
-// --- 1. CONFIGURACIÓN FIREBASE & CLOUDINARY ---
+// --- CONFIGURACIÓN ---
 const firebaseConfig = {
   apiKey: "AIzaSyDdzCiachuhbE9jATz-TesPI2vUVIJrHjM",
   authDomain: "sistemadegestion-7400d.firebaseapp.com",
@@ -223,254 +164,75 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const cloudName = "df79cjklp"; 
 const uploadPreset = "fci_documentos"; 
-const ESTADOS = ["Pendiente", "Revisión", "Aprobado", "Rechazado", "Finalizado"];
+const ESTADOS = ["Pendiente","Revisión","Aprobación","Finalizado"];
 
-// --- 2. GESTIÓN DE SESIÓN ---
+// --- FUNCIÓN DE EMERGENCIA (AQUÍ DENTRO DEL SCRIPT) ---
+async function crearPrimerAdmin() {
+    await db.collection("Users").add({
+        nombre: "Admin",
+        pass: "123456",
+        correo: "admin@fci.com",
+        rol: "SuperAdmin",
+        fechaRegistro: new Date(),
+        permisos: {
+            solicitudes: true,
+            aprobar: true,
+            gestionar: true 
+        }
+    });
+    alert("¡Usuario Admin creado! Usuario: Admin / Pass: 123456");
+    location.reload();
+}
+
+// --- LÓGICA DE SESIÓN ---
 let currentUser = null;
 
 function initApp() {
-    const session = sessionStorage.getItem("fciSession_v2");
+    const session = sessionStorage.getItem("userSession");
     if(session) {
         currentUser = JSON.parse(session);
-        document.getElementById("view-login").classList.add("hidden");
-        document.getElementById("view-app").classList.remove("hidden");
-        renderInterface();
+        mostrarApp();
     } else {
         document.getElementById("view-login").classList.remove("hidden");
+        document.getElementById("view-app").classList.add("hidden");
     }
 }
 
 async function login() {
     const u = document.getElementById("loginUser").value;
     const p = document.getElementById("loginPass").value;
+    
     try {
         const snap = await db.collection("Users").where("nombre", "==", u).where("pass", "==", p).get();
         if(!snap.empty) {
             const userData = { id: snap.docs[0].id, ...snap.docs[0].data() };
-            sessionStorage.setItem("fciSession_v2", JSON.stringify(userData));
+            sessionStorage.setItem("userSession", JSON.stringify(userData));
             currentUser = userData;
-            location.reload();
+            mostrarApp();
         } else {
             document.getElementById("loginError").style.display = "block";
         }
-    } catch(e) { console.error(e); alert("Error de red"); }
+    } catch(e) { console.error(e); alert("Error de conexión"); }
 }
 
 function logout() {
-    if(confirm("¿Cerrar sesión?")) {
-        sessionStorage.clear();
-        location.reload();
-    }
+    sessionStorage.clear();
+    location.reload();
 }
 
-function renderInterface() {
+function mostrarApp() {
+    document.getElementById("view-login").classList.add("hidden");
+    document.getElementById("view-app").classList.remove("hidden");
     document.getElementById("userNameDisplay").innerText = currentUser.nombre;
-    const permisos = currentUser.permisos || {};
     
-    // Etiqueta de Rol
-    let rolText = permisos.admin ? "ADMINISTRADOR" : "COLABORADOR";
-    document.getElementById("userRoleDisplay").innerText = rolText;
-
-    // Mostrar/Ocultar Admin
-    if(permisos.admin) {
-        document.getElementById("adminSection").classList.remove("hidden");
+    if(!currentUser.permisos || !currentUser.permisos.gestionar) {
+        document.getElementById("adminSection").style.display = "none";
     }
-
-    // Mostrar/Ocultar Crear Solicitud
-    if(!permisos.crear && !permisos.admin) {
-        document.getElementById("seccionCrearSolicitud").classList.add("hidden");
-    }
-
-    cargarDatosEnTiempoReal();
-}
-
-// --- 3. LOGICA FORMULARIO CONDICIONAL ---
-function toggleCamposTecnicos() {
-    const accion = document.getElementById("solAccion").value;
-    const panel = document.getElementById("camposTecnicos");
-    if(accion === "Modificación" || accion === "Inactivación") {
-        panel.classList.remove("hidden");
-    } else {
-        panel.classList.add("hidden");
-    }
-}
-
-// --- 4. CRUD Y DATOS ---
-function cargarDatosEnTiempoReal() {
-    // A. GERENCIAS (Con botón eliminar)
-    db.collection("gerencias").onSnapshot(snap => {
-        const selectores = ["departamentoGerencia","usuarioGerencia","solGerencia"];
-        let htmlList = "";
-        let htmlOpts = "<option value=''>Seleccione...</option>";
-        
-        snap.forEach(doc => {
-            const d = doc.data();
-            htmlOpts += `<option value="${d.nombre}">${d.nombre}</option>`;
-            // Solo admin ve la lista para borrar
-            htmlList += `<div class="list-item">
-                <span>${d.nombre}</span>
-                <button onclick="eliminarGenerico('gerencias','${doc.id}')" class="btn-delete" style="padding:2px 6px;">x</button>
-            </div>`;
-        });
-        
-        selectores.forEach(id => { if(document.getElementById(id)) document.getElementById(id).innerHTML = htmlOpts; });
-        if(document.getElementById("listaGerencias")) document.getElementById("listaGerencias").innerHTML = htmlList;
-    });
-
-    // B. DEPARTAMENTOS
-    db.collection("departamentos").onSnapshot(snap => {
-        const selectores = ["usuarioDepartamento","solDepartamento"];
-        let htmlList = "";
-        let htmlOpts = "<option value=''>Seleccione...</option>";
-
-        snap.forEach(doc => {
-            const d = doc.data();
-            htmlOpts += `<option value="${d.nombre}">${d.nombre} (${d.gerencia})</option>`;
-            htmlList += `<div class="list-item">
-                <span>${d.nombre} <small>(${d.gerencia})</small></span>
-                <button onclick="eliminarGenerico('departamentos','${doc.id}')" class="btn-delete" style="padding:2px 6px;">x</button>
-            </div>`;
-        });
-
-        selectores.forEach(id => { if(document.getElementById(id)) document.getElementById(id).innerHTML = htmlOpts; });
-        if(document.getElementById("listaDepartamentos")) document.getElementById("listaDepartamentos").innerHTML = htmlList;
-    });
-
-    // C. USUARIOS (Solo visible para Admin)
-    if(currentUser.permisos.admin) {
-        db.collection("Users").onSnapshot(snap => {
-            let tbody = document.querySelector("#tablaUsuarios tbody");
-            tbody.innerHTML = "";
-            snap.forEach(doc => {
-                let u = doc.data();
-                let badges = "";
-                if(u.permisos.admin) badges += "<span class='tag tag-admin'>ADMIN</span> ";
-                if(u.permisos.aprobar) badges += "<span class='tag tag-user'>APRUEBA</span>";
-                
-                tbody.innerHTML += `<tr>
-                    <td><b>${u.nombre}</b><br><small>${u.correo}</small></td>
-                    <td>${u.gerencia}<br><small>${u.departamento}</small></td>
-                    <td>${badges}</td>
-                    <td><button onclick="eliminarGenerico('Users','${doc.id}')" class="btn-delete">Eliminar</button></td>
-                </tr>`;
-            });
-        });
-    }
-
-    // D. SOLICITUDES (Filtrado según permisos)
-    db.collection("solicitudes").orderBy("fecha", "desc").onSnapshot(snap => {
-        let tbody = document.querySelector("#tablaSolicitudes tbody");
-        tbody.innerHTML = "";
-        let counts = { Pendiente:0, Proceso:0, Finalizado:0 };
-
-        snap.forEach(doc => {
-            let d = doc.data();
-            
-            // --- FILTRO DE VISIBILIDAD ---
-            let visible = false;
-            if(currentUser.permisos.admin) visible = true;
-            else if(currentUser.permisos.ver_gerencia && d.gerencia === currentUser.gerencia) visible = true;
-            else if(d.usuarioCreador === currentUser.nombre) visible = true;
-
-            if(!visible) return; // Saltar si no tiene permiso de verla
-
-            // Estadísticas
-            if(d.estado === "Pendiente") counts.Pendiente++;
-            else if(d.estado === "Finalizado" || d.estado === "Rechazado") counts.Finalizado++;
-            else counts.Proceso++;
-
-            // Control de Estado (Solo Admin o Aprobador)
-            let estadoControl = `<span class="tag tag-user">${d.estado}</span>`;
-            if(currentUser.permisos.admin || currentUser.permisos.aprobar) {
-                estadoControl = `<select onchange="cambiarEstado('${doc.id}', this.value)" style="padding:2px;">
-                    ${ESTADOS.map(e => `<option ${d.estado===e?"selected":""}>${e}</option>`).join("")}
-                </select>`;
-            }
-
-            // Datos Extra para el botón Ver Ficha
-            let dataString = JSON.stringify(d).replace(/"/g, '&quot;');
-
-            tbody.innerHTML += `<tr>
-                <td><b style="color:#2D336B">${d.fciId || '---'}</b><br><small>${new Date(d.fecha.seconds*1000).toLocaleDateString()}</small></td>
-                <td><b>${d.titulo}</b><br><span class="tag tag-user">${d.tipo}</span> <span class="tag" style="border:1px solid #333">${d.accion}</span></td>
-                <td>${d.usuarioCreador}<br><small>${d.gerencia}</small></td>
-                <td>${estadoControl}</td>
-                <td>
-                    <button onclick="verFicha('${dataString}')" class="btn-action btn-view">👁️</button>
-                    <a href="${d.documentos[0] || '#'}" target="_blank" class="btn-action" style="text-decoration:none;">📎</a>
-                    ${ currentUser.permisos.admin ? `<button onclick="eliminarSolicitud('${doc.id}')" class="btn-delete">🗑️</button>` : '' }
-                </td>
-            </tr>`;
-        });
-        
-        document.getElementById("stat-Pendiente").innerText = counts.Pendiente;
-        document.getElementById("stat-Proceso").innerText = counts.Proceso;
-        document.getElementById("stat-Finalizado").innerText = counts.Finalizado;
-    });
-}
-
-// --- 5. FUNCIONES DE ACCIÓN ---
-
-// Crear Organización
-function crearGerencia() {
-    let n = document.getElementById("gerenciaNombre").value;
-    if(n) db.collection("gerencias").add({nombre:n});
-    document.getElementById("gerenciaNombre").value = "";
-}
-function crearDepartamento() {
-    let n = document.getElementById("departamentoNombre").value;
-    let g = document.getElementById("departamentoGerencia").value;
-    if(n && g) db.collection("departamentos").add({nombre:n, gerencia:g});
-    document.getElementById("departamentoNombre").value = "";
-}
-
-// Eliminar Genérico (User/Org)
-function eliminarGenerico(coleccion, id) {
-    if(confirm("¿Estás seguro de eliminar este registro permanentemente?")) {
-        db.collection(coleccion).doc(id).delete();
-    }
-}
-
-// Eliminar Solicitud (Con Motivo)
-function eliminarSolicitud(id) {
-    let motivo = prompt("⚠️ ATENCIÓN: Estás a punto de eliminar una solicitud.\nPor favor, escribe el MOTIVO de la eliminación:");
-    if(motivo && motivo.length > 3) {
-        // Podríamos guardar el motivo en un log aparte, pero por ahora borramos
-        console.log("Eliminado por:", motivo); 
-        db.collection("solicitudes").doc(id).delete();
-        alert("Solicitud eliminada.");
-    } else if(motivo !== null) {
-        alert("Debes detallar un motivo válido para eliminar.");
-    }
-}
-
-// Crear Usuario (Con Permisos Nuevos)
-async function crearUsuario() {
-    let nom = document.getElementById("usuarioNombre").value;
-    let pass = document.getElementById("usuarioPassword").value;
     
-    if(!nom || !pass) return alert("Faltan credenciales");
-
-    await db.collection("Users").add({
-        nombre: nom,
-        correo: document.getElementById("usuarioCorreo").value,
-        pass: pass,
-        gerencia: document.getElementById("usuarioGerencia").value,
-        departamento: document.getElementById("usuarioDepartamento").value,
-        fechaRegistro: new Date(),
-        permisos: {
-            admin: document.getElementById("perm_admin").checked,
-            crear: document.getElementById("perm_crear").checked,
-            ver_gerencia: document.getElementById("perm_ver_ger").checked,
-            aprobar: document.getElementById("perm_aprobar").checked
-        }
-    });
-    alert("Usuario Registrado Exitosamente");
-    document.getElementById("usuarioNombre").value = "";
-    document.getElementById("usuarioPassword").value = "";
+    cargarDatos();
 }
 
-// ID Correlativo
+// --- ID CORRELATIVO ---
 async function getNextID() {
     const ref = db.collection("configuracion").doc("contadores");
     return db.runTransaction(async (t) => {
@@ -481,106 +243,137 @@ async function getNextID() {
     });
 }
 
-// Crear Solicitud (CORE)
-async function crearSolicitud() {
-    let btn = document.querySelector("button[onclick='crearSolicitud()']");
-    btn.disabled = true; btn.innerText = "Procesando...";
+// --- CRUD PRINCIPAL ---
+function cargarDatos() {
+    db.collection("gerencias").onSnapshot(s => {
+        let h = ""; s.forEach(d => h += `<option value="${d.data().nombre}">${d.data().nombre}</option>`);
+        ["departamentoGerencia","usuarioGerencia","solGerencia"].forEach(id => {
+             const el = document.getElementById(id);
+             if(el) el.innerHTML = h; 
+        });
+    });
 
-    try {
-        let tit = document.getElementById("solTitulo").value;
-        if(!tit) throw "El título es obligatorio";
+    db.collection("departamentos").onSnapshot(s => {
+        let h = ""; s.forEach(d => h += `<option value="${d.data().nombre}">${d.data().nombre}</option>`);
+        ["usuarioDepartamento","solDepartamento"].forEach(id => {
+             const el = document.getElementById(id);
+             if(el) el.innerHTML = h;
+        });
+    });
 
-        // Subida Archivo
-        let fileInput = document.getElementById("solArchivos");
-        let urls = [];
-        if(fileInput.files.length > 0) {
-            for(let f of fileInput.files) {
-                let fd = new FormData(); 
-                fd.append("file", f); 
-                fd.append("upload_preset", uploadPreset);
-                let res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, {method:"POST", body:fd});
-                let json = await res.json(); 
-                urls.push(json.secure_url);
-            }
-        }
+    if(currentUser.permisos && currentUser.permisos.gestionar) {
+        db.collection("Users").onSnapshot(s => {
+            let tbody = document.querySelector("#tablaUsuarios tbody");
+            tbody.innerHTML = "";
+            s.forEach(doc => {
+                let u = doc.data();
+                let p = [];
+                if(u.permisos.solicitudes) p.push("Solicita");
+                if(u.permisos.aprobar) p.push("Aprueba");
+                if(u.permisos.gestionar) p.push("Admin");
+                
+                tbody.innerHTML += `<tr>
+                    <td>${u.nombre}</td><td>${u.correo}</td>
+                    <td>${p.map(x=>`<span class="permiso-tag">${x}</span>`).join("")}</td>
+                    <td><button onclick="db.collection('Users').doc('${doc.id}').delete()" class="btn-action btn-delete">X</button></td>
+                </tr>`;
+            });
+        });
+    }
 
-        const id = await getNextID();
+    db.collection("solicitudes").orderBy("fecha", "desc").onSnapshot(s => {
+        let tbody = document.querySelector("#tablaSolicitudes tbody");
+        tbody.innerHTML = "";
+        let stats = { total:0, Pendiente:0, Proceso:0, Finalizado:0 };
         
-        // Datos Condicionales
-        let accion = document.getElementById("solAccion").value;
-        let codigoDoc = "", versionAnt = "", fechaVer = "";
-        
-        if(accion !== "Creación") {
-            codigoDoc = document.getElementById("solCodigo").value;
-            versionAnt = document.getElementById("solVersionActual").value;
-            fechaVer = document.getElementById("solFechaVersion").value;
-            if(!codigoDoc) throw "Para Modificar/Inactivar debes ingresar el Código del Documento";
-        }
+        s.forEach(doc => {
+            let d = doc.data();
+            stats.total++;
+            if(d.estado == "Pendiente") stats.Pendiente++;
+            else if(d.estado == "Finalizado") stats.Finalizado++;
+            else stats.Proceso++;
 
-        await db.collection("solicitudes").add({
-            fciId: id,
-            titulo: tit,
-            tipo: document.getElementById("solTipo").value,
-            accion: accion,
-            // Datos Técnicos
-            codigoDocumento: codigoDoc,
-            versionActual: versionAnt,
-            fechaUltimaVersion: fechaVer,
-            
-            gerencia: document.getElementById("solGerencia").value,
-            departamento: document.getElementById("solDepartamento").value,
-            motivo: document.getElementById("solMotivo").value,
-            descripcion: document.getElementById("solDescripcion").value,
-            documentos: urls,
-            estado: "Pendiente",
-            fecha: new Date(),
-            usuarioCreador: currentUser.nombre
+            let acciones = `<select onchange="db.collection('solicitudes').doc('${doc.id}').update({estado:this.value})">
+                ${ESTADOS.map(e => `<option ${d.estado==e?"selected":""}>${e}</option>`).join("")}
+            </select>`;
+
+            tbody.innerHTML += `<tr>
+                <td><span class="id-badge">${d.fciId || 'S/N'}</span></td>
+                <td>${d.titulo}<br><small>${d.tipo}</small></td>
+                <td><span class="permiso-tag">${d.estado}</span></td>
+                <td>${acciones}</td>
+            </tr>`;
         });
         
-        alert(`✅ Solicitud ${id} creada con éxito.`);
-        document.getElementById("solTitulo").value = "";
-        document.getElementById("solDescripcion").value = "";
-    
-    } catch(e) {
-        alert("Error: " + e);
-    }
-    btn.disabled = false; btn.innerText = "🚀 Enviar Solicitud";
-}
-
-function cambiarEstado(id, nuevoEstado) {
-    db.collection("solicitudes").doc(id).update({estado: nuevoEstado});
-}
-
-function verFicha(jsonStr) {
-    const d = JSON.parse(jsonStr);
-    let msg = `
-    📋 FICHA TÉCNICA: ${d.fciId}
-    --------------------------------
-    Título: ${d.titulo}
-    Tipo: ${d.tipo}
-    Acción: ${d.accion}
-    
-    📂 DATOS TÉCNICOS:
-    Código: ${d.codigoDocumento || 'N/A (Creación)'}
-    Versión Actual: ${d.versionActual || 'N/A'}
-    Fecha Versión: ${d.fechaUltimaVersion || 'N/A'}
-    
-    👤 Solicitante: ${d.usuarioCreador}
-    📍 Ubicación: ${d.gerencia} - ${d.departamento}
-    
-    📝 Motivo: ${d.motivo}
-    📄 Descripción: ${d.descripcion}
-    `;
-    alert(msg);
-}
-
-// EMERGENCIA
-async function crearPrimerAdmin() {
-    await db.collection("Users").add({
-        nombre: "Admin", pass: "123456", correo: "admin@fci.com", gerencia:"TI", departamento:"Sistemas",
-        permisos: { admin: true, crear: true, ver_gerencia: true, aprobar: true }
+        document.getElementById("stat-total").innerText = stats.total;
+        document.getElementById("stat-Pendiente").innerText = stats.Pendiente;
+        document.getElementById("stat-Proceso").innerText = stats.Proceso;
+        document.getElementById("stat-Finalizado").innerText = stats.Finalizado;
     });
-    alert("Admin creado: Admin / 123456"); location.reload();
+}
+
+// --- CREACIONES ---
+function crearGerencia() {
+    let n = document.getElementById("gerenciaNombre").value;
+    if(n) db.collection("gerencias").add({nombre:n});
+    document.getElementById("gerenciaNombre").value="";
+}
+
+function crearDepartamento() {
+    let n = document.getElementById("departamentoNombre").value;
+    let g = document.getElementById("departamentoGerencia").value;
+    if(n) db.collection("departamentos").add({nombre:n, gerencia:g});
+    document.getElementById("departamentoNombre").value="";
+}
+
+async function crearUsuario() {
+    let nom = document.getElementById("usuarioNombre").value;
+    let cor = document.getElementById("usuarioCorreo").value;
+    let pass = document.getElementById("usuarioPassword").value;
+    if(!nom || !pass) return alert("Faltan datos");
+
+    await db.collection("Users").add({
+        nombre: nom, correo: cor, pass: pass,
+        fechaRegistro: new Date(),
+        permisos: {
+            solicitudes: document.getElementById("perm_sol").checked,
+            aprobar: document.getElementById("perm_apr").checked,
+            gestionar: document.getElementById("perm_ges").checked
+        }
+    });
+    alert("Usuario Creado");
+    document.getElementById("usuarioNombre").value = "";
+    document.getElementById("usuarioPassword").value = "";
+}
+
+async function crearSolicitud() {
+    let tit = document.getElementById("solTitulo").value;
+    if(!tit) return alert("Título obligatorio");
+    
+    const id = await getNextID();
+    let files = document.getElementById("solArchivos").files;
+    let urls = [];
+
+    for(let f of files) {
+        let fd = new FormData(); fd.append("file", f); fd.append("upload_preset", uploadPreset);
+        let res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, {method:"POST", body:fd});
+        let json = await res.json(); urls.push(json.secure_url);
+    }
+
+    await db.collection("solicitudes").add({
+        fciId: id, titulo: tit,
+        tipo: document.getElementById("solTipo").value,
+        accion: document.getElementById("solAccion").value,
+        gerencia: document.getElementById("solGerencia").value,
+        departamento: document.getElementById("solDepartamento").value,
+        motivo: document.getElementById("solMotivo").value,
+        descripcion: document.getElementById("solDescripcion").value,
+        documentos: urls,
+        estado: "Pendiente",
+        fecha: new Date(),
+        usuarioCreador: currentUser.nombre 
+    });
+    alert(`Solicitud ${id} Creada`);
 }
 
 initApp();
