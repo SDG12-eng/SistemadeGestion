@@ -1,10 +1,9 @@
-// IMPORTAR FIREBASE (Versión 10.7.1)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, arrayUnion, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, arrayUnion, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// CONFIGURACIÓN (Tu config)
+// --- CONFIGURACIÓN FIREBASE ---
 const firebaseConfig = {
-  apiKey: "AIzaSyDdzCiachuhbE9jATz-TesPI2vUVIJrHjM",
+  apiKey: "AIzaSyDdzCiachuhbE9jATz-TesPI2vUVIJrHjM", // Tu API Key
   authDomain: "sistemadegestion-7400d.firebaseapp.com",
   projectId: "sistemadegestion-7400d",
   storageBucket: "sistemadegestion-7400d.appspot.com",
@@ -15,282 +14,295 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ESTADO GLOBAL
+// --- ESTADO Y UI HELPERS ---
 let currentUser = null;
-let currentSignId = null; // ID de solicitud a firmar
+let currentSignId = null;
+let allDocs = []; // Para búsqueda local
 
-// --- CLOUDINARY (Subida de archivos) ---
-async function uploadFile(file) {
-  const url = "https://api.cloudinary.com/v1_1/df79cjklp/upload";
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", "fci_documentos");
-  try {
-    const res = await fetch(url, { method: "POST", body: formData });
-    const data = await res.json();
-    return data.secure_url;
-  } catch (e) {
-    console.error("Error subida:", e);
-    return null;
-  }
-}
-
-// --- SISTEMA DE NOTIFICACIONES ---
-const btnNotif = document.getElementById("btnNotif");
-
-btnNotif.onclick = () => {
-  if (!("Notification" in window)) {
-    alert("Este navegador no soporta notificaciones de escritorio");
-  } else if (Notification.permission === "granted") {
-    new Notification("Sistema SGC", { body: "Las notificaciones ya están activas." });
-  } else if (Notification.permission !== "denied") {
-    Notification.requestPermission().then(permission => {
-      if (permission === "granted") {
-        new Notification("Sistema SGC", { body: "¡Notificaciones activadas!" });
-      }
-    });
-  }
+const showLoader = (show) => document.getElementById("globalLoader").classList.toggle("hide", !show);
+const notify = (msg, type = 'info') => {
+    let color = type === 'success' ? '#10b981' : (type === 'error' ? '#ef4444' : '#2563eb');
+    Toastify({ text: msg, duration: 3000, backgroundColor: color, gravity: "bottom", position: "right" }).showToast();
 };
 
-function sendSystemNotification(title, body) {
-  if (Notification.permission === "granted") {
-    new Notification(title, { body, icon: 'https://cdn-icons-png.flaticon.com/512/1042/1042390.png' });
-  }
-  // Aquí podríamos añadir lógica para guardar en base de datos una colección "Notificaciones"
-}
-
-// --- AUTENTICACIÓN Y ROLES ---
+// --- AUTHENTICATION ---
 document.getElementById("btnLogin").onclick = async () => {
-  const u = document.getElementById("loginUser").value;
-  const p = document.getElementById("loginPass").value;
-
-  // 1. Admin Hardcoded (Backup)
-  if (u === "Admin" && p === "1130") {
-    loginSuccess({ usuario: "Admin", role: "admin" });
-    return;
-  }
-
-  // 2. Buscar en Firebase
-  const q = query(collection(db, "Usuarios"), where("usuario", "==", u), where("pass", "==", p));
-  const snapshot = await getDocs(q);
-
-  if (!snapshot.empty) {
-    loginSuccess(snapshot.docs[0].data());
-  } else {
-    document.getElementById("loginMsg").innerText = "Credenciales inválidas";
-  }
-};
-
-function loginSuccess(user) {
-  currentUser = user;
-  document.getElementById("loginScreen").classList.add("hide");
-  document.getElementById("dashboard").classList.remove("hide");
-  
-  document.getElementById("userLogged").innerText = user.usuario;
-  document.getElementById("userRoleDisplay").innerText = user.role.toUpperCase();
-
-  // Mostrar elementos solo para admin
-  const adminElements = document.querySelectorAll(".admin-only");
-  adminElements.forEach(el => el.style.display = user.role === 'admin' ? 'block' : 'none');
-
-  loadDashboardData();
-}
-
-document.getElementById("btnLogout").onclick = () => location.reload();
-
-// --- GESTIÓN DOCUMENTAL ---
-
-// UI Toggle
-window.toggleForm = (id) => {
-  document.getElementById(id).classList.toggle("hide");
-};
-
-// Toggle fecha ultima versión
-document.getElementById("solAccion").onchange = (e) => {
-  const isMod = e.target.value === "Modificación";
-  const dateInput = document.getElementById("solLastDate");
-  dateInput.disabled = !isMod;
-  if(!isMod) dateInput.value = "";
-};
-
-// Crear Solicitud
-window.crearSolicitud = async () => {
-  const title = document.getElementById("solTitle").value;
-  const tipo = document.getElementById("solTipo").value;
-  const accion = document.getElementById("solAccion").value;
-  const version = document.getElementById("solVersion").value;
-  const lastDate = document.getElementById("solLastDate").value; // ISO Date string
-  const desc = document.getElementById("solDesc").value;
-  const fileInput = document.getElementById("solFile").files[0];
-
-  if (!title || !tipo || !accion) return alert("Complete los campos obligatorios");
-
-  let fileUrl = "#";
-  if (fileInput) {
-    fileUrl = await uploadFile(fileInput);
-  }
-
-  const newDoc = {
-    title, tipo, accion, version, desc, fileUrl,
-    ultimaFechaVersion: lastDate || "N/A",
-    estado: "Pendiente",
-    createdBy: currentUser.usuario,
-    createdAt: new Date().toISOString(),
-    historial: [{ 
-      accion: "Solicitud Creada", 
-      user: currentUser.usuario, 
-      fecha: new Date().toISOString() 
-    }]
-  };
-
-  await addDoc(collection(db, "Solicitudes"), newDoc);
-  
-  // Notificar
-  sendSystemNotification("Nueva Solicitud ISO", `${currentUser.usuario} ha solicitado ${accion} de ${title}`);
-  
-  toggleForm('solFormContainer');
-  loadDashboardData();
-};
-
-// Cargar Datos
-async function loadDashboardData() {
-  const list = document.getElementById("solList");
-  const historial = document.getElementById("historialList");
-  list.innerHTML = "";
-  historial.innerHTML = "";
-
-  // Query básica (mejorar con índices compuestos luego)
-  const q = query(collection(db, "Solicitudes"), orderBy("createdAt", "desc"));
-  const snapshot = await getDocs(q);
-
-  let stats = { total: 0, pending: 0, approved: 0 };
-
-  snapshot.forEach(docu => {
-    const data = docu.data();
+    const u = document.getElementById("loginUser").value;
+    const p = document.getElementById("loginPass").value;
     
-    // Filtrado de seguridad visual (El admin ve todo, usuario solo lo suyo)
-    if (currentUser.role !== 'admin' && data.createdBy !== currentUser.usuario) return;
+    if(!u || !p) return notify("Ingrese credenciales", "error");
+    showLoader(true);
 
-    // Stats
-    stats.total++;
-    if (data.estado === "Pendiente") stats.pending++;
-    if (data.estado === "Aprobado") stats.approved++;
+    try {
+        let userFound = null;
+        // Check Hardcoded Admin first
+        if(u === "Admin" && p === "1130") userFound = { usuario: "Admin", role: "admin" };
+        else {
+            const q = query(collection(db, "Usuarios"), where("usuario", "==", u), where("pass", "==", p));
+            const snap = await getDocs(q);
+            if(!snap.empty) userFound = snap.docs[0].data();
+        }
 
-    // Render Lista Documentos
-    const div = document.createElement("div");
-    div.className = "item";
-    div.innerHTML = `
-      <div>
-        <strong>${data.title}</strong> <span class="badge ${data.estado}">${data.estado}</span>
-        <br>
-        <small>${data.tipo} v${data.version} | ${data.accion} | Última Ver: ${data.ultimaFechaVersion}</small>
-      </div>
-      <div>
-        ${data.fileUrl !== '#' ? `<a href="${data.fileUrl}" target="_blank" class="btn-text">Ver Doc</a>` : ''}
-        
-        ${currentUser.role === 'admin' && data.estado === 'Pendiente' ? 
-          `<button class="btn-primary" onclick="abrirFirma('${docu.id}')">Aprobar</button>
-           <button class="btn-outline" style="color:red; border-color:red" onclick="rechazar('${docu.id}')">Rechazar</button>` 
-          : ''}
-      </div>
-    `;
-    list.appendChild(div);
+        if(userFound) {
+            currentUser = userFound;
+            initDashboard();
+        } else {
+            notify("Credenciales incorrectas", "error");
+        }
+    } catch (e) {
+        console.error(e);
+        notify("Error de conexión", "error");
+    } finally {
+        showLoader(false);
+    }
+};
 
-    // Render Historial (Audit Trail)
-    historial.innerHTML += `
-      <div class="historial-item" style="padding: 10px; border-bottom: 1px solid #eee;">
-        <small>${new Date(data.createdAt).toLocaleDateString()}</small><br>
-        <b>${data.accion}</b> - ${data.title} (${data.createdBy})
-      </div>
-    `;
-  });
+document.getElementById("btnLogout").onclick = () => window.location.reload();
 
-  // Update Stats UI
-  document.getElementById("statTotal").innerText = stats.total;
-  document.getElementById("statPendientes").innerText = stats.pending;
-  document.getElementById("statAprobados").innerText = stats.approved;
+function initDashboard() {
+    document.getElementById("loginScreen").classList.add("hide");
+    document.getElementById("dashboard").classList.remove("hide");
+    
+    // Set UI User Info
+    document.getElementById("userLogged").innerText = currentUser.usuario;
+    document.getElementById("userAvatar").innerText = currentUser.usuario.charAt(0).toUpperCase();
+    document.getElementById("userRoleDisplay").innerText = currentUser.role === 'admin' ? 'ADMINISTRADOR' : 'USUARIO';
+
+    // Show/Hide Admin Tabs
+    document.querySelectorAll(".admin-only").forEach(el => el.style.display = currentUser.role === 'admin' ? 'block' : 'none');
+
+    // Load Data
+    loadDataRealtime();
 }
 
-// --- LÓGICA DE FIRMA ELECTRÓNICA (CANVAS) ---
-const modalFirma = document.getElementById("modalFirma");
+// --- DATA & REALTIME DASHBOARD ---
+function loadDataRealtime() {
+    const q = query(collection(db, "Solicitudes"), orderBy("createdAt", "desc"));
+    
+    // Listener en tiempo real (Snapshot)
+    onSnapshot(q, (snapshot) => {
+        allDocs = [];
+        let stats = { total: 0, pending: 0, approved: 0 };
+        const tbody = document.getElementById("solTableBody");
+        const timeline = document.getElementById("historialList");
+        
+        tbody.innerHTML = "";
+        timeline.innerHTML = "";
+
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            const id = docSnap.id;
+            
+            // Filtro de seguridad por Rol
+            if(currentUser.role !== 'admin' && data.createdBy !== currentUser.usuario) return;
+
+            allDocs.push({ id, ...data });
+
+            // Stats
+            stats.total++;
+            if(data.estado === "Pendiente") stats.pending++;
+            if(data.estado === "Aprobado") stats.approved++;
+
+            // Render Tabla
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>
+                    <b>${data.title}</b><br>
+                    <small class="text-muted">${data.createdAt.substring(0,10)}</small>
+                </td>
+                <td>${data.tipo}</td>
+                <td>v${data.version}</td>
+                <td><span class="status-badge status-${data.estado}">${data.estado}</span></td>
+                <td>
+                    <button class="btn-text" onclick="verDetalle('${data.desc}', '${data.fileUrl}')">Ver</button>
+                    ${currentUser.role === 'admin' && data.estado === 'Pendiente' ? 
+                        `<button class="btn-text" style="color:var(--success)" onclick="abrirFirma('${id}')">Aprobar</button>
+                         <button class="btn-text" style="color:var(--danger)" onclick="rechazar('${id}')">Rechazar</button>` : ''}
+                </td>
+            `;
+            tbody.appendChild(tr);
+
+            // Render Timeline (Solo últimos 5)
+            if(stats.total <= 5) {
+                timeline.innerHTML += `
+                    <div class="timeline-item">
+                        <div class="timeline-line"></div>
+                        <div class="timeline-icon"><span class="material-icons-round">history</span></div>
+                        <div class="timeline-content">
+                            <strong>${data.accion}</strong> - ${data.title}
+                            <div style="font-size:0.8rem; color:#888">${new Date(data.createdAt).toLocaleString()} por ${data.createdBy}</div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        // Update UI Stats
+        document.getElementById("statTotal").innerText = stats.total;
+        document.getElementById("statPendientes").innerText = stats.pending;
+        document.getElementById("statAprobados").innerText = stats.approved;
+        
+        // Empty State
+        document.getElementById("emptyState").classList.toggle("hide", stats.total > 0);
+
+        // Update Charts
+        updateChart(stats);
+    });
+}
+
+// --- CHART.JS INTEGRATION ---
+let myChart = null;
+function updateChart(stats) {
+    const ctx = document.getElementById('mainChart').getContext('2d');
+    if(myChart) myChart.destroy();
+    
+    myChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Pendientes', 'Aprobados', 'Rechazados'],
+            datasets: [{
+                data: [stats.pending, stats.approved, stats.total - (stats.pending + stats.approved)],
+                backgroundColor: ['#f59e0b', '#10b981', '#ef4444'],
+                borderWidth: 0
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '70%' }
+    });
+}
+
+// --- SEARCH ---
+document.getElementById("globalSearch").addEventListener("keyup", (e) => {
+    const term = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll("#solTableBody tr");
+    rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(term) ? "" : "none";
+    });
+});
+
+// --- ACTIONS ---
+window.toggleModal = (id) => document.getElementById(id).classList.toggle("hide");
+window.checkModType = () => {
+    const isMod = document.getElementById("solAccion").value === "Modificación";
+    document.getElementById("solLastDate").disabled = !isMod;
+};
+
+window.crearSolicitud = async () => {
+    const title = document.getElementById("solTitle").value;
+    const tipo = document.getElementById("solTipo").value;
+    const accion = document.getElementById("solAccion").value;
+    
+    if(!title) return Swal.fire("Error", "El título es obligatorio", "warning");
+
+    showLoader(true);
+    // Simular upload
+    const fileUrl = "#"; // Aquí iría tu lógica de Cloudinary
+
+    try {
+        await addDoc(collection(db, "Solicitudes"), {
+            title, tipo, accion, 
+            version: document.getElementById("solVersion").value || "1.0",
+            desc: document.getElementById("solDesc").value,
+            fileUrl,
+            estado: "Pendiente",
+            createdBy: currentUser.usuario,
+            createdAt: new Date().toISOString()
+        });
+        notify("Solicitud Creada Exitosamente", "success");
+        toggleModal('modalSolicitud');
+    } catch (e) {
+        notify("Error al crear", "error");
+    } finally {
+        showLoader(false);
+    }
+};
+
+window.verDetalle = (desc, url) => {
+    Swal.fire({
+        title: 'Detalles del Documento',
+        html: `<p>${desc}</p><br>${url !== '#' ? `<a href="${url}" target="_blank" class="btn-primary">Ver Archivo</a>` : 'Sin archivo adjunto'}`,
+        showCloseButton: true
+    });
+};
+
+// --- FIRMA DIGITAL ---
 const canvas = document.getElementById("signaturePad");
 const ctx = canvas.getContext("2d");
 let drawing = false;
 
-// Eventos de dibujo (Mouse y Touch)
-const startDraw = (e) => { drawing = true; ctx.beginPath(); ctx.moveTo(getPosition(e).x, getPosition(e).y); };
-const endDraw = () => { drawing = false; };
-const draw = (e) => {
-  if (!drawing) return;
-  e.preventDefault();
-  ctx.lineTo(getPosition(e).x, getPosition(e).y);
-  ctx.stroke();
-};
-
-function getPosition(e) {
-  const rect = canvas.getBoundingClientRect();
-  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-  return { x: clientX - rect.left, y: clientY - rect.top };
+// Funciones de dibujo (ratón y táctil)
+const getPos = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    return { x, y };
 }
 
-canvas.addEventListener("mousedown", startDraw);
-canvas.addEventListener("mouseup", endDraw);
-canvas.addEventListener("mousemove", draw);
-canvas.addEventListener("touchstart", startDraw);
-canvas.addEventListener("touchend", endDraw);
-canvas.addEventListener("touchmove", draw);
+['mousedown', 'touchstart'].forEach(evt => 
+    canvas.addEventListener(evt, (e) => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); })
+);
+['mousemove', 'touchmove'].forEach(evt => 
+    canvas.addEventListener(evt, (e) => { 
+        if(!drawing) return; 
+        e.preventDefault(); 
+        const p = getPos(e); 
+        ctx.lineTo(p.x, p.y); 
+        ctx.stroke(); 
+    })
+);
+['mouseup', 'touchend'].forEach(evt => canvas.addEventListener(evt, () => drawing = false));
 
-document.getElementById("btnClearSign").onclick = () => ctx.clearRect(0, 0, canvas.width, canvas.height);
-window.closeModalFirma = () => modalFirma.classList.add("hide");
+document.getElementById("btnClearSign").onclick = () => ctx.clearRect(0,0,canvas.width, canvas.height);
 
-// Abrir Modal
 window.abrirFirma = (id) => {
-  currentSignId = id;
-  ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpiar canvas previo
-  modalFirma.classList.remove("hide");
+    currentSignId = id;
+    document.getElementById("signerName").innerText = currentUser.usuario;
+    ctx.clearRect(0,0,canvas.width, canvas.height);
+    toggleModal("modalFirma");
 };
 
-// Confirmar Firma y Aprobar
 document.getElementById("btnConfirmSign").onclick = async () => {
-  if (!currentSignId) return;
-  
-  // Convertir firma a imagen Base64
-  const firmaImg = canvas.toDataURL("image/png");
-
-  const ref = doc(db, "Solicitudes", currentSignId);
-  await updateDoc(ref, {
-    estado: "Aprobado",
-    firmaAdmin: firmaImg, // Guardamos la firma visual
-    fechaAprobacion: new Date().toISOString(),
-    historial: arrayUnion({
-      accion: "Aprobado y Firmado",
-      user: currentUser.usuario,
-      fecha: new Date().toISOString()
-    })
-  });
-
-  sendSystemNotification("Documento Aprobado", "El documento ha sido firmado y aprobado por la administración.");
-  closeModalFirma();
-  loadDashboardData();
+    showLoader(true);
+    const firmaImg = canvas.toDataURL();
+    
+    await updateDoc(doc(db, "Solicitudes", currentSignId), {
+        estado: "Aprobado",
+        firmaAdmin: firmaImg,
+        approvedAt: new Date().toISOString()
+    });
+    
+    toggleModal("modalFirma");
+    showLoader(false);
+    Swal.fire("¡Aprobado!", "El documento ha sido firmado y procesado.", "success");
 };
 
 window.rechazar = async (id) => {
-  if(!confirm("¿Rechazar solicitud?")) return;
-  const ref = doc(db, "Solicitudes", id);
-  await updateDoc(ref, {
-    estado: "Rechazado",
-    historial: arrayUnion({ accion: "Rechazado", user: currentUser.usuario, fecha: new Date().toISOString() })
-  });
-  loadDashboardData();
+    const result = await Swal.fire({
+        title: '¿Rechazar solicitud?',
+        text: "Esta acción no se puede deshacer",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, rechazar'
+    });
+
+    if (result.isConfirmed) {
+        await updateDoc(doc(db, "Solicitudes", id), { estado: "Rechazado" });
+        notify("Solicitud rechazada", "info");
+    }
 };
 
-// Pestañas
-document.querySelectorAll(".tabBtn").forEach(btn => {
-  btn.onclick = () => {
-    document.querySelectorAll(".tabBtn").forEach(b => b.classList.remove("active"));
-    document.querySelectorAll(".tabContent").forEach(c => c.classList.remove("active"));
-    btn.classList.add("active");
-    document.getElementById(btn.dataset.tab).classList.add("active");
-  }
+// --- PESTAÑAS ---
+document.querySelectorAll(".nav-item").forEach(btn => {
+    btn.onclick = () => {
+        document.querySelectorAll(".nav-item").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById(btn.dataset.tab).classList.add("active");
+        
+        // Mobile Sidebar Close
+        if(window.innerWidth < 768) document.querySelector(".sidebar").classList.remove("show");
+    };
 });
+
+// Inicialmente ocultar loader
+window.onload = () => showLoader(false);
