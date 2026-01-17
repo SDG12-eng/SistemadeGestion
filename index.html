@@ -3,132 +3,169 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistema de Gestión</title>
+<title>SGC - Sistema de Gestión ISO</title>
 <link rel="stylesheet" href="styles.css">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
 </head>
 <body>
+
 <div id="app">
-  <!-- LOGIN -->
   <div id="loginScreen" class="screen">
-    <div class="card">
-      <h2>Iniciar Sesión</h2>
+    <div class="card login-card">
+      <div class="logo-area">
+        <span class="material-icons-sharp">verified_user</span>
+        <h2>Acceso SGC</h2>
+      </div>
+      <p>Sistema de Gestión de Calidad</p>
       <input id="loginUser" placeholder="Usuario">
       <input id="loginPass" placeholder="Contraseña" type="password">
-      <button id="btnLogin">Ingresar</button>
-      <button id="btnCrearAdmin">Crear Admin (solo 1 vez)</button>
-      <p id="loginMsg"></p>
+      <button id="btnLogin" class="btn-primary">Ingresar</button>
+      <button id="btnCrearAdmin" class="btn-text">Inicializar Admin</button>
+      <p id="loginMsg" class="msg-error"></p>
     </div>
   </div>
 
-  <!-- DASHBOARD -->
   <div id="dashboard" class="screen hide">
     <header>
-      <h1>Sistema de Gestión</h1>
-      <div>
-        <span id="userLogged"></span>
-        <button id="btnLogout">Cerrar sesión</button>
+      <div class="brand">
+        <span class="material-icons-sharp">dashboard</span>
+        <h1>Panel de Control</h1>
+      </div>
+      <div class="top-actions">
+        <button id="btnNotif" class="icon-btn" title="Activar Notificaciones">
+          <span class="material-icons-sharp">notifications</span>
+          <span class="badge-dot hide" id="notifBadge"></span>
+        </button>
+        <div class="user-info">
+          <small id="userRoleDisplay">Rol</small>
+          <strong id="userLogged">Usuario</strong>
+        </div>
+        <button id="btnLogout" class="btn-outline">Salir</button>
       </div>
     </header>
 
-    <nav class="tabs">
-      <button class="tabBtn active" data-tab="tabDashboard">Dashboard</button>
-      <button class="tabBtn" data-tab="tabUsuarios">Usuarios</button>
-      <button class="tabBtn" data-tab="tabDepartamentos">Departamentos</button>
-      <button class="tabBtn" data-tab="tabGerencias">Gerencias</button>
-      <button class="tabBtn" data-tab="tabSolicitudes">Solicitudes</button>
-    </nav>
+    <div class="main-container">
+      <aside>
+        <nav class="sidebar">
+          <button class="tabBtn active" data-tab="tabDashboard">
+            <span class="material-icons-sharp">analytics</span> Dashboard
+          </button>
+          <button class="tabBtn" data-tab="tabSolicitudes">
+            <span class="material-icons-sharp">assignment</span> Documentos
+          </button>
+          <button class="tabBtn admin-only" data-tab="tabUsuarios">
+            <span class="material-icons-sharp">people</span> Usuarios
+          </button>
+          <button class="tabBtn admin-only" data-tab="tabConfig">
+            <span class="material-icons-sharp">settings</span> Configuración
+          </button>
+        </nav>
+      </aside>
 
-    <main>
-      <!-- DASHBOARD -->
-      <section id="tabDashboard" class="tabContent active">
-        <div class="stats">
-          <div class="statCard">
-            <h3>Total Solicitudes</h3>
-            <p id="statTotal"></p>
+      <main>
+        <section id="tabDashboard" class="tabContent active">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="icon-box info"><span class="material-icons-sharp">folder</span></div>
+              <h3>Total Docs</h3>
+              <p id="statTotal">0</p>
+            </div>
+            <div class="stat-card">
+              <div class="icon-box warning"><span class="material-icons-sharp">pending</span></div>
+              <h3>Pendientes</h3>
+              <p id="statPendientes">0</p>
+            </div>
+            <div class="stat-card">
+              <div class="icon-box success"><span class="material-icons-sharp">check_circle</span></div>
+              <h3>Aprobados</h3>
+              <p id="statAprobados">0</p>
+            </div>
           </div>
-          <div class="statCard">
-            <h3>Pendientes</h3>
-            <p id="statPendientes"></p>
+
+          <div class="recent-activity">
+            <h2>Historial Reciente (Audit Trail)</h2>
+            <div id="historialList" class="timeline"></div>
           </div>
-          <div class="statCard">
-            <h3>En Reunión</h3>
-            <p id="statReunion"></p>
+        </section>
+
+        <section id="tabSolicitudes" class="tabContent">
+          <div class="section-header">
+            <h2>Gestión Documental</h2>
+            <button class="btn-primary" onclick="toggleForm('solFormContainer')">
+              <span class="material-icons-sharp">add</span> Nueva Solicitud
+            </button>
           </div>
-          <div class="statCard">
-            <h3>Finalizadas</h3>
-            <p id="statFinalizadas"></p>
+
+          <div id="solFormContainer" class="form-container hide">
+            <h3>Nueva Solicitud ISO</h3>
+            <div class="grid-2">
+              <input id="solTitle" placeholder="Código / Título del Documento">
+              <select id="solTipo">
+                <option value="" disabled selected>Tipo de Documento</option>
+                <option value="Manual">Manual</option>
+                <option value="Procedimiento">Procedimiento</option>
+                <option value="Instructivo">Instructivo</option>
+                <option value="Formato">Formato</option>
+              </select>
+            </div>
+            
+            <div class="grid-3">
+              <select id="solAccion" onchange="toggleDateInput()">
+                <option value="" disabled selected>Acción Requerida</option>
+                <option value="Creación">Creación</option>
+                <option value="Modificación">Modificación</option>
+                <option value="Inactivación">Inactivación</option>
+              </select>
+              <input id="solVersion" placeholder="Versión Propuesta (Ej: 1.0)">
+              <input id="solLastDate" type="date" placeholder="Fecha Última Versión" disabled>
+            </div>
+
+            <textarea id="solDesc" placeholder="Justificación del cambio o descripción breve..."></textarea>
+            
+            <div class="file-area">
+              <label>Adjuntar Borrador</label>
+              <input type="file" id="solFile">
+            </div>
+
+            <div class="form-actions">
+              <button onclick="crearSolicitud()" class="btn-primary">Enviar Solicitud</button>
+              <button onclick="toggleForm('solFormContainer')" class="btn-text">Cancelar</button>
+            </div>
           </div>
-        </div>
 
-        <div class="historial">
-          <h2>Historial de Solicitudes</h2>
-          <div id="historialList"></div>
-        </div>
-      </section>
+          <div id="solList" class="doc-list"></div>
+        </section>
 
-      <!-- USUARIOS -->
-      <section id="tabUsuarios" class="tabContent">
-        <h2>Usuarios</h2>
-        <div class="form">
-          <input id="userName" placeholder="Nombre de usuario">
-          <input id="userEmail" placeholder="Correo (notificaciones)">
-          <input id="userPass" placeholder="Contraseña">
-          <select id="userRole">
-            <option value="user">Usuario</option>
-            <option value="admin">Admin</option>
-          </select>
-          <select id="userDept"></select>
-          <select id="userGer"></select>
-          <div class="checkboxes">
-            <label><input type="checkbox" id="perm1"> Realizar solicitudes</label>
-            <label><input type="checkbox" id="perm2"> Ver solicitudes propias</label>
-            <label><input type="checkbox" id="perm3"> Ver solicitudes de gerencia</label>
-            <label><input type="checkbox" id="perm4"> Aprobar/Rechazar</label>
-            <label><input type="checkbox" id="perm5"> Gestionar usuarios</label>
+        <section id="tabUsuarios" class="tabContent">
+          <h2>Gestión de Usuarios</h2>
+          <div class="form-inline">
+            <input id="newUserName" placeholder="Nombre">
+            <input id="newUserPass" placeholder="Contraseña">
+            <select id="newUserRole">
+              <option value="user">Usuario</option>
+              <option value="admin">Admin</option>
+            </select>
+            <button onclick="crearUsuario()" class="btn-primary">Añadir</button>
           </div>
-          <button id="btnAddUser">Crear Usuario</button>
-        </div>
-
-        <div class="list" id="usersList"></div>
-      </section>
-
-      <!-- DEPARTAMENTOS -->
-      <section id="tabDepartamentos" class="tabContent">
-        <h2>Departamentos</h2>
-        <div class="form">
-          <input id="deptName" placeholder="Nombre departamento">
-          <button id="btnAddDept">Crear Departamento</button>
-        </div>
-        <div class="list" id="deptList"></div>
-      </section>
-
-      <!-- GERENCIAS -->
-      <section id="tabGerencias" class="tabContent">
-        <h2>Gerencias</h2>
-        <div class="form">
-          <input id="gerName" placeholder="Nombre gerencia">
-          <button id="btnAddGer">Crear Gerencia</button>
-        </div>
-        <div class="list" id="gerList"></div>
-      </section>
-
-      <!-- SOLICITUDES -->
-      <section id="tabSolicitudes" class="tabContent">
-        <h2>Solicitudes</h2>
-
-        <div class="form">
-          <input id="solTitle" placeholder="Título solicitud">
-          <textarea id="solDesc" placeholder="Descripción"></textarea>
-          <select id="solDept"></select>
-          <select id="solGer"></select>
-          <input type="file" id="solFile">
-          <button id="btnAddSol">Crear Solicitud</button>
-        </div>
-
-        <div class="list" id="solList"></div>
-      </section>
-    </main>
+          <div id="usersList" class="list-simple"></div>
+        </section>
+      </main>
+    </div>
   </div>
+
+  <div id="modalFirma" class="modal hide">
+    <div class="modal-content">
+      <h3>Firma de Aprobación</h3>
+      <p>Por favor firme a continuación para validar este documento ISO.</p>
+      <canvas id="signaturePad" width="400" height="200"></canvas>
+      <div class="modal-actions">
+        <button id="btnClearSign" class="btn-outline">Limpiar</button>
+        <button id="btnConfirmSign" class="btn-primary">Confirmar y Aprobar</button>
+        <button onclick="closeModalFirma()" class="btn-text">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script type="module" src="app.js"></script>
