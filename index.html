@@ -4,7 +4,160 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SGD - Dashboard</title>
-  <link rel="stylesheet" href="styles.css">
+
+  <style>
+    :root{
+      --primary:#1a237e;
+      --secondary:#3949ab;
+      --bg:#f4f7f9;
+      --card:#fff;
+      --text:#333;
+      --shadow:0 2px 10px rgba(0,0,0,0.1);
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: 'Segoe UI', sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+    .hidden{ display:none !important; }
+    .view{ height:100vh; display:flex; justify-content:center; align-items:center; background:linear-gradient(135deg,var(--primary),var(--secondary)); }
+
+    .login-card{
+      width:360px;
+      background:#fff;
+      padding:25px;
+      border-radius:12px;
+      box-shadow:var(--shadow);
+      text-align:center;
+    }
+
+    .login-card input{
+      width:100%;
+      padding:12px;
+      margin:8px 0;
+      border:1px solid #ccc;
+      border-radius:8px;
+    }
+
+    .btn{
+      padding:12px 18px;
+      border:none;
+      border-radius:8px;
+      cursor:pointer;
+      font-weight:bold;
+    }
+
+    .primary{ background:var(--primary); color:white; }
+    .secondary{ background:#f0f0f0; color:#333; }
+    .danger{ background:#c62828; color:white; }
+
+    header{
+      background:var(--primary);
+      color:white;
+      padding:12px 25px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+
+    .tabs{
+      display:flex;
+      background:#fff;
+      padding:10px 25px;
+      gap:10px;
+      border-bottom:1px solid #ddd;
+    }
+
+    .tab{
+      padding:10px 14px;
+      cursor:pointer;
+      border-radius:8px;
+      font-weight:bold;
+      color:#666;
+    }
+    .tab.active{
+      background:var(--primary);
+      color:white;
+    }
+
+    .content{
+      padding:25px;
+      max-width:1200px;
+      margin:0 auto;
+    }
+
+    .card{
+      background:var(--card);
+      padding:20px;
+      border-radius:12px;
+      box-shadow:var(--shadow);
+      margin-bottom:20px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:15px;
+    }
+
+    .stat{
+      text-align:center;
+    }
+    .statValue{
+      font-size:30px;
+      font-weight:bold;
+      margin-top:10px;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+    }
+    th,td{
+      padding:12px;
+      border-bottom:1px solid #eee;
+      text-align:left;
+    }
+
+    .form-grid{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:10px;
+    }
+    .form-grid input, .form-grid select, .form-grid textarea{
+      padding:10px;
+      border:1px solid #ccc;
+      border-radius:8px;
+    }
+    .form-grid textarea{ resize:none; grid-column:span 3; }
+
+    .row{
+      display:flex;
+      gap:10px;
+      margin-top:15px;
+    }
+
+    .modal{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.6);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:1000;
+    }
+
+    .modal-body{
+      background:#fff;
+      width:90%;
+      max-width:900px;
+      padding:25px;
+      border-radius:12px;
+    }
+  </style>
+
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
