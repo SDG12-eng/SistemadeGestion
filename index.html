@@ -9,112 +9,215 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
+<!-- Chart -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- jsPDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <style>
 :root{
-  --p:#1a237e;--s:#3949ab;--ok:#2e7d32;--bad:#c62828;--bg:#f4f7f9;
+--primary:#1a237e;
+--secondary:#3949ab;
+--success:#2e7d32;
+--danger:#c62828;
+--bg:#f4f7f9;
 }
-body{margin:0;font-family:Segoe UI;background:var(--bg)}
-.hidden{display:none}
-header{background:var(--p);color:#fff;padding:12px 20px;display:flex;justify-content:space-between}
-.tabs{background:#fff;display:flex;border-bottom:1px solid #ddd}
-.tab{padding:14px 18px;cursor:pointer;font-weight:600}
-.tab.active{color:var(--p);border-bottom:3px solid var(--p);background:#eef}
-.content{padding:20px;max-width:1200px;margin:auto}
-.card{background:#fff;padding:20px;border-radius:10px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
-input,select,textarea{width:100%;padding:10px;margin-top:5px;border:1px solid #ccc;border-radius:6px}
-button{padding:10px 16px;border:none;border-radius:6px;font-weight:600;cursor:pointer}
-.btn-p{background:var(--p);color:#fff}
-.btn-s{background:var(--ok);color:#fff}
-.btn-d{background:var(--bad);color:#fff}
-table{width:100%;border-collapse:collapse}
-th,td{padding:10px;border-bottom:1px solid #eee}
-.badge{padding:4px 10px;border-radius:20px;font-size:11px}
-.Pendiente{background:#fff3e0;color:#ef6c00}
-.Finalizado{background:#e8f5e9;color:#2e7d32}
-.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:2000}
-.modal-body{background:#fff;padding:25px;border-radius:12px;width:90%;max-width:700px;max-height:90vh;overflow:auto}
+
+*{box-sizing:border-box}
+body{
+margin:0;
+font-family:Segoe UI,Arial;
+background:var(--bg);
+}
+
+.hidden{display:none!important}
+
+header{
+background:var(--primary);
+color:white;
+padding:15px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+nav{
+display:flex;
+background:white;
+border-bottom:1px solid #ddd;
+}
+
+nav button{
+flex:1;
+padding:14px;
+border:none;
+background:none;
+font-weight:600;
+cursor:pointer;
+}
+
+nav button.active{
+background:#e8eaf6;
+color:var(--primary);
+}
+
+.container{
+padding:20px;
+max-width:1300px;
+margin:auto;
+}
+
+.card{
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 2px 10px rgba(0,0,0,.08);
+margin-bottom:20px;
+}
+
+input,select,textarea{
+width:100%;
+padding:10px;
+border-radius:6px;
+border:1px solid #ccc;
+margin-bottom:10px;
+}
+
+button{
+padding:10px 16px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.btn-p{background:var(--primary);color:white}
+.btn-s{background:var(--success);color:white}
+.btn-d{background:var(--danger);color:white}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+th,td{
+padding:10px;
+border-bottom:1px solid #eee;
+}
+
+.modal{
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.6);
+display:flex;
+justify-content:center;
+align-items:center;
+z-index:1000;
+}
+
+.modal-box{
+background:white;
+width:95%;
+max-width:600px;
+padding:25px;
+border-radius:12px;
+max-height:90vh;
+overflow:auto;
+}
 </style>
 </head>
-
 <body>
 
 <!-- LOGIN -->
-<div id="login" style="height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a237e,#3949ab)">
-<div class="card" style="width:340px;text-align:center">
-<h2 style="color:#1a237e">FCI LOGISTIX</h2>
-<input id="l-user" placeholder="Usuario">
-<input id="l-pass" type="password" placeholder="Contraseña" style="margin-top:10px">
-<button class="btn-p" style="width:100%;margin-top:15px" onclick="login()">INGRESAR</button>
-
-<!-- BOTÓN ADMIN EMERGENCIA -->
-<button onclick="crearAdminInicial()" style="margin-top:15px;background:none;border:none;color:#aaa;font-size:11px">
-⚡ Crear usuario admin (uso único)
-</button>
+<div id="loginView" class="modal">
+<div class="modal-box">
+<h2>FCI LOGISTIX</h2>
+<input id="loginUser" placeholder="Usuario">
+<input id="loginPass" type="password" placeholder="Contraseña">
+<button class="btn-p" onclick="login()">Ingresar</button>
+<button style="margin-top:10px" onclick="crearAdmin()">⚡ Crear Admin Inicial</button>
 </div>
 </div>
 
 <!-- APP -->
-<div id="app" class="hidden">
+<div id="appView" class="hidden">
+
 <header>
 <div>
 <strong>FCI | SGD</strong><br>
 <small id="userInfo"></small>
 </div>
-<button class="btn-d" onclick="location.reload()">Salir</button>
+<button class="btn-d" onclick="logout()">Cerrar sesión</button>
 </header>
 
-<div class="tabs">
-<div class="tab active" onclick="tab(this,'sol')">Solicitudes</div>
-<div class="tab admin" onclick="tab(this,'users')">Usuarios</div>
-<div class="tab admin" onclick="tab(this,'org')">Organización</div>
+<nav>
+<button class="active" onclick="tab('dash')">Dashboard</button>
+<button onclick="tab('sol')">Solicitudes</button>
+<button onclick="tab('users')" class="adminOnly hidden">Usuarios</button>
+<button onclick="tab('org')" class="adminOnly hidden">Organización</button>
+</nav>
+
+<div class="container">
+
+<!-- DASHBOARD -->
+<div id="dash" class="tab">
+<div class="card">
+<canvas id="chartSolicitudes"></canvas>
+</div>
 </div>
 
-<div class="content">
-
 <!-- SOLICITUDES -->
-<div id="t-sol">
-<button class="btn-s" onclick="openModal('m-sol')">+ Nueva Solicitud</button>
+<div id="sol" class="tab hidden">
+<button class="btn-s" onclick="openModal('modalSolicitud')">+ Nueva Solicitud</button>
 <div class="card">
 <table>
-<thead><tr><th>ID</th><th>Documento</th><th>Estado</th><th>Acción</th></tr></thead>
-<tbody id="listSol"></tbody>
+<thead>
+<tr>
+<th>ID</th><th>Título</th><th>Estado</th><th>Usuario</th><th>Acción</th>
+</tr>
+</thead>
+<tbody id="listaSolicitudes"></tbody>
 </table>
 </div>
 </div>
 
 <!-- USUARIOS -->
-<div id="t-users" class="hidden">
+<div id="users" class="tab hidden">
 <div class="card">
 <h3>Crear Usuario</h3>
-<input id="u-name" placeholder="Nombre">
-<input id="u-user" placeholder="Usuario">
-<input id="u-pass" placeholder="Contraseña">
-<select id="u-rol">
-<option>Usuario</option><option>Gerente</option><option>Admin</option>
+<input id="uNombre" placeholder="Nombre">
+<input id="uUser" placeholder="Usuario">
+<input id="uPass" placeholder="Contraseña">
+<select id="uRol">
+<option>Solicitante</option>
+<option>Gerente</option>
+<option>Admin</option>
 </select>
-<select id="u-ger"></select>
 <button class="btn-p" onclick="crearUsuario()">Guardar</button>
 </div>
 
 <div class="card">
 <table>
-<thead><tr><th>Nombre</th><th>Rol</th><th>Gerencia</th><th>Eliminar</th></tr></thead>
-<tbody id="listUsers"></tbody>
+<thead><tr><th>Nombre</th><th>Rol</th><th>Eliminar</th></tr></thead>
+<tbody id="listaUsuarios"></tbody>
 </table>
 </div>
 </div>
 
-<!-- ORG -->
-<div id="t-org" class="hidden">
+<!-- ORGANIZACIÓN -->
+<div id="org" class="tab hidden">
 <div class="card">
 <h3>Gerencias</h3>
-<input id="g-name"><button onclick="addGer()">+</button>
+<input id="gerName" placeholder="Nueva gerencia">
+<button class="btn-p" onclick="addGerencia()">Agregar</button>
 <ul id="gerList"></ul>
 </div>
+
 <div class="card">
 <h3>Departamentos</h3>
-<select id="d-parent"></select>
-<input id="d-name"><button onclick="addDep()">+</button>
+<input id="depName" placeholder="Departamento">
+<select id="depGer"></select>
+<button class="btn-p" onclick="addDepartamento()">Agregar</button>
 <ul id="depList"></ul>
 </div>
 </div>
@@ -122,101 +225,444 @@ th,td{padding:10px;border-bottom:1px solid #eee}
 </div>
 </div>
 
-<!-- MODAL SOL -->
-<div id="m-sol" class="modal hidden">
-<div class="modal-body">
+<!-- MODAL SOLICITUD -->
+<div id="modalSolicitud" class="modal hidden">
+<div class="modal-box">
 <h3>Nueva Solicitud</h3>
-<input id="s-doc" placeholder="Nombre Documento">
-<select id="s-tipo">
-<option>Procedimiento</option><option>Manual</option><option>Guía</option><option>Formato</option>
-</select>
-<textarea id="s-motivo" placeholder="Motivo"></textarea>
-<input id="s-file" placeholder="URL Documento (Cloudinary)">
+<input id="sTitulo" placeholder="Título">
+<input type="file" id="sFile">
+<textarea id="sDesc" placeholder="Descripción"></textarea>
 <button class="btn-s" onclick="crearSolicitud()">Enviar</button>
 <button onclick="closeModal()">Cerrar</button>
 </div>
 </div>
 
 <script>
-const firebaseConfig={
-apiKey:"AIzaSyDdzCiachuhbE9jATz-TesPI2vUVIJrHjM",
-authDomain:"sistemadegestion-7400d.firebaseapp.com",
-projectId:"sistemadegestion-7400d"
-};
-firebase.initializeApp(firebaseConfig);
+// FIREBASE
+firebase.initializeApp({
+apiKey: "AIzaSyDdzCiachuhbE9jATz-TesPI2vUVIJrHjM",
+authDomain: "sistemadegestion-7400d.firebaseapp.com",
+projectId: "sistemadegestion-7400d"
+});
 const db=firebase.firestore();
 
-let user=null;
+// CLOUDINARY
+const CLOUDINARY_URL="https://api.cloudinary.com/v1_1/dxg8oz9d6/upload";
+const CLOUDINARY_PRESET="fci_documentos";
 
-async function crearAdminInicial(){
-const q=await db.collection("Users").where("user","==","admin").get();
-if(!q.empty){alert("Admin ya existe");return;}
-await db.collection("Users").add({nombre:"Administrador",user:"admin",pass:"123456",rol:"Admin",gerencia:"SGC"});
-alert("Admin creado: admin / 123456");
+let currentUser=null;
+
+// VARIABLES GLOBALES
+let gerencias = [];
+let departamentos = [];
+let usuarios = [];
+let solicitudes = [];
+
+// TAB SWITCH
+function tab(name){
+  document.querySelectorAll('.tab').forEach(t => t.classList.add('hidden'));
+  document.getElementById(name).classList.remove('hidden');
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
 }
 
+// MODAL
+function openModal(id){ document.getElementById(id).classList.remove('hidden'); }
+function closeModal(){ document.querySelectorAll('.modal').forEach(m => m.classList.add('hidden')); }
+
+// LOGIN SIMPLE
 async function login(){
-const u=l-user.value,p=l-pass.value;
-const q=await db.collection("Users").where("user","==",u).where("pass","==",p).get();
-if(q.empty){alert("Credenciales incorrectas");return;}
-user={id:q.docs[0].id,...q.docs[0].data()};
-login.classList.add("hidden");app.classList.remove("hidden");
-userInfo.innerText=user.nombre+" | "+user.rol;
-if(user.rol!=="Admin")document.querySelectorAll(".admin").forEach(e=>e.remove());
-load();
+  const user = document.getElementById('loginUser').value.trim();
+  const pass = document.getElementById('loginPass').value.trim();
+  if(!user || !pass){ alert("Ingresa usuario y contraseña"); return; }
+
+  const snap = await db.collection("Usuarios").where("usuario","==",user).where("password","==",pass).get();
+  if(snap.empty){
+    alert("Usuario o contraseña incorrectos");
+    return;
+  }
+
+  snap.forEach(doc => {
+    currentUser = {id:doc.id, ...doc.data()};
+  });
+
+  if(!currentUser.activo){
+    alert("Usuario inactivo");
+    return;
+  }
+
+  document.getElementById('loginView').classList.add('hidden');
+  document.getElementById('appView').classList.remove('hidden');
+
+  document.getElementById('userInfo').innerText = `${currentUser.nombre} | ${currentUser.rol}`;
+
+  if(currentUser.rol === "Admin"){
+    document.querySelectorAll('.adminOnly').forEach(el => el.classList.remove('hidden'));
+  }
+
+  cargarDatos();
 }
 
-function tab(el,id){
-document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-document.querySelectorAll("[id^='t-']").forEach(d=>d.classList.add("hidden"));
-el.classList.add("active");document.getElementById("t-"+id).classList.remove("hidden");
+// CREAR ADMIN (BOTON DE EMERGENCIA)
+async function crearAdmin(){
+  const snap = await db.collection("Usuarios").where("usuario","==","Admin").get();
+  if(!snap.empty){ alert("Admin ya existe"); return; }
+
+  await db.collection("Usuarios").add({
+    nombre:"Admin",
+    usuario:"Admin",
+    password:"1130",
+    rol:"Admin",
+    activo:true,
+    gerencia:"",
+    departamento:""
+  });
+
+  alert("Admin creado");
 }
 
-function openModal(id){document.getElementById(id).classList.remove("hidden")}
-function closeModal(){document.querySelectorAll(".modal").forEach(m=>m.classList.add("hidden"))}
+// LOGOUT
+function logout(){
+  currentUser=null;
+  document.getElementById('appView').classList.add('hidden');
+  document.getElementById('loginView').classList.remove('hidden');
+  document.getElementById('loginUser').value="";
+  document.getElementById('loginPass').value="";
+}
+
+// CARGAR DATOS
+async function cargarDatos(){
+  // GERENCIAS
+  const gSnap = await db.collection("Gerencias").get();
+  gerencias = [];
+  gSnap.forEach(d => gerencias.push({id:d.id,...d.data()}));
+  renderGerencias();
+
+  // DEPARTAMENTOS
+  const dSnap = await db.collection("Departamentos").get();
+  departamentos = [];
+  dSnap.forEach(d => departamentos.push({id:d.id,...d.data()}));
+  renderDepartamentos();
+
+  // USUARIOS
+  const uSnap = await db.collection("Usuarios").get();
+  usuarios = [];
+  uSnap.forEach(d => usuarios.push({id:d.id,...d.data()}));
+  renderUsuarios();
+
+  // SOLICITUDES
+  const sSnap = await db.collection("Solicitudes").get();
+  solicitudes = [];
+  sSnap.forEach(d => solicitudes.push({id:d.id,...d.data()}));
+  renderSolicitudes();
+  renderChart();
+}
+
+// RENDER GERENCIAS
+function renderGerencias(){
+  const list = document.getElementById("gerList");
+  list.innerHTML="";
+  gerencias.forEach(g=>{
+    const li = document.createElement("li");
+    li.innerHTML = `${g.nombre} <button class="btn-d" style="padding:4px 8px" onclick="delGer('${g.id}')">Eliminar</button>`;
+    list.appendChild(li);
+  });
+
+  const sel = document.getElementById("depGer");
+  sel.innerHTML="";
+  gerencias.forEach(g=>{
+    const opt = document.createElement("option");
+    opt.value=g.id;
+    opt.textContent=g.nombre;
+    sel.appendChild(opt);
+  });
+}
+
+async function addGerencia(){
+  const name = document.getElementById("gerName").value.trim();
+  if(!name) return alert("Nombre requerido");
+  await db.collection("Gerencias").add({nombre:name});
+  document.getElementById("gerName").value="";
+  cargarDatos();
+}
+async function delGer(id){
+  await db.collection("Gerencias").doc(id).delete();
+  cargarDatos();
+}
+
+// RENDER DEPARTAMENTOS
+function renderDepartamentos(){
+  const list = document.getElementById("depList");
+  list.innerHTML="";
+  departamentos.forEach(d=>{
+    const ger = gerencias.find(g=>g.id===d.gerencia);
+    const gerName = ger ? ger.nombre : "-";
+    const li = document.createElement("li");
+    li.innerHTML = `${d.nombre} | ${gerName} <button class="btn-d" style="padding:4px 8px" onclick="delDep('${d.id}')">Eliminar</button>`;
+    list.appendChild(li);
+  });
+}
+
+async function addDepartamento(){
+  const name = document.getElementById("depName").value.trim();
+  const ger = document.getElementById("depGer").value;
+  if(!name || !ger) return alert("Nombre y gerencia requeridos");
+  await db.collection("Departamentos").add({nombre:name, gerencia:ger});
+  document.getElementById("depName").value="";
+  cargarDatos();
+}
+async function delDep(id){
+  await db.collection("Departamentos").doc(id).delete();
+  cargarDatos();
+}
+
+// RENDER USUARIOS
+function renderUsuarios(){
+  const list = document.getElementById("listaUsuarios");
+  list.innerHTML="";
+  usuarios.forEach(u=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${u.nombre}</td>
+      <td>${u.rol}</td>
+      <td><button class="btn-d" onclick="delUser('${u.id}')">Eliminar</button></td>
+    `;
+    list.appendChild(tr);
+  });
+}
 
 async function crearUsuario(){
-await db.collection("Users").add({
-nombre:u-name.value,user:u-user.value,pass:u-pass.value,rol:u-rol.value,gerencia:u-ger.value
-});
-alert("Usuario creado");
+  const nombre = document.getElementById("uNombre").value.trim();
+  const usuario = document.getElementById("uUser").value.trim();
+  const pass = document.getElementById("uPass").value.trim();
+  const rol = document.getElementById("uRol").value;
+
+  if(!nombre || !usuario || !pass) return alert("Completa todos los campos");
+
+  await db.collection("Usuarios").add({
+    nombre, usuario, password:pass,
+    rol, activo:true, gerencia:"", departamento:""
+  });
+
+  document.getElementById("uNombre").value="";
+  document.getElementById("uUser").value="";
+  document.getElementById("uPass").value="";
+  cargarDatos();
 }
 
+async function delUser(id){
+  await db.collection("Usuarios").doc(id).delete();
+  cargarDatos();
+}
+
+// RENDER SOLICITUDES
+function renderSolicitudes(){
+  const tbody = document.getElementById("listaSolicitudes");
+  tbody.innerHTML="";
+
+  // filtro por rol
+  let data = solicitudes;
+  if(currentUser.rol==="Solicitante"){
+    data = solicitudes.filter(s=>s.userId===currentUser.id);
+  }
+  if(currentUser.rol==="Gerente"){
+    data = solicitudes.filter(s=>s.gerencia===currentUser.gerencia);
+  }
+
+  data.forEach(s=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${s.id}</td>
+      <td>${s.titulo}</td>
+      <td>${s.estado}</td>
+      <td>${s.userName}</td>
+      <td>
+        <button class="btn-p" onclick="verDetalle('${s.id}')">Detalles</button>
+        <button class="btn-d" onclick="delSol('${s.id}')">Eliminar</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+async function delSol(id){
+  await db.collection("Solicitudes").doc(id).delete();
+  cargarDatos();
+}
+
+// DETALLE
+async function verDetalle(id){
+  const doc = await db.collection("Solicitudes").doc(id).get();
+  if(!doc.exists) return alert("No existe");
+
+  const data = doc.data();
+  alert(`
+ID: ${doc.id}
+Título: ${data.titulo}
+Estado: ${data.estado}
+Usuario: ${data.userName}
+Descripción: ${data.descripcion}
+Documento: ${data.url || "No"}
+`);
+}
+
+// CREAR SOLICITUD
 async function crearSolicitud(){
-await db.collection("Solicitudes").add({
-doc:s-doc.value,tipo:s-tipo.value,motivo:s-motivo.value,
-file:s-file.value,estado:"Pendiente",
-user:user.nombre,uid:user.id,fecha:new Date()
-});
-closeModal();
+  const titulo = document.getElementById("sTitulo").value.trim();
+  const desc = document.getElementById("sDesc").value.trim();
+  const file = document.getElementById("sFile").files[0];
+
+  if(!titulo || !desc) return alert("Completa todos los campos");
+
+  let url = "";
+  if(file){
+    const form = new FormData();
+    form.append("file", file);
+    form.append("upload_preset", CLOUDINARY_PRESET);
+
+    const res = await fetch(CLOUDINARY_URL, {
+      method:"POST",
+      body: form
+    });
+    const data = await res.json();
+    url = data.secure_url;
+  }
+
+  await db.collection("Solicitudes").add({
+    titulo,
+    descripcion:desc,
+    estado:"Pendiente",
+    userId:currentUser.id,
+    userName:currentUser.nombre,
+    gerencia: currentUser.gerencia || "",
+    departamento: currentUser.departamento || "",
+    url,
+    createdAt: new Date()
+  });
+
+  document.getElementById("sTitulo").value="";
+  document.getElementById("sDesc").value="";
+  document.getElementById("sFile").value="";
+
+  closeModal();
+  cargarDatos();
 }
 
-function load(){
-db.collection("Users").onSnapshot(s=>{
-listUsers.innerHTML="";
-s.forEach(d=>listUsers.innerHTML+=`<tr><td>${d.data().nombre}</td><td>${d.data().rol}</td><td>${d.data().gerencia}</td><td><button onclick="db.collection('Users').doc('${d.id}').delete()">X</button></td></tr>`);
-});
-db.collection("Solicitudes").onSnapshot(s=>{
-listSol.innerHTML="";
-s.forEach(d=>listSol.innerHTML+=`<tr><td>${d.id}</td><td>${d.data().doc}</td><td><span class="badge ${d.data().estado}">${d.data().estado}</span></td><td>Ver</td></tr>`);
-});
-db.collection("gerencias").onSnapshot(s=>{
-u-ger.innerHTML=d-parent.innerHTML="";
-gerList.innerHTML="";
-s.forEach(d=>{
-u-ger.innerHTML+=`<option>${d.data().nombre}</option>`;
-d-parent.innerHTML+=`<option>${d.data().nombre}</option>`;
-gerList.innerHTML+=`<li>${d.data().nombre}</li>`;
-});
-});
-db.collection("departamentos").onSnapshot(s=>{
-depList.innerHTML="";
-s.forEach(d=>depList.innerHTML+=`<li>${d.data().nombre} (${d.data().parent})</li>`);
-});
+// ----------------------
+// DASHBOARD
+// ----------------------
+function renderChart(){
+  const pendientes = solicitudes.filter(s => s.estado === "Pendiente").length;
+  const aprobadas = solicitudes.filter(s => s.estado === "Aprobado").length;
+  const finalizadas = solicitudes.filter(s => s.estado === "Finalizado").length;
+  const rechazadas = solicitudes.filter(s => s.estado === "Rechazado").length;
+
+  document.getElementById("cPend").innerText = pendientes;
+  document.getElementById("cApro").innerText = aprobadas;
+  document.getElementById("cFin").innerText = finalizadas;
+  document.getElementById("cRech").innerText = rechazadas;
+
+  // GRÁFICA SIMPLE
+  const ctx = document.getElementById("chart").getContext("2d");
+  new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: ["Pendiente","Aprobado","Finalizado","Rechazado"],
+      datasets: [{
+        data: [pendientes, aprobadas, finalizadas, rechazadas],
+        backgroundColor: ["#ffcc80","#81c784","#90caf9","#ef9a9a"]
+      }]
+    },
+    options: { responsive:true }
+  });
 }
 
-function addGer(){db.collection("gerencias").add({nombre:g-name.value})}
-function addDep(){db.collection("departamentos").add({nombre:d-name.value,parent:d-parent.value})}
-</script>
-</body>
-</html>
+// ----------------------
+// FILTROS HISTORIAL
+// ----------------------
+function filtrar(){
+  const estado = document.getElementById("fEstado").value;
+  const gerencia = document.getElementById("fGerencia").value;
+
+  let data = solicitudes;
+
+  if(estado !== "Todos") data = data.filter(s => s.estado === estado);
+  if(gerencia !== "Todos") data = data.filter(s => s.gerencia === gerencia);
+
+  renderSolicitudesFiltered(data);
+}
+
+function renderSolicitudesFiltered(data){
+  const tbody = document.getElementById("listaSolicitudes");
+  tbody.innerHTML="";
+
+  data.forEach(s=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${s.id}</td>
+      <td>${s.titulo}</td>
+      <td>${s.estado}</td>
+      <td>${s.userName}</td>
+      <td>
+        <button class="btn-p" onclick="verDetalle('${s.id}')">Detalles</button>
+        <button class="btn-d" onclick="delSol('${s.id}')">Eliminar</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ----------------------
+// DETALLES + CAMBIO DE ESTADO
+// ----------------------
+async function verDetalle(id){
+  const doc = await db.collection("Solicitudes").doc(id).get();
+  const d = doc.data();
+
+  document.getElementById("detTitulo").innerText = d.titulo;
+  document.getElementById("detDesc").innerText = d.descripcion;
+  document.getElementById("detUser").innerText = d.userName;
+  document.getElementById("detEstado").innerText = d.estado;
+
+  document.getElementById("detFile").href = d.url;
+  document.getElementById("detFile").innerText = d.url ? "Descargar" : "No adjunto";
+
+  document.getElementById("detId").value = doc.id;
+
+  if(currentUser.rol === "Admin"){
+    document.getElementById("panelAdmin").classList.remove("hidden");
+  } else {
+    document.getElementById("panelAdmin").classList.add("hidden");
+  }
+
+  openModal("modalDetalle");
+}
+
+async function cambiarEstado(estado){
+  const id = document.getElementById("detId").value;
+  await db.collection("Solicitudes").doc(id).update({estado});
+  closeModal();
+  cargarDatos();
+}
+
+// ----------------------
+// EXPORT PDF
+// ----------------------
+async function exportPDF(){
+  const doc = new jsPDF();
+  doc.setFontSize(16);
+  doc.text("Reporte de Solicitudes - FCI SGD", 15, 20);
+  doc.setFontSize(10);
+
+  let y = 35;
+  solicitudes.forEach(s => {
+    doc.text(`ID: ${s.id} | Título: ${s.titulo} | Estado: ${s.estado} | Usuario: ${s.userName}`, 15, y);
+    y += 8;
+    if(y > 280){
+      doc.addPage();
+      y = 20;
+    }
+  });
+
+  doc.save("Reporte_Solicitudes.pdf");
+}
