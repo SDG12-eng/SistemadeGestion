@@ -3,160 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGC | ISO Management System</title>
+    <title>SGC | Sistema de Gestión ISO</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css"> <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<div id="globalLoader" class="loader-overlay">
-    <div class="spinner"></div>
-    <p>Cargando Sistema SGC...</p>
-</div>
+    <div id="loader" class="loader-overlay hide">
+        <div class="spinner"></div>
+        <p>Procesando...</p>
+    </div>
 
-<div id="app">
-    <div id="loginScreen" class="screen flex-center">
-        <div class="login-container">
+    <div id="loginSection" class="full-screen-center">
+        <div class="login-card">
             <div class="login-header">
-                <span class="material-icons-round logo-icon">verified</span>
-                <h1>Acceso Corporativo</h1>
-                <p>Sistema de Gestión de Calidad ISO 9001</p>
+                <span class="material-icons-round logo-icon">verified_user</span>
+                <h2>Acceso Corporativo</h2>
+                <p>Gestión Documental ISO 9001</p>
             </div>
             <form id="loginForm" onsubmit="return false;">
                 <div class="input-group">
                     <span class="material-icons-round">person</span>
-                    <input id="loginUser" type="text" placeholder="Usuario / ID" required>
+                    <input type="text" id="loginUser" placeholder="Usuario" required>
                 </div>
                 <div class="input-group">
                     <span class="material-icons-round">lock</span>
-                    <input id="loginPass" type="password" placeholder="Contraseña" required>
+                    <input type="password" id="loginPass" placeholder="Contraseña" required>
                 </div>
-                <button id="btnLogin" class="btn-primary full-width">
-                    Iniciar Sesión <span class="material-icons-round">arrow_forward</span>
-                </button>
+                <button id="btnLogin" class="btn-primary full-width">Iniciar Sesión</button>
             </form>
             <div class="login-footer">
-                <button id="btnCrearAdmin" class="link-btn">Inicializar Sistema (Primer uso)</button>
+                <button id="btnInitAdmin" class="btn-link">Inicializar Admin (Primer uso)</button>
             </div>
         </div>
     </div>
 
-    <div id="dashboard" class="screen layout hide">
+    <div id="appSection" class="app-layout hide">
+        
         <aside class="sidebar">
             <div class="brand">
-                <span class="material-icons-round">verified_user</span>
+                <span class="material-icons-round">dashboard</span>
                 <span>SGC <strong>Pro</strong></span>
             </div>
-            
+
             <nav class="nav-menu">
-                <button class="nav-item active" data-tab="tabDashboard">
-                    <span class="material-icons-round">dashboard</span> Dashboard
+                <button class="nav-item active" onclick="navigate('viewDashboard')">
+                    <span class="material-icons-round">analytics</span> Dashboard
                 </button>
-                <button class="nav-item" data-tab="tabSolicitudes">
+                <button class="nav-item" onclick="navigate('viewSolicitudes')">
                     <span class="material-icons-round">description</span> Documentos
                 </button>
-                <div class="admin-only">
+                
+                <div id="adminMenu" class="hide">
                     <div class="nav-divider">ADMINISTRACIÓN</div>
-                    <button class="nav-item" data-tab="tabUsuarios">
-                        <span class="material-icons-round">manage_accounts</span> Usuarios
+                    <button class="nav-item" onclick="navigate('viewUsuarios')">
+                        <span class="material-icons-round">people</span> Usuarios
                     </button>
-                    <button class="nav-item" data-tab="tabReportes">
-                        <span class="material-icons-round">analytics</span> Auditoría
+                    <button class="nav-item" onclick="navigate('viewConfig')">
+                        <span class="material-icons-round">settings</span> Configuración
                     </button>
                 </div>
             </nav>
 
-            <div class="sidebar-footer">
-                <div class="user-mini-profile">
-                    <div class="avatar" id="userAvatar">U</div>
-                    <div class="info">
-                        <span id="userLogged">Usuario</span>
-                        <small id="userRoleDisplay">Rol</small>
-                    </div>
+            <div class="user-profile">
+                <div class="avatar" id="userAvatar">U</div>
+                <div class="info">
+                    <strong id="displayUser">Usuario</strong>
+                    <small id="displayRole">Rol</small>
                 </div>
-                <button id="btnLogout" class="btn-icon" title="Cerrar Sesión">
+                <button id="btnLogout" class="btn-icon" title="Salir">
                     <span class="material-icons-round">logout</span>
                 </button>
             </div>
         </aside>
 
-        <main class="content">
+        <main class="main-content">
             <header class="top-bar">
                 <h2 id="pageTitle">Resumen General</h2>
                 <div class="actions">
-                    <div class="search-box">
-                        <span class="material-icons-round">search</span>
-                        <input type="text" id="globalSearch" placeholder="Buscar documento...">
-                    </div>
-                    <button id="btnNotif" class="btn-icon relative">
+                    <button class="btn-icon relative">
                         <span class="material-icons-round">notifications</span>
-                        <span class="badge-dot" id="notifBadge"></span>
+                        <span class="badge-dot"></span>
                     </button>
                 </div>
             </header>
 
-            <section id="tabDashboard" class="view active">
-                <div class="stats-row">
+            <section id="viewDashboard" class="view-section active">
+                <div class="stats-grid">
                     <div class="card stat-card">
-                        <div class="icon bg-blue"><span class="material-icons-round">folder</span></div>
-                        <div class="data">
-                            <h3>Total Docs</h3>
-                            <span id="statTotal" class="num">0</span>
-                        </div>
+                        <div class="icon blue"><span class="material-icons-round">folder</span></div>
+                        <div><h3>Total</h3><span id="statTotal" class="num">0</span></div>
                     </div>
                     <div class="card stat-card">
-                        <div class="icon bg-orange"><span class="material-icons-round">pending_actions</span></div>
-                        <div class="data">
-                            <h3>Pendientes</h3>
-                            <span id="statPendientes" class="num">0</span>
-                        </div>
+                        <div class="icon orange"><span class="material-icons-round">pending</span></div>
+                        <div><h3>Pendientes</h3><span id="statPendientes" class="num">0</span></div>
                     </div>
                     <div class="card stat-card">
-                        <div class="icon bg-green"><span class="material-icons-round">verified</span></div>
-                        <div class="data">
-                            <h3>Aprobados</h3>
-                            <span id="statAprobados" class="num">0</span>
-                        </div>
+                        <div class="icon green"><span class="material-icons-round">check_circle</span></div>
+                        <div><h3>Aprobados</h3><span id="statAprobados" class="num">0</span></div>
                     </div>
                 </div>
 
-                <div class="grid-2-1">
+                <div class="charts-grid">
                     <div class="card">
-                        <div class="card-header">
-                            <h3>Actividad Mensual</h3>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="mainChart"></canvas>
-                        </div>
+                        <h3>Estado de Solicitudes</h3>
+                        <div class="chart-box"><canvas id="statusChart"></canvas></div>
                     </div>
                     <div class="card">
-                        <div class="card-header">
-                            <h3>Historial Reciente</h3>
-                        </div>
-                        <div id="historialList" class="timeline-container">
-                            </div>
+                        <h3>Historial Reciente</h3>
+                        <div id="recentHistory" class="timeline-list"></div>
                     </div>
                 </div>
             </section>
 
-            <section id="tabSolicitudes" class="view">
+            <section id="viewSolicitudes" class="view-section">
                 <div class="toolbar">
-                    <div class="filters">
-                        <select id="filterState" class="form-select">
-                            <option value="all">Todos los Estados</option>
-                            <option value="Pendiente">Pendientes</option>
-                            <option value="Aprobado">Aprobados</option>
-                        </select>
-                    </div>
-                    <button onclick="toggleModal('modalSolicitud')" class="btn-primary">
+                    <input type="text" id="searchDocs" placeholder="Buscar documento..." class="search-input">
+                    <button onclick="openModal('modalNewSol')" class="btn-primary">
                         <span class="material-icons-round">add</span> Nueva Solicitud
                     </button>
                 </div>
 
-                <div class="card no-padding">
+                <div class="card no-pad">
                     <div class="table-responsive">
                         <table class="data-table">
                             <thead>
@@ -168,118 +142,84 @@
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody id="solTableBody">
+                            <tbody id="docsTableBody">
                                 </tbody>
                         </table>
-                    </div>
-                    <div id="emptyState" class="empty-state hide">
-                        <img src="https://cdn-icons-png.flaticon.com/512/7486/7486747.png" alt="Vacio">
-                        <p>No se encontraron documentos</p>
                     </div>
                 </div>
             </section>
 
-             <section id="tabUsuarios" class="view">
-                 <div class="card">
-                     <h3>Gestión de Acceso</h3>
-                     <div class="form-grid">
-                         <input id="newUserName" placeholder="Nombre Usuario" class="form-input">
-                         <input id="newUserPass" placeholder="Contraseña" class="form-input">
-                         <select id="newUserRole" class="form-select">
-                             <option value="user">Usuario Estándar</option>
-                             <option value="admin">Administrador</option>
-                         </select>
-                         <button onclick="crearUsuario()" class="btn-secondary">Crear Usuario</button>
-                     </div>
-                     <div id="usersList" class="user-list-grid"></div>
-                 </div>
-             </section>
+            <section id="viewUsuarios" class="view-section">
+                <div class="card">
+                    <h3>Gestión de Usuarios</h3>
+                    <div class="form-row">
+                        <input id="uName" placeholder="Usuario">
+                        <input id="uPass" placeholder="Contraseña">
+                        <select id="uRole">
+                            <option value="user">Usuario</option>
+                            <option value="admin">Administrador</option>
+                        </select>
+                        <button id="btnCreateUser" class="btn-primary">Crear</button>
+                    </div>
+                    <div id="usersList" class="list-simple"></div>
+                </div>
+            </section>
         </main>
     </div>
 
-    <div id="modalSolicitud" class="modal-overlay hide">
+    <div id="modalNewSol" class="modal-overlay hide">
         <div class="modal-card">
             <div class="modal-header">
                 <h3>Nueva Solicitud ISO</h3>
-                <button onclick="toggleModal('modalSolicitud')" class="close-btn">&times;</button>
+                <button onclick="closeModal('modalNewSol')" class="close-btn">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="form-grid-2">
-                    <div class="field">
-                        <label>Título / Código</label>
-                        <input id="solTitle" class="form-input" placeholder="Ej: MAN-001 Manual Calidad">
-                    </div>
-                    <div class="field">
-                        <label>Tipo Documento</label>
-                        <select id="solTipo" class="form-select">
-                            <option value="Manual">Manual</option>
-                            <option value="Procedimiento">Procedimiento</option>
-                            <option value="Instructivo">Instructivo</option>
-                            <option value="Formato">Formato</option>
-                        </select>
-                    </div>
+                <div class="grid-2">
+                    <input id="solTitle" placeholder="Título / Código" class="input-std">
+                    <select id="solTipo" class="input-std">
+                        <option value="Manual">Manual</option>
+                        <option value="Procedimiento">Procedimiento</option>
+                        <option value="Formato">Formato</option>
+                    </select>
                 </div>
-                
-                <div class="form-grid-2">
-                    <div class="field">
-                        <label>Acción</label>
-                        <select id="solAccion" class="form-select" onchange="checkModType()">
-                            <option value="Creación">Creación</option>
-                            <option value="Modificación">Modificación</option>
-                            <option value="Inactivación">Inactivación</option>
-                        </select>
-                    </div>
-                    <div class="field">
-                        <label>Versión</label>
-                        <input id="solVersion" class="form-input" placeholder="Ej: 1.0">
-                    </div>
+                <div class="grid-2">
+                    <select id="solAccion" class="input-std" onchange="toggleDate()">
+                        <option value="Creación">Creación</option>
+                        <option value="Modificación">Modificación</option>
+                        <option value="Inactivación">Inactivación</option>
+                    </select>
+                    <input id="solVersion" placeholder="Versión (Ej: 1.0)" class="input-std">
                 </div>
-
-                <div class="field">
-                    <label>Fecha Última Versión (Si aplica)</label>
-                    <input id="solLastDate" type="date" class="form-input" disabled>
-                </div>
-
-                <div class="field">
-                    <label>Justificación / Descripción</label>
-                    <textarea id="solDesc" class="form-input" rows="3"></textarea>
-                </div>
-
-                <div class="file-drop-area">
-                    <span class="material-icons-round">cloud_upload</span>
-                    <p>Arrastra archivo o clic aquí</p>
+                <input id="solLastDate" type="date" class="input-std" disabled title="Solo para modificaciones">
+                <textarea id="solDesc" placeholder="Justificación..." rows="3" class="input-std"></textarea>
+                <div class="file-area">
+                    <label>Adjuntar Evidencia</label>
                     <input type="file" id="solFile">
                 </div>
             </div>
             <div class="modal-footer">
-                <button onclick="toggleModal('modalSolicitud')" class="btn-text">Cancelar</button>
-                <button onclick="crearSolicitud()" class="btn-primary">Enviar a Revisión</button>
+                <button onclick="crearSolicitud()" class="btn-primary full-width">Enviar Solicitud</button>
             </div>
         </div>
     </div>
 
-    <div id="modalFirma" class="modal-overlay hide">
+    <div id="modalSign" class="modal-overlay hide">
         <div class="modal-card">
             <div class="modal-header">
                 <h3>Firma de Aprobación</h3>
             </div>
-            <div class="modal-body center">
-                <p class="text-sm">Yo, <b id="signerName">Admin</b>, certifico la validez de este documento.</p>
-                <div class="signature-wrapper">
-                    <canvas id="signaturePad" width="400" height="200"></canvas>
-                    <small>Firme dentro del recuadro</small>
-                </div>
+            <div class="modal-body center-content">
+                <canvas id="signaturePad" width="400" height="200"></canvas>
+                <small>Dibuje su firma en el recuadro</small>
             </div>
-            <div class="modal-footer">
-                <button id="btnClearSign" class="btn-text">Borrar</button>
-                <button id="btnConfirmSign" class="btn-primary">Firmar y Aprobar</button>
+            <div class="modal-footer row">
+                <button id="btnClearSign" class="btn-outline">Limpiar</button>
+                <button id="btnConfirmSign" class="btn-success">Aprobar Documento</button>
+                <button onclick="closeModal('modalSign')" class="btn-link">Cancelar</button>
             </div>
         </div>
     </div>
 
-</div>
-
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-<script type="module" src="app.js"></script>
+    <script type="module" src="app.js"></script>
 </body>
 </html>
