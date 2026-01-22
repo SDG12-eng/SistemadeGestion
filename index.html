@@ -3,200 +3,234 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGC Pro | Sistema de Gestión ISO 9001</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <title>SGC Pro Ultra | Sistema de Gestión ISO 9001</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    
-    <style>
-        :root { 
-            --primary: #2563eb; --bg: #f8fafc; --sidebar: #0f172a; --text: #334155;
-            --border: #e2e8f0; --success: #10b981; --warning: #f59e0b; --danger: #ef4444; 
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-        body { background: var(--bg); display: flex; height: 100vh; overflow: hidden; color: var(--text); }
-
-        /* Login */
-        #login-screen { position: fixed; inset: 0; background: #020617; display: flex; align-items: center; justify-content: center; z-index: 3000; }
-        .login-box { background: white; padding: 40px; border-radius: 20px; width: 380px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
-        
-        /* Layout */
-        .sidebar { width: 260px; background: var(--sidebar); color: white; display: none; flex-direction: column; padding: 25px; transition: 0.3s; }
-        .main { flex: 1; padding: 40px; overflow-y: auto; display: none; background: #f1f5f9; }
-
-        .nav-link { display: flex; align-items: center; padding: 14px; color: #94a3b8; border: none; background: none; cursor: pointer; border-radius: 12px; width: 100%; margin-bottom: 8px; font-weight: 500; font-size: 14px; text-align: left; }
-        .nav-link.active { background: var(--primary); color: white; font-weight: 700; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.4); }
-        .nav-link span { margin-right: 12px; font-size: 20px; }
-
-        .section { display: none; animation: fadeIn 0.3s ease; }
-        .section.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .card { background: white; padding: 25px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 25px; }
-        label { display: block; font-size: 11px; font-weight: 800; color: #64748b; margin-bottom: 8px; text-transform: uppercase; }
-        input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; margin-bottom: 15px; }
-
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: white; padding: 20px; border-radius: 16px; border-left: 5px solid var(--primary); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .stat-value { font-size: 28px; font-weight: 800; color: #0f172a; }
-        
-        table { width: 100%; border-collapse: collapse; background: white; }
-        th { text-align: left; padding: 15px; font-size: 11px; color: #64748b; border-bottom: 2px solid #f1f5f9; text-transform: uppercase; }
-        td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
-
-        .btn { padding: 10px 20px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-success { background: var(--success); color: white; }
-        .btn-warning { background: var(--warning); color: #78350f; }
-
-        .status { padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; }
-        .st-pendiente { background: #fef3c7; color: #92400e; }
-        .st-aprobado { background: #dcfce7; color: #166534; }
-        .st-rechazado { background: #fee2e2; color: #991b1b; }
-
-        .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); display: none; align-items: center; justify-content: center; z-index: 4000; backdrop-filter: blur(5px); }
-        .modal-content { background: white; width: 750px; border-radius: 20px; padding: 40px; max-height: 90vh; overflow-y: auto; }
-        
-        #loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 5000; display: none; align-items: center; justify-content: center; flex-direction: column; }
-        #btn-reset-hidden { opacity: 0; position: absolute; bottom: 0; left: 0; width: 1px; height: 1px; }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
 <body>
 
-    <div id="loading-overlay">
-        <div style="font-size: 40px; margin-bottom: 10px;">☁️</div>
-        <h3 style="color:var(--primary)">Sincronizando con la Nube...</h3>
-        <p>Subiendo archivos y generando correlativo FCI</p>
-    </div>
-
     <div id="login-screen">
         <div class="login-box">
-            <h1 style="color:var(--primary); margin-bottom: 10px;">SGC PRO</h1>
-            <p style="color:#64748b; font-size:12px; margin-bottom:30px;">Sistema de Gestión de Calidad</p>
-            <input type="text" id="userInput" placeholder="Usuario">
-            <input type="password" id="passInput" placeholder="Contraseña">
-            <button class="btn btn-primary" id="btnLogin" style="width: 100%; justify-content: center; padding: 14px;">INICIAR SESIÓN</button>
-            <button id="btn-reset-hidden">.</button>
+            <div class="login-header">
+                <span class="material-icons-round">verified_user</span>
+                <h1>SGC PRO GOLD</h1>
+                <p>Gestión Documental Corporativa</p>
+            </div>
+            <div class="login-form">
+                <label>Usuario del Sistema</label>
+                <input type="text" id="userInput" placeholder="Ej: admin_calidad">
+                <label>Contraseña</label>
+                <input type="password" id="passInput" placeholder="••••••••">
+                <button class="btn btn-primary" id="btnLogin">
+                    <span>INICIAR SESIÓN</span>
+                    <span class="material-icons-round">login</span>
+                </button>
+                <button id="btn-reset-hidden" style="opacity:0; width:1px; height:1px;">.</button>
+            </div>
         </div>
     </div>
 
     <aside class="sidebar" id="sidebar">
-        <div style="font-size: 22px; font-weight: 900; color: #38bdf8; margin-bottom: 40px; text-align:center;">SGC PRO</div>
-        <nav style="flex:1">
-            <button class="nav-link active" onclick="cambiarVista('sec-dash', this)"><span class="material-icons-round">analytics</span> Dashboard</button>
-            <button class="nav-link" onclick="cambiarVista('sec-nueva', this)"><span class="material-icons-round">add_circle</span> Nueva Solicitud</button>
-            <button class="nav-link" onclick="cambiarVista('sec-historial', this)"><span class="material-icons-round">inventory</span> Historial</button>
+        <div class="sidebar-brand">
+            <span class="material-icons-round">layers</span>
+            <span>SGC PRO GOLD</span>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <button class="nav-link active" onclick="cambiarVista('sec-dash', this)">
+                <span class="material-icons-round">dashboard</span>
+                <span>Dashboard</span>
+            </button>
+            <button class="nav-link" onclick="cambiarVista('sec-nueva', this)">
+                <span class="material-icons-round">add_circle</span>
+                <span>Nueva Solicitud</span>
+            </button>
+            <button class="nav-link" onclick="cambiarVista('sec-historial', this)">
+                <span class="material-icons-round">assignment</span>
+                <span>Bandeja de Entrada</span>
+            </button>
             
-            <div id="admin-menu" style="display:none; margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-                <button class="nav-link" onclick="cambiarVista('sec-usuarios', this)"><span class="material-icons-round">groups</span> Usuarios</button>
-                <button class="nav-link" onclick="cambiarVista('sec-estructura', this)"><span class="material-icons-round">account_tree</span> Estructura</button>
+            <div id="admin-menu" class="admin-section">
+                <p class="nav-label">Administración</p>
+                <button class="nav-link" onclick="cambiarVista('sec-usuarios', this)">
+                    <span class="material-icons-round">people_alt</span>
+                    <span>Gestión de Usuarios</span>
+                </button>
+                <button class="nav-link" onclick="cambiarVista('sec-config', this)">
+                    <span class="material-icons-round">settings</span>
+                    <span>Configuración ISO</span>
+                </button>
             </div>
         </nav>
-        <div id="info-user-tag" style="font-size: 11px; color: #94a3b8; text-align: center; margin-bottom: 20px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;"></div>
-        <button class="btn btn-danger" onclick="location.reload()" style="width:100%; justify-content: center;">Cerrar Sesión</button>
+
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="user-avatar" id="u-initial">U</div>
+                <div class="user-info">
+                    <span id="u-name-display">Cargando...</span>
+                    <small id="u-role-display">Rol del Usuario</small>
+                </div>
+            </div>
+            <button class="btn-logout" onclick="location.reload()">
+                <span class="material-icons-round">logout</span>
+                Cerrar Sesión
+            </button>
+        </div>
     </aside>
 
     <main class="main" id="main-content">
+        
         <section id="sec-dash" class="section active">
-            <h1 style="margin-bottom: 20px;">Resumen de Gestión</h1>
+            <header class="section-header">
+                <h1>Panel de Indicadores</h1>
+                <p id="current-date"></p>
+            </header>
+            
             <div class="stats-grid">
-                <div class="stat-card"><h3>Total</h3><p id="c-total" class="stat-value">0</p></div>
-                <div class="stat-card" style="border-color:var(--warning)"><h3>Pendientes</h3><p id="c-pen" class="stat-value">0</p></div>
-                <div class="stat-card" style="border-color:var(--primary)"><h3>En Revisión</h3><p id="c-reu" class="stat-value">0</p></div>
-                <div class="stat-card" style="border-color:var(--success)"><h3>Aprobados</h3><p id="c-ok" class="stat-value">0</p></div>
+                <div class="stat-card total">
+                    <div class="stat-icon"><span class="material-icons-round">folder</span></div>
+                    <div class="stat-data">
+                        <h3>Total Solicitudes</h3>
+                        <p id="c-total">0</p>
+                    </div>
+                </div>
+                <div class="stat-card pending">
+                    <div class="stat-icon"><span class="material-icons-round">pending_actions</span></div>
+                    <div class="stat-data">
+                        <h3>En Revisión</h3>
+                        <p id="c-rev">0</p>
+                    </div>
+                </div>
+                <div class="stat-card approved">
+                    <div class="stat-icon"><span class="material-icons-round">check_circle</span></div>
+                    <div class="stat-data">
+                        <h3>Vigentes / Aprobados</h3>
+                        <p id="c-ok">0</p>
+                    </div>
+                </div>
+                <div class="stat-card alert">
+                    <div class="stat-icon"><span class="material-icons-round">warning</span></div>
+                    <div class="stat-data">
+                        <h3>Rechazados</h3>
+                        <p id="c-reject">0</p>
+                    </div>
+                </div>
             </div>
         </section>
 
         <section id="sec-nueva" class="section">
-            <h1>Nueva Solicitud de Documento</h1>
-            <div class="card">
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-                    <div><label>Tipo de Acción</label>
-                        <select id="sol-accion">
-                            <option value="creacion">Creación (Nuevo)</option>
-                            <option value="modificacion">Modificación</option>
-                            <option value="inactivacion">Inactivación</option>
-                        </select>
+            <div class="form-container">
+                <header class="form-header">
+                    <h2>Formulario de Solicitud de Documento (Paso 1: Elaboración)</h2>
+                </header>
+                <div class="card">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Tipo de Acción ISO</label>
+                            <select id="sol-accion">
+                                <option value="creacion">Creación de Nuevo Documento</option>
+                                <option value="modificacion">Modificación de Documento Existente</option>
+                                <option value="inactivacion">Inactivación (Baja de Documento)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Gerencia Responsable</label>
+                            <select id="sol-ger"></select>
+                        </div>
                     </div>
-                    <div><label>Tipo Documento</label>
-                        <select id="sol-tipo">
-                            <option>Procedimiento</option><option>Manual</option>
-                            <option>Guía</option><option>Formato</option><option>Instructivo</option>
-                        </select>
+                    
+                    <div class="form-group">
+                        <label>Título Descriptivo del Documento</label>
+                        <input type="text" id="sol-tit" placeholder="Ej: Manual de Gestión de Riesgos Financieros">
                     </div>
-                </div>
 
-                <div id="iso-fields" style="display:none; background: #fff7ed; padding: 20px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #ffedd5;">
-                    <p style="font-size: 11px; font-weight: 800; color: #c2410c; margin-bottom: 10px;">DATOS DEL DOCUMENTO ACTUAL (ISO 9001)</p>
-                    <div style="display:grid; grid-template-columns: 2fr 1fr 1fr; gap:10px;">
-                        <input type="text" id="sol-cod-ref" placeholder="Código Actual (Ej: FCI-PRO-01)">
-                        <input type="number" id="sol-ver-ref" placeholder="Versión">
-                        <input type="date" id="sol-fec-ref">
+                    <div class="form-group">
+                        <label>Justificación del Cambio o Creación</label>
+                        <textarea id="sol-jus" rows="4" placeholder="Describa el motivo de la solicitud bajo los lineamientos de la norma..."></textarea>
                     </div>
-                </div>
 
-                <label>Título Descriptivo</label><input type="text" id="sol-tit" placeholder="Ej: Manual de Gestión de Riesgos">
-                
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-                    <div><label>Gerencia Solicitante</label><select id="sol-ger"></select></div>
-                    <div><label>Departamento</label><select id="sol-dep"></select></div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Documento de Referencia (Archivo Principal)</label>
+                            <div class="file-upload">
+                                <input type="file" id="sol-file">
+                                <span class="material-icons-round">upload_file</span>
+                                <p>Arrastra o haz clic para subir</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary btn-full" id="btnSend">
+                        <span class="material-icons-round">send</span>
+                        ENVIAR PARA VERIFICACIÓN TÉCNICA
+                    </button>
                 </div>
-                
-                <label>Documento de Referencia (Word/PDF)</label>
-                <input type="file" id="sol-file" style="border: 1px dashed #cbd5e1; padding: 20px; background: #f8fafc;">
-                
-                <label>Justificación del Cambio</label>
-                <textarea id="sol-jus" rows="4" placeholder="Explique el motivo de la solicitud..."></textarea>
-                
-                <button class="btn btn-primary" id="btnSend" style="width:100%; padding: 16px; justify-content: center; font-size: 15px;">Enviar a Revisión SGC</button>
             </div>
         </section>
 
         <section id="sec-historial" class="section">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <h1>Bandeja de Documentos</h1>
-                <input type="text" id="main-search" placeholder="🔍 Buscar por ID o Título..." style="width: 300px; margin:0;">
-            </div>
-            <div class="card" style="padding:0; overflow:hidden;">
-                <table id="table-sol">
-                    <thead><tr><th>Código FCI</th><th>Documento</th><th>Estado</th><th>Acción</th></tr></thead>
-                    <tbody></tbody>
-                </table>
+            <header class="table-actions">
+                <h1>Listado Maestro de Documentos</h1>
+                <div class="search-box">
+                    <span class="material-icons-round">search</span>
+                    <input type="text" id="main-search" placeholder="Buscar por ID, Título o Solicitante...">
+                </div>
+            </header>
+            
+            <div class="card no-padding">
+                <div class="table-responsive">
+                    <table id="table-sol">
+                        <thead>
+                            <tr>
+                                <th>CÓDIGO FCI</th>
+                                <th>DOCUMENTO</th>
+                                <th>ELABORADO POR</th>
+                                <th>ESTADO DE FIRMAS</th>
+                                <th>ACCIONES</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            </tbody>
+                    </table>
+                </div>
             </div>
         </section>
 
         <section id="sec-usuarios" class="section">
-            <h1>Gestión de Accesos</h1>
-            <div class="card">
-                <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:15px;">
-                    <input type="text" id="u-nom" placeholder="Nombre Completo">
-                    <input type="text" id="u-usr" placeholder="ID Usuario">
-                    <input type="text" id="u-pas" placeholder="Contraseña">
-                    <select id="u-rol">
-                        <option value="applicant">Solicitante</option>
-                        <option value="gerente">Gerente de Área</option>
-                        <option value="admin">Administrador SGC</option>
-                    </select>
-                </div>
-                <label>Asignar Gerencia (Solo para Gerentes/Solicitantes)</label>
-                <select id="u-ger-assign"></select>
-                <button class="btn btn-primary" id="btnUser" style="margin-top:10px; width:100%">Registrar en Sistema</button>
-            </div>
-            <div class="card" style="padding:0"><table id="table-u"><thead><tr><th>Usuario</th><th>Rol</th><th>Gerencia</th><th>X</th></tr></thead><tbody></tbody></table></div>
-        </section>
-
-        <section id="sec-estructura" class="section">
-            <h1>Estructura Organizativa</h1>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:25px;">
-                <div class="card">
-                    <h3>Gerencias</h3>
-                    <div style="display:flex; gap:10px; margin:15px 0;"><input type="text" id="in-ger"><button class="btn btn-primary" id="add-ger">+</button></div>
-                    <div id="list-ger"></div>
-                </div>
-                <div class="card">
-                    <h3>Departamentos</h3>
-                    <div style="display:flex; gap:10px; margin:15px 0;"><input type="text" id="in-dep"><button class="btn btn-primary" id="add-dep">+</button></div>
-                    <div id="list-dep"></div>
+            <div class="form-container">
+                <h2>Administración de Usuarios y Rangos</h2>
+                <div class="card grid-2">
+                    <div class="form-group">
+                        <label>Nombre Completo</label>
+                        <input type="text" id="u-nom">
+                    </div>
+                    <div class="form-group">
+                        <label>Identificador de Usuario (Login)</label>
+                        <input type="text" id="u-usr">
+                    </div>
+                    <div class="form-group">
+                        <label>Contraseña</label>
+                        <input type="text" id="u-pas" value="1234">
+                    </div>
+                    <div class="form-group">
+                        <label>Correo Electrónico (Notificaciones)</label>
+                        <input type="email" id="u-mail">
+                    </div>
+                    <div class="form-group">
+                        <label>Rol en el Flujo de Calidad</label>
+                        <select id="u-rol">
+                            <option value="applicant">Elaborador (Solicitante)</option>
+                            <option value="verifier">Verificador Técnico</option>
+                            <option value="admin">Administrador SGC (Validador)</option>
+                            <option value="manager">Gerente General (Aprobador)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Gerencia Asignada</label>
+                        <select id="u-ger-assign"></select>
+                    </div>
+                    <button class="btn btn-primary" id="btnUser" style="grid-column: span 2;">REGISTRAR NUEVO USUARIO</button>
                 </div>
             </div>
         </section>
@@ -204,288 +238,74 @@
 
     <div class="modal-overlay" id="modal">
         <div class="modal-content">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                <div>
-                    <span id="m-fci" style="background:var(--primary); color:white; padding:4px 10px; border-radius:4px; font-size:11px; font-weight:800;"></span>
-                    <h2 id="m-tit" style="margin-top:10px; color:var(--sidebar)"></h2>
+            <div class="modal-data">
+                <div class="modal-header">
+                    <div class="modal-badge" id="m-fci">CÓDIGO</div>
+                    <button class="btn-icon" onclick="closeModal()">
+                        <span class="material-icons-round">close</span>
+                    </button>
                 </div>
-                <button class="btn btn-danger" onclick="window.closeModal()">Cerrar</button>
-            </div>
-            <hr style="margin:20px 0; opacity:0.1;">
-            <div id="m-body"></div>
+                
+                <h2 id="m-tit">Título del Documento</h2>
+                
+                <div class="signature-timeline">
+                    <div class="step" id="step-1">
+                        <div class="dot"><span class="material-icons-round">edit</span></div>
+                        <span>Elaborado</span>
+                    </div>
+                    <div class="step" id="step-2">
+                        <div class="dot"><span class="material-icons-round">fact_check</span></div>
+                        <span>Verificado</span>
+                    </div>
+                    <div class="step" id="step-3">
+                        <div class="dot"><span class="material-icons-round">security</span></div>
+                        <span>SGC Validado</span>
+                    </div>
+                    <div class="step" id="step-4">
+                        <div class="dot"><span class="material-icons-round">verified</span></div>
+                        <span>Aprobado</span>
+                    </div>
+                </div>
 
-            <div id="m-gestion" style="margin-top:30px; padding:20px; background:#f1f5f9; border-radius:12px; display:none;">
-                <p style="font-weight:800; font-size:11px; margin-bottom:15px; color:#64748b;">PANEL DE GESTIÓN ADMINISTRATIVA</p>
-                <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <button class="btn btn-success" id="btn-aprobar">Aprobar Solicitud</button>
-                    <button class="btn btn-warning" id="btn-m-reu">Programar Reunión</button>
-                    <button class="btn btn-danger" id="btn-m-rech">Rechazar</button>
+                <div class="document-details" id="m-body">
+                    </div>
+
+                <div class="modal-actions" id="m-actions">
+                    <p class="action-label">CONTROL DE FIRMA ELECTRÓNICA</p>
+                    <div class="action-buttons">
+                        <button class="btn btn-success" id="btn-next-step">
+                            <span class="material-icons-round">history_edu</span>
+                            <span id="btn-text-sig">Confirmar Firma Actual</span>
+                        </button>
+                        <button class="btn btn-danger" id="btn-reject">
+                            <span class="material-icons-round">block</span>
+                            Rechazar Solicitud
+                        </button>
+                    </div>
                 </div>
-                <div id="panel-extra" style="margin-top:20px; display:none;">
-                    <textarea id="m-obs" placeholder="Observaciones o motivo de rechazo..." rows="3"></textarea>
-                    <button class="btn btn-primary" id="btn-m-save">Confirmar Acción</button>
+            </div>
+
+            <div class="modal-chat">
+                <div class="chat-header">
+                    <span class="material-icons-round">forum</span>
+                    <h3>Consultas y Observaciones</h3>
+                </div>
+                <div class="chat-body" id="chat-box">
+                    </div>
+                <div class="chat-footer">
+                    <input type="text" id="chat-input" placeholder="Escribir consulta...">
+                    <button id="btnChatSend">
+                        <span class="material-icons-round">send</span>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, query, where, onSnapshot, doc, updateDoc, deleteDoc, getDoc, runTransaction, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <p>Sincronizando con el Servidor SGC...</p>
+    </div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDdzCiachuhbE9jATz-TesPI2vUVIJrHjM",
-            authDomain: "sistemadegestion-7400d.firebaseapp.com",
-            projectId: "sistemadegestion-7400d",
-            storageBucket: "sistemadegestion-7400d.appspot.com",
-            messagingSenderId: "709030283072",
-            appId: "1:709030283072:web:5997837b36a448e9515ca5"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        let user = null;
-        let selectedId = null;
-
-        const CLOUD_NAME = "df79cjklp";
-        const UPLOAD_PRESET = "fci_documentos";
-
-        // --- CORE FUNCTIONS ---
-        async function uploadToCloudinary(file) {
-            if(!file) return null;
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('upload_preset', UPLOAD_PRESET);
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, { method: 'POST', body: formData });
-            const data = await res.json();
-            return data.secure_url;
-        }
-
-        async function getNextFCI() {
-            const ref = doc(db, "Contadores", "solicitudes");
-            let fci = "";
-            await runTransaction(db, async (t) => {
-                const snap = await t.get(ref);
-                let count = snap.exists() ? snap.data().count + 1 : 1;
-                t.set(ref, { count });
-                fci = `FCI-SOL-${String(count).padStart(4, '0')}`;
-            });
-            return fci;
-        }
-
-        // --- UI LOGIC ---
-        window.cambiarVista = (id, btn) => {
-            document.querySelectorAll('.section, .nav-link').forEach(e => e.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            if(btn) btn.classList.add('active');
-        };
-
-        document.getElementById('sol-accion').onchange = (e) => {
-            document.getElementById('iso-fields').style.display = (e.target.value !== 'creacion') ? 'block' : 'none';
-        };
-
-        // --- LOGIN & INIT ---
-        document.getElementById('btnLogin').onclick = async () => {
-            const u = document.getElementById('userInput').value;
-            const p = document.getElementById('passInput').value;
-            const q = query(collection(db, "Usuarios"), where("usuario", "==", u), where("pass", "==", p));
-            const snap = await getDocs(q);
-            
-            if(!snap.empty) {
-                user = snap.docs[0].data();
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('sidebar').style.display = 'flex';
-                document.getElementById('main-content').style.display = 'block';
-                document.getElementById('info-user-tag').innerHTML = `<b>${user.nombre}</b><br>${user.role.toUpperCase()}<br>${user.gerencia || 'ACCESO GLOBAL'}`;
-                if(user.role === 'admin') document.getElementById('admin-menu').style.display = 'block';
-                startRealtime();
-            } else alert("Error de acceso");
-        };
-
-        function startRealtime() {
-            // Estructura
-            onSnapshot(collection(db, "Gerencias"), s => {
-                let list = "", opt = "";
-                s.forEach(d => {
-                    list += `<div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #eee;">${d.data().nombre} <button onclick="window.delDoc('Gerencias','${d.id}')" style="color:red; background:none; border:none; cursor:pointer">✕</button></div>`;
-                    opt += `<option>${d.data().nombre}</option>`;
-                });
-                document.getElementById('list-ger').innerHTML = list;
-                document.getElementById('sol-ger').innerHTML = opt;
-                document.getElementById('u-ger-assign').innerHTML = opt;
-            });
-
-            onSnapshot(collection(db, "Departamentos"), s => {
-                let list = "", opt = "";
-                s.forEach(d => {
-                    list += `<div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #eee;">${d.data().nombre} <button onclick="window.delDoc('Departamentos','${d.id}')" style="color:red; background:none; border:none; cursor:pointer">✕</button></div>`;
-                    opt += `<option>${d.data().nombre}</option>`;
-                });
-                document.getElementById('list-dep').innerHTML = list;
-                document.getElementById('sol-dep').innerHTML = opt;
-            });
-
-            // Solicitudes
-            onSnapshot(collection(db, "Solicitudes"), snap => {
-                const tb = document.querySelector('#table-sol tbody');
-                tb.innerHTML = "";
-                let stats = { total:0, pen:0, reu:0, ok:0 };
-
-                snap.forEach(d => {
-                    const s = d.data();
-                    let access = (user.role === 'admin') || (user.role === 'gerente' && s.gerencia === user.gerencia) || (s.solicitante === user.usuario);
-                    
-                    if(access) {
-                        stats.total++;
-                        if(s.estado === 'Pendiente') stats.pen++;
-                        if(s.estado === 'Aprobado') stats.ok++;
-                        
-                        tb.innerHTML += `<tr>
-                            <td><b>${s.customId}</b></td>
-                            <td>${s.titulo}<br><small style="color:#64748b">${s.gerencia}</small></td>
-                            <td><span class="status st-${s.estado.toLowerCase()}">${s.estado}</span></td>
-                            <td><button class="btn btn-primary" onclick="window.openPanel('${d.id}')">Ver Detalle</button></td>
-                        </tr>`;
-                    }
-                });
-                document.getElementById('c-total').innerText = stats.total;
-                document.getElementById('c-pen').innerText = stats.pen;
-                document.getElementById('c-ok').innerText = stats.ok;
-            });
-
-            // Usuarios
-            if(user.role === 'admin') {
-                onSnapshot(collection(db, "Usuarios"), s => {
-                    const tb = document.querySelector('#table-u tbody'); tb.innerHTML = "";
-                    s.forEach(d => {
-                        const u = d.data();
-                        tb.innerHTML += `<tr><td>${u.usuario}</td><td>${u.role}</td><td>${u.gerencia || '-'}</td><td><button onclick="window.delDoc('Usuarios','${d.id}')">✕</button></td></tr>`;
-                    });
-                });
-            }
-        }
-
-        // --- SUBMIT ---
-        document.getElementById('btnSend').onclick = async () => {
-            const file = document.getElementById('sol-file').files[0];
-            if(!file) return alert("Adjunte el documento");
-            
-            document.getElementById('loading-overlay').style.display = 'flex';
-            try {
-                const url = await uploadToCloudinary(file);
-                const fci = await getNextFCI();
-                
-                await addDoc(collection(db, "Solicitudes"), {
-                    customId: fci,
-                    titulo: document.getElementById('sol-tit').value,
-                    accion: document.getElementById('sol-accion').value,
-                    tipo: document.getElementById('sol-tipo').value,
-                    codigoReferencia: document.getElementById('sol-cod-ref').value || '',
-                    versionReferencia: document.getElementById('sol-ver-ref').value || '',
-                    fechaReferencia: document.getElementById('sol-fec-ref').value || '',
-                    gerencia: document.getElementById('sol-ger').value,
-                    departamento: document.getElementById('sol-dep').value,
-                    justificacion: document.getElementById('sol-jus').value,
-                    fileUrl: url,
-                    solicitante: user.usuario,
-                    estado: 'Pendiente',
-                    fecha: new Date().toLocaleDateString()
-                });
-                alert("Solicitud registrada correctamente: " + fci);
-                cambiarVista('sec-historial');
-            } catch (e) {
-                console.error(e);
-            }
-            document.getElementById('loading-overlay').style.display = 'none';
-        };
-
-        // --- MODAL & GESTIÓN ---
-        window.openPanel = async (id) => {
-            selectedId = id;
-            const snap = await getDoc(doc(db, "Solicitudes", id));
-            const s = snap.data();
-            
-            document.getElementById('m-fci').innerText = s.customId;
-            document.getElementById('m-tit').innerText = s.titulo;
-            
-            let extraISO = "";
-            if(s.accion !== 'creacion') {
-                extraISO = `<div style="background:#fff7ed; padding:15px; border-radius:8px; margin-bottom:15px; border:1px solid #ffedd5;">
-                    <b>Referencia ISO:</b> ${s.codigoReferencia} | Versión: ${s.versionReferencia} | Fecha: ${s.fechaReferencia}
-                </div>`;
-            }
-
-            document.getElementById('m-body').innerHTML = `
-                ${extraISO}
-                <p><b>Acción:</b> ${s.accion.toUpperCase()} (${s.tipo})</p>
-                <p><b>Estado:</b> ${s.estado}</p>
-                <p><b>Gerencia:</b> ${s.gerencia} / ${s.departamento}</p>
-                <p><b>Solicitante:</b> ${s.solicitante} (${s.fecha})</p>
-                <div style="margin:15px 0; padding:15px; border:1px solid #eee; border-radius:8px;">
-                    <b>Justificación:</b><br>${s.justificacion}
-                </div>
-                <a href="${s.fileUrl}" target="_blank" class="btn btn-warning" style="width:100%; justify-content:center;">📥 Descargar Documento Adjunto</a>
-            `;
-
-            // Permisos de Gestión
-            const isManager = (user.role === 'gerente' && s.gerencia === user.gerencia);
-            const isAdmin = (user.role === 'admin');
-            
-            document.getElementById('m-gestion').style.display = (isAdmin || isManager) ? 'block' : 'none';
-            document.getElementById('modal').style.display = 'flex';
-        };
-
-        window.closeModal = () => {
-            document.getElementById('modal').style.display = 'none';
-            document.getElementById('panel-extra').style.display = 'none';
-        };
-
-        // --- ACCIONES ADMIN ---
-        document.getElementById('btn-m-rech').onclick = () => document.getElementById('panel-extra').style.display = 'block';
-        document.getElementById('btn-aprobar').onclick = async () => {
-            if(confirm("¿Aprobar este documento?")) {
-                await updateDoc(doc(db, "Solicitudes", selectedId), { estado: 'Aprobado' });
-                window.closeModal();
-            }
-        };
-
-        // --- UTILIDADES ---
-        window.delDoc = async (col, id) => {
-            if(confirm("¿Eliminar?")) await deleteDoc(doc(db, col, id));
-        };
-
-        document.getElementById('add-ger').onclick = async () => {
-            const n = document.getElementById('in-ger').value;
-            if(n) await addDoc(collection(db, "Gerencias"), { nombre: n });
-        };
-
-        document.getElementById('add-dep').onclick = async () => {
-            const n = document.getElementById('in-dep').value;
-            if(n) await addDoc(collection(db, "Departamentos"), { nombre: n });
-        };
-
-        document.getElementById('btnUser').onclick = async () => {
-            await addDoc(collection(db, "Usuarios"), {
-                nombre: document.getElementById('u-nom').value,
-                usuario: document.getElementById('u-usr').value,
-                pass: document.getElementById('u-pas').value,
-                role: document.getElementById('u-rol').value,
-                gerencia: document.getElementById('u-ger-assign').value
-            });
-            alert("Usuario creado");
-        };
-
-        // Reset Admin oculto
-        document.getElementById('btn-reset-hidden').onclick = async () => {
-            await setDoc(doc(db, "Usuarios", "admin_root"), {
-                nombre: "Administrador Sistema",
-                usuario: "admin",
-                pass: "1234",
-                role: "admin"
-            });
-            alert("Acceso maestro restaurado: admin / 1234");
-        };
-
-    </script>
 </body>
 </html>
