@@ -33,7 +33,9 @@
         .nav-link span { margin-right: 12px; }
 
         /* Contenido Principal */
-        .main { flex: 1; padding: 30px; overflow-y: auto; display: none; }
+        .main { flex: 1; padding: 30px; overflow: hidden; display: none; flex-direction: column; }
+        .scrollable-content { flex: 1; overflow-y: auto; padding-right: 5px; } /* Scroll independiente contenido principal */
+        
         .section { display: none; animation: fadeIn 0.4s ease-out; }
         .section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -63,14 +65,21 @@
 
         /* Modal */
         .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); display: none; align-items: center; justify-content: center; z-index: 4000; backdrop-filter: blur(4px); }
-        .modal-content { background: white; width: 95%; max-width: 1100px; height: 90vh; border-radius: 20px; display: grid; grid-template-columns: 1fr 350px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
-        .modal-main { padding: 30px; overflow-y: auto; border-right: 1px solid var(--border); }
-        .modal-side { background: #f8fafc; padding: 20px; display: flex; flex-direction: column; border-left: 1px solid var(--border); }
+        .modal-content { background: white; width: 95%; max-width: 1200px; height: 90vh; border-radius: 20px; display: grid; grid-template-columns: 1fr 400px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+        
+        /* SCROLL INDEPENDIENTE EN MODAL */
+        .modal-main { padding: 30px; overflow-y: auto; border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        .modal-side { background: #f8fafc; padding: 20px; display: flex; flex-direction: column; border-left: 1px solid var(--border); overflow: hidden; }
 
-        /* Detalles */
-        .detail-row { display: flex; padding: 12px 0; border-bottom: 1px solid #f1f5f9; align-items: center; }
-        .detail-label { width: 180px; font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
-        .detail-value { flex: 1; font-size: 14px; color: #1e293b; font-weight: 500; }
+        /* Timeline de Firmas */
+        .signature-timeline { display: flex; justify-content: space-between; margin: 20px 0; position: relative; padding: 0 10px; }
+        .signature-timeline::before { content: ''; position: absolute; top: 14px; left: 0; width: 100%; height: 2px; background: var(--border); z-index: 1; }
+        .step { position: relative; z-index: 2; text-align: center; flex: 1; }
+        .step-dot { width: 30px; height: 30px; background: var(--white); border: 3px solid var(--border); border-radius: 50%; margin: 0 auto 5px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; transition: 0.3s; }
+        .step.completed .step-dot { background: var(--success); border-color: var(--success); color: white; }
+        .step.active .step-dot { background: var(--accent); border-color: var(--accent); color: white; transform: scale(1.1); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2); }
+        .step label { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
+        .step.active label { color: var(--accent); }
 
         /* Chat */
         .chat-box { flex: 1; overflow-y: auto; padding-right: 5px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
@@ -78,6 +87,11 @@
         .msg-sys { background: #e2e8f0; color: #475569; font-size: 11px; text-align: center; margin: 5px auto; width: 100%; border-radius: 6px; }
         .msg-user { background: white; border: 1px solid #e2e8f0; align-self: flex-start; border-bottom-left-radius: 2px; }
         .msg-me { background: var(--accent); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+
+        /* Detalles */
+        .detail-row { display: flex; padding: 12px 0; border-bottom: 1px solid #f1f5f9; align-items: center; }
+        .detail-label { width: 180px; font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
+        .detail-value { flex: 1; font-size: 14px; color: #1e293b; font-weight: 500; }
 
         /* Badges */
         .badge { padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
@@ -94,7 +108,7 @@
 
     <div id="loading-overlay">
         <div class="spinner" style="margin-bottom: 15px;"></div>
-        <h4 style="color:var(--primary)">Procesando...</h4>
+        <h4 style="color:var(--primary)">Sincronizando...</h4>
     </div>
 
     <!-- LOGIN -->
@@ -141,157 +155,158 @@
 
     <!-- MAIN -->
     <main class="main" id="main-content">
-        
-        <!-- DASHBOARD -->
-        <section id="sec-dash" class="section active">
-            <h1 style="margin-bottom: 25px;">Resumen General</h1>
-            <div class="stats-grid">
-                <div class="stat-card" style="border-color: #3b82f6;"><div><h3>Total</h3><p id="c-total">0</p></div></div>
-                <div class="stat-card" style="border-color: #f59e0b;"><div><h3>En Proceso</h3><p id="c-proc">0</p></div></div>
-                <div class="stat-card" style="border-color: #10b981;"><div><h3>Vigentes</h3><p id="c-ok">0</p></div></div>
-                <div class="stat-card" style="border-color: #ef4444;"><div><h3>Rechazados</h3><p id="c-rej">0</p></div></div>
-            </div>
-        </section>
-
-        <!-- NUEVA SOLICITUD -->
-        <section id="sec-nueva" class="section">
-            <div class="card" style="max-width: 800px; margin: auto;">
-                <h2 style="margin-bottom: 20px; color: var(--primary);">Crear Solicitud Documental</h2>
-                
-                <div class="grid-2">
-                    <div>
-                        <label>Acción Requerida</label>
-                        <select id="sol-accion" onchange="toggleISO()">
-                            <option value="creacion">Creación (Nuevo Documento)</option>
-                            <option value="modificacion">Modificación (Versión)</option>
-                            <option value="inactivacion">Inactivación (Baja)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>Tipo de Documento</label>
-                        <select id="sol-tipo">
-                            <option>Procedimiento</option>
-                            <option>Manual</option>
-                            <option>Guía</option>
-                            <option>Formato</option>
-                            <option>Instructivo</option>
-                        </select>
-                    </div>
+        <div class="scrollable-content">
+            <!-- DASHBOARD -->
+            <section id="sec-dash" class="section active">
+                <h1 style="margin-bottom: 25px;">Resumen General</h1>
+                <div class="stats-grid">
+                    <div class="stat-card" style="border-color: #3b82f6;"><div><h3>Total</h3><p id="c-total">0</p></div></div>
+                    <div class="stat-card" style="border-color: #f59e0b;"><div><h3>En Proceso</h3><p id="c-proc">0</p></div></div>
+                    <div class="stat-card" style="border-color: #10b981;"><div><h3>Vigentes</h3><p id="c-ok">0</p></div></div>
+                    <div class="stat-card" style="border-color: #ef4444;"><div><h3>Rechazados</h3><p id="c-rej">0</p></div></div>
                 </div>
+            </section>
 
-                <!-- Campos ISO Dinámicos -->
-                <div id="iso-extra-fields" style="background: #fffbeb; padding: 20px; border-radius: 12px; border: 1px dashed #fcd34d; margin-bottom: 20px; display: none;">
-                    <p style="font-size: 11px; font-weight: 800; color: #b45309; margin-bottom: 10px;">DATOS DEL DOCUMENTO DE REFERENCIA</p>
-                    <div class="grid-3">
-                        <div><label>Código Actual</label><input type="text" id="sol-ref" placeholder="Ej: RH-PRO-01"></div>
-                        <div><label>Versión Actual</label><input type="number" id="sol-ver" value="1"></div>
-                        <div><label>Fecha Últ. Rev.</label><input type="date" id="sol-f-ver"></div>
-                    </div>
-                </div>
-
-                <label>Título del Documento</label>
-                <input type="text" id="sol-tit" placeholder="Nombre oficial del documento">
-
-                <div class="grid-2">
-                    <div><label>Gerencia Responsable</label><select id="sol-ger"></select></div>
-                    <div><label>Departamento</label><select id="sol-dep"></select></div>
-                </div>
-
-                <label>Documento Borrador (Carga Local)</label>
-                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
-                    <input type="file" id="sol-file" style="margin-bottom: 0;">
-                </div>
-
-                <label>Justificación Técnica</label>
-                <textarea id="sol-jus" rows="4" placeholder="Describa el motivo del cambio o creación..."></textarea>
-
-                <button class="btn btn-primary" id="btnCrear" style="width: 100%; justify-content: center; padding: 15px;">INICIAR FLUJO DE APROBACIÓN</button>
-            </div>
-        </section>
-
-        <!-- HISTORIAL -->
-        <section id="sec-historial" class="section">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h1>Bandeja de Documentos</h1>
-                <input type="text" id="main-search" placeholder="🔍 Buscar por código, título..." style="width: 300px; margin: 0;">
-            </div>
-            <div class="card" style="padding: 0; overflow: hidden;">
-                <table id="table-data">
-                    <thead>
-                        <tr>
-                            <th>FCI / CÓDIGO</th>
-                            <th>TIPO</th>
-                            <th>DOCUMENTO</th>
-                            <th>SOLICITANTE</th>
-                            <th>ESTADO</th>
-                            <th>ACCIÓN</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- ADMIN: USUARIOS -->
-        <section id="sec-usuarios" class="section">
-            <h1>Gestión de Usuarios y Accesos</h1>
-            <div class="grid-2">
-                <div class="card">
-                    <h3 style="margin-bottom: 20px;">Registrar Nuevo Usuario</h3>
+            <!-- NUEVA SOLICITUD -->
+            <section id="sec-nueva" class="section">
+                <div class="card" style="max-width: 800px; margin: auto;">
+                    <h2 style="margin-bottom: 20px; color: var(--primary);">Crear Solicitud Documental</h2>
+                    
                     <div class="grid-2">
-                        <div><label>Nombre</label><input type="text" id="u-nom"></div>
-                        <div><label>Usuario ID</label><input type="text" id="u-usr"></div>
-                    </div>
-                    <div class="grid-2">
-                        <div><label>Contraseña</label><input type="text" id="u-pas" value="123"></div>
                         <div>
-                            <label>Rol / Permisos</label>
-                            <select id="u-rol">
-                                <option value="applicant">Elaborador (Solo crea)</option>
-                                <option value="verifier">Verificador</option>
-                                <option value="admin">Admin SGC (Valida)</option>
-                                <option value="manager">Gerente (Aprueba)</option>
+                            <label>Acción Requerida</label>
+                            <select id="sol-accion" onchange="toggleISO()">
+                                <option value="creacion">Creación (Nuevo Documento)</option>
+                                <option value="modificacion">Modificación (Versión)</option>
+                                <option value="inactivacion">Inactivación (Baja)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Tipo de Documento</label>
+                            <select id="sol-tipo">
+                                <option>Procedimiento</option>
+                                <option>Manual</option>
+                                <option>Guía</option>
+                                <option>Formato</option>
+                                <option>Instructivo</option>
                             </select>
                         </div>
                     </div>
-                    <label>Asignar Gerencia (Para filtrar vistas)</label>
-                    <select id="u-ger-sel"></select>
-                    
-                    <button class="btn btn-primary" id="btnSaveUser" style="width: 100%; margin-top: 10px;">GUARDAR USUARIO</button>
-                </div>
-                <div class="card" style="padding: 0; overflow: hidden; height: fit-content;">
-                    <div style="padding: 15px; background: #f8fafc; border-bottom: 1px solid var(--border); font-weight: 700; font-size: 12px;">USUARIOS REGISTRADOS</div>
-                    <div style="max-height: 400px; overflow-y: auto;">
-                        <table id="table-u">
-                            <tbody id="tbody-users"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </section>
 
-        <!-- ADMIN: ESTRUCTURA -->
-        <section id="sec-estructura" class="section">
-            <h1>Estructura Organizativa</h1>
-            <div class="grid-2">
-                <div class="card">
-                    <h3>Gerencias</h3>
-                    <div style="display: flex; gap: 10px; margin: 15px 0;">
-                        <input type="text" id="g-nom" placeholder="Nueva Gerencia" style="margin: 0;">
-                        <button class="btn btn-success" id="btnSaveGer"><span class="material-icons-round">add</span></button>
+                    <!-- Campos ISO Dinámicos -->
+                    <div id="iso-extra-fields" style="background: #fffbeb; padding: 20px; border-radius: 12px; border: 1px dashed #fcd34d; margin-bottom: 20px; display: none;">
+                        <p style="font-size: 11px; font-weight: 800; color: #b45309; margin-bottom: 10px;">DATOS DEL DOCUMENTO DE REFERENCIA</p>
+                        <div class="grid-3">
+                            <div><label>Código Actual</label><input type="text" id="sol-ref" placeholder="Ej: RH-PRO-01"></div>
+                            <div><label>Versión Actual</label><input type="number" id="sol-ver" value="1"></div>
+                            <div><label>Fecha Últ. Rev.</label><input type="date" id="sol-f-ver"></div>
+                        </div>
                     </div>
-                    <div id="ger-list"></div>
-                </div>
-                <div class="card">
-                    <h3>Departamentos</h3>
-                    <div style="display: flex; gap: 10px; margin: 15px 0;">
-                        <input type="text" id="d-nom" placeholder="Nuevo Departamento" style="margin: 0;">
-                        <button class="btn btn-success" id="btnSaveDep"><span class="material-icons-round">add</span></button>
+
+                    <label>Título del Documento</label>
+                    <input type="text" id="sol-tit" placeholder="Nombre oficial del documento">
+
+                    <div class="grid-2">
+                        <div><label>Gerencia Responsable</label><select id="sol-ger"></select></div>
+                        <div><label>Departamento</label><select id="sol-dep"></select></div>
                     </div>
-                    <div id="dep-list"></div>
+
+                    <label>Documento Borrador (Carga Local)</label>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+                        <input type="file" id="sol-file" accept=".pdf,.doc,.docx" style="margin-bottom: 0;">
+                    </div>
+
+                    <label>Justificación Técnica</label>
+                    <textarea id="sol-jus" rows="4" placeholder="Describa el motivo del cambio o creación..."></textarea>
+
+                    <button class="btn btn-primary" id="btnCrear" style="width: 100%; justify-content: center; padding: 15px;">INICIAR FLUJO DE APROBACIÓN</button>
                 </div>
-            </div>
-        </section>
+            </section>
+
+            <!-- HISTORIAL -->
+            <section id="sec-historial" class="section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h1>Bandeja de Documentos</h1>
+                    <input type="text" id="main-search" placeholder="🔍 Buscar por código, título..." style="width: 300px; margin: 0;">
+                </div>
+                <div class="card" style="padding: 0; overflow: hidden;">
+                    <table id="table-data">
+                        <thead>
+                            <tr>
+                                <th>FCI / CÓDIGO</th>
+                                <th>TIPO</th>
+                                <th>DOCUMENTO</th>
+                                <th>SOLICITANTE</th>
+                                <th>ESTADO</th>
+                                <th>ACCIÓN</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ADMIN: USUARIOS -->
+            <section id="sec-usuarios" class="section">
+                <h1>Gestión de Usuarios y Accesos</h1>
+                <div class="grid-2">
+                    <div class="card">
+                        <h3 style="margin-bottom: 20px;">Registrar Nuevo Usuario</h3>
+                        <div class="grid-2">
+                            <div><label>Nombre</label><input type="text" id="u-nom"></div>
+                            <div><label>Usuario ID</label><input type="text" id="u-usr"></div>
+                        </div>
+                        <div class="grid-2">
+                            <div><label>Contraseña</label><input type="text" id="u-pas" value="123"></div>
+                            <div>
+                                <label>Rol / Permisos</label>
+                                <select id="u-rol">
+                                    <option value="applicant">Elaborador (Solo crea)</option>
+                                    <option value="verifier">Verificador</option>
+                                    <option value="admin">Admin SGC (Valida)</option>
+                                    <option value="manager">Gerente (Aprueba)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <label>Asignar Gerencia (Para filtrar vistas)</label>
+                        <select id="u-ger-sel"></select>
+                        
+                        <button class="btn btn-primary" id="btnSaveUser" style="width: 100%; margin-top: 10px;">GUARDAR USUARIO</button>
+                    </div>
+                    <div class="card" style="padding: 0; overflow: hidden; height: fit-content;">
+                        <div style="padding: 15px; background: #f8fafc; border-bottom: 1px solid var(--border); font-weight: 700; font-size: 12px;">USUARIOS REGISTRADOS</div>
+                        <div style="max-height: 400px; overflow-y: auto;">
+                            <table id="table-u">
+                                <tbody id="tbody-users"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ADMIN: ESTRUCTURA -->
+            <section id="sec-estructura" class="section">
+                <h1>Estructura Organizativa</h1>
+                <div class="grid-2">
+                    <div class="card">
+                        <h3>Gerencias</h3>
+                        <div style="display: flex; gap: 10px; margin: 15px 0;">
+                            <input type="text" id="g-nom" placeholder="Nueva Gerencia" style="margin: 0;">
+                            <button class="btn btn-success" id="btnSaveGer"><span class="material-icons-round">add</span></button>
+                        </div>
+                        <div id="ger-list"></div>
+                    </div>
+                    <div class="card">
+                        <h3>Departamentos</h3>
+                        <div style="display: flex; gap: 10px; margin: 15px 0;">
+                            <input type="text" id="d-nom" placeholder="Nuevo Departamento" style="margin: 0;">
+                            <button class="btn btn-success" id="btnSaveDep"><span class="material-icons-round">add</span></button>
+                        </div>
+                        <div id="dep-list"></div>
+                    </div>
+                </div>
+            </section>
+        </div>
     </main>
 
     <!-- MODAL DETALLE -->
@@ -306,7 +321,15 @@
                     <button class="btn btn-danger" onclick="closeModal()">Cerrar</button>
                 </div>
                 
-                <h2 id="m-tit" style="margin: 20px 0;"></h2>
+                <h2 id="m-tit" style="margin: 20px 0 10px 0;"></h2>
+
+                <!-- Timeline Visual de 4 Pasos -->
+                <div class="signature-timeline">
+                    <div class="step" id="s1"><div class="step-dot">1</div><label>Documentado</label></div>
+                    <div class="step" id="s2"><div class="step-dot">2</div><label>Verificado</label></div>
+                    <div class="step" id="s3"><div class="step-dot">3</div><label>Aprobado SGD</label></div>
+                    <div class="step" id="s4"><div class="step-dot">4</div><label>Gerente Solicitud</label></div>
+                </div>
 
                 <!-- Detalles -->
                 <div class="detail-row"><div class="detail-label">SOLICITANTE</div><div class="detail-value" id="m-sol"></div></div>
@@ -335,18 +358,24 @@
                     <label style="color: var(--warning);">⚠️ ADMINISTRACIÓN: ADJUNTAR DOCUMENTO FINAL / CORREGIDO</label>
                     <p style="font-size: 12px; margin-bottom: 10px; color: #b45309;">Antes de aprobar, suba la versión final del documento si ha realizado correcciones.</p>
                     <div style="display: flex; gap: 10px;">
-                        <input type="file" id="file-admin-upload" style="background: white; margin: 0;">
+                        <input type="file" id="file-admin-upload" accept=".pdf,.doc,.docx" style="background: white; margin: 0;">
                         <button class="btn btn-warning" id="btnUploadAdmin">Subir & Actualizar</button>
                     </div>
                 </div>
 
-                <!-- Botones de Flujo -->
+                <!-- Botones de Flujo (Selector de Estados) -->
                 <div id="m-actions" style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #f1f5f9; display: none;">
                     <p style="font-size: 11px; font-weight: 800; color: var(--secondary); margin-bottom: 15px;">ACCIONES DE FLUJO:</p>
                     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                         <button class="btn btn-info" onclick="accionFlujo('Consulta')"><span class="material-icons-round">help</span> Consultar</button>
                         <button class="btn btn-warning" onclick="accionFlujo('Reunion')"><span class="material-icons-round">groups</span> Reunión</button>
-                        <button class="btn btn-primary" onclick="firmarPaso()"><span class="material-icons-round">draw</span> Firmar Etapa</button>
+                        
+                        <!-- Botón Dinámico de Firma -->
+                        <button class="btn btn-primary" id="btn-firma-next" onclick="firmarPaso()">
+                            <span class="material-icons-round">draw</span> 
+                            <span id="btn-firma-label">Firmar Etapa</span>
+                        </button>
+                        
                         <button class="btn btn-danger" onclick="rechazar()"><span class="material-icons-round">block</span> Rechazar</button>
                     </div>
                 </div>
@@ -390,6 +419,11 @@
         let user = null;
         let selectedId = null;
         let cacheDocs = [];
+
+        // PASOS ISO 9001
+        const PASOS = ["Documentado", "Verificado", "Aprobado SGD", "Gerente Solicitud"];
+        // Mapeo Rol -> Paso (0: Applicant, 1: Verifier, 2: Admin, 3: Manager)
+        const ROLES_PASOS = ["applicant", "verifier", "admin", "manager"];
 
         // --- UTILIDADES ---
         const showLoading = (show) => document.getElementById('loading-overlay').style.display = show ? 'flex' : 'none';
@@ -490,18 +524,19 @@
                     const s = {id: d.id, ...d.data()};
                     cacheDocs.push(s);
                     
-                    stats.total++;
-                    if(s.estado === 'Aprobado') stats.ok++;
-                    else if(s.estado === 'Rechazado') stats.rej++;
-                    else stats.proc++;
-
-                    // Filtro de Visibilidad
+                    // Filtro de Visibilidad Estricto
                     let visible = false;
                     if(user.role === 'admin' || user.role === 'manager') visible = true;
-                    else if(s.gerencia === user.gerencia) visible = true; // Gerente ve su área
-                    else if(s.solicitante === user.usuario) visible = true; // Solicitante ve lo suyo
+                    else if(user.role === 'verifier') visible = true; // Verificadores ven todo para revisar
+                    else if(user.role === 'gerente' && s.gerencia === user.gerencia) visible = true; 
+                    else if(user.role === 'applicant' && s.uidSolicitante === user.usuario) visible = true;
 
                     if(visible) {
+                        stats.total++;
+                        if(s.estado === 'Aprobado') stats.ok++;
+                        else if(s.estado === 'Rechazado') stats.rej++;
+                        else stats.proc++;
+
                         tb.innerHTML += `
                             <tr>
                                 <td><b style="color:var(--primary)">${s.customId}</b></td>
@@ -548,8 +583,9 @@
                 fileUrl: url || '#',
                 fileFinalUrl: '',
                 solicitante: user.nombre,
-                estado: "Elaborado",
-                pasoActual: 1, 
+                uidSolicitante: user.usuario, // ID para filtrar
+                estado: PASOS[0],
+                pasoActual: 0, // Inicia en 0 (Documentado/Elaborado)
                 chat: [{u: "SISTEMA", m: "Solicitud ingresada al sistema.", t: new Date().toLocaleTimeString()}]
             };
 
@@ -591,18 +627,32 @@
                 if(fileHtml === "") fileHtml = "No hay archivos adjuntos.";
                 document.getElementById('m-file-area').innerHTML = fileHtml;
 
+                // TIMELINE VISUAL
+                for(let i=0; i<4; i++) {
+                    const step = document.getElementById(`s${i+1}`);
+                    step.className = "step";
+                    if(i < s.pasoActual) step.classList.add('completed');
+                    if(i === s.pasoActual) step.classList.add('active');
+                }
+
                 // RENDER CHAT
                 renderChat(s.chat || []);
 
                 // PERMISOS DE GESTIÓN
-                const rolesPasos = ["applicant", "verifier", "admin", "manager"];
-                const paso = s.pasoActual || 1;
-                const miTurno = rolesPasos[paso] === user.role;
+                const paso = s.pasoActual || 0;
+                const rolRequerido = ROLES_PASOS[paso];
+                
+                // Admin puede firmar como Admin o Verifier si es necesario (superusuario)
+                const esAdmin = user.role === 'admin';
+                const esMiTurno = (rolRequerido === user.role) || (esAdmin && (paso === 1 || paso === 2)); 
                 const activo = s.estado !== 'Aprobado' && s.estado !== 'Rechazado';
                 
                 const actionsDiv = document.getElementById('m-actions');
-                if (actionsDiv) actionsDiv.style.display = (miTurno && activo) ? 'block' : 'none';
+                if (actionsDiv) actionsDiv.style.display = (esMiTurno && activo) ? 'block' : 'none';
                 
+                // Label Botón Firma
+                document.getElementById('btn-firma-label').innerText = `Firmar como ${PASOS[paso]}`;
+
                 // ADMIN UPLOAD FINAL
                 const adminUploadDiv = document.getElementById('admin-file-upload');
                 if (adminUploadDiv) adminUploadDiv.style.display = (user.role === 'admin' || user.role === 'manager') ? 'block' : 'none';
@@ -634,12 +684,18 @@
             const snap = await getDoc(doc(db, "Solicitudes", selectedId));
             const s = snap.data();
             const nextPaso = s.pasoActual + 1;
-            const estados = ["Elaborado", "Verificado", "Validado SGC", "Aprobado", "Aprobado"]; // 4 pasos + final
+            
+            let nuevoEstado = "";
+            if (nextPaso < 4) {
+                nuevoEstado = PASOS[nextPaso]; // Avanza al siguiente nombre
+            } else {
+                nuevoEstado = "Aprobado"; // Fin del flujo
+            }
             
             await updateDoc(doc(db, "Solicitudes", selectedId), {
                 pasoActual: nextPaso,
-                estado: estados[nextPaso] || "Aprobado",
-                chat: arrayUnion({u: "SISTEMA", m: `Firma registrada por ${user.nombre}. Avanza a ${estados[nextPaso] || 'Final'}`, t: new Date().toLocaleTimeString()})
+                estado: nuevoEstado,
+                chat: arrayUnion({u: "SISTEMA", m: `Firma registrada por ${user.nombre}. Avanza a ${nuevoEstado}`, t: new Date().toLocaleTimeString()})
             });
             window.closeModal();
         };
