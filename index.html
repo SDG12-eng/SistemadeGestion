@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGC | Gestión System </title>
+    <title>SGC Pro Platinum | Gestión Integral</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
@@ -20,58 +20,71 @@
 
         /* Login */
         #login-screen { position: fixed; inset: 0; background: var(--sidebar); display: flex; align-items: center; justify-content: center; z-index: 5000; }
-        .login-box { background: var(--white); padding: 40px; border-radius: 24px; width: 400px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); text-align: center; }
+        .login-box { background: var(--white); padding: 40px; border-radius: 24px; width: 420px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); text-align: center; }
 
         /* Sidebar */
-        .sidebar { width: 280px; background: var(--sidebar); color: white; display: none; flex-direction: column; padding: 20px; transition: 0.3s; }
+        .sidebar { width: 280px; background: var(--sidebar); color: white; display: none; flex-direction: column; padding: 20px; border-right: 1px solid rgba(255,255,255,0.1); }
         .nav-link { 
-            display: flex; align-items: center; padding: 12px; color: #94a3b8; border: none; 
-            background: none; cursor: pointer; width: 100%; border-radius: 8px; margin-bottom: 5px; transition: 0.3s; font-size: 14px;
+            display: none; align-items: center; padding: 12px; color: #94a3b8; border: none; 
+            background: none; cursor: pointer; width: 100%; border-radius: 12px; margin-bottom: 5px; transition: 0.3s; font-size: 14px; text-align: left;
         }
+        .nav-link.visible { display: flex; }
         .nav-link:hover { background: rgba(255,255,255,0.05); color: white; }
-        .nav-link.active { background: var(--accent); color: white; font-weight: 600; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); }
+        .nav-link.active { background: var(--accent); color: white; font-weight: 600; }
         .nav-link span { margin-right: 12px; }
 
-        /* Contenido Principal */
-        .main { flex: 1; padding: 30px; overflow: hidden; display: none; flex-direction: column; } /* Flex para scroll interno */
-        .scrollable-content { flex: 1; overflow-y: auto; padding-right: 5px; } /* Scroll solo aqui */
-
-        .section { display: none; animation: fadeIn 0.4s ease-out; }
+        /* Main Content */
+        .main { flex: 1; padding: 30px; overflow-y: auto; display: none; }
+        .section { display: none; animation: fadeIn 0.3s ease-out; }
         .section.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* UI Components */
-        .card { background: white; padding: 25px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        /* UI Elements */
+        .card { background: white; padding: 25px; border-radius: 20px; border: 1px solid var(--border); margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
         
-        label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 5px; display: block; }
-        input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 15px; font-size: 14px; background: #fff; transition: 0.2s; }
-        input:focus, select:focus { border-color: var(--accent); outline: none; }
-        
-        .btn { padding: 10px 18px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; font-size: 13px; }
-        .btn:hover { filter: brightness(110%); }
+        label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 6px; display: block; letter-spacing: 0.5px; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 15px; font-size: 14px; background: #fdfdfd; color: inherit; }
+
+        .btn { padding: 12px 20px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; font-size: 13px; }
         .btn-primary { background: var(--primary); color: white; }
-        .btn-info { background: var(--info); color: white; }
-        .btn-warning { background: var(--warning); color: #fff; }
         .btn-success { background: var(--success); color: white; }
         .btn-danger { background: var(--danger); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-info { background: var(--info); color: white; }
         .btn-ghost { background: #f1f5f9; color: #475569; }
 
-        /* Tablas */
-        table { width: 100%; border-collapse: collapse; background: white; }
-        th { text-align: left; padding: 15px; background: #f8fafc; border-bottom: 2px solid var(--border); font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; }
-        td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 13px; color: #334155; }
-        tr:hover { background: #fcfcfc; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 15px; background: #f8fafc; border-bottom: 2px solid var(--border); font-size: 11px; color: #64748b; text-transform: uppercase; }
+        td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
 
-        /* Modal con Scroll Independiente */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); display: none; align-items: center; justify-content: center; z-index: 4000; backdrop-filter: blur(4px); }
-        .modal-content { background: white; width: 95%; max-width: 1200px; height: 90vh; border-radius: 20px; display: grid; grid-template-columns: 1fr 400px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+        .badge { padding: 4px 10px; border-radius: 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
+        .badge-info { background: #e0f2fe; color: #0369a1; }
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+
+        /* Switches */
+        .access-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; background: #f8fafc; border-radius: 8px; margin-bottom: 5px; border: 1px solid #eee; }
+        .switch { position: relative; display: inline-block; width: 34px; height: 18px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; inset: 0; background-color: #cbd5e1; transition: .4s; border-radius: 18px; }
+        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--accent); }
+        input:checked + .slider:before { transform: translateX(16px); }
+
+        /* Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); display: none; align-items: center; justify-content: center; z-index: 4000; backdrop-filter: blur(4px); }
+        .modal-content { background: white; width: 95%; max-width: 1200px; height: 90vh; border-radius: 24px; display: grid; grid-template-columns: 1fr 380px; overflow: hidden; }
         
-        .modal-main { padding: 30px; overflow-y: auto; border-right: 1px solid var(--border); display: flex; flex-direction: column; }
-        .modal-side { background: #f8fafc; padding: 20px; display: flex; flex-direction: column; border-left: 1px solid var(--border); overflow: hidden; }
+        #chat-box { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 15px; background: #f1f5f9; border-radius: 12px; }
+        .chat-msg { padding: 12px; background: white; border-radius: 12px; border-left: 4px solid var(--accent); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
 
-        /* Timeline de Firmas */
+        .file-link { display: inline-flex; align-items: center; gap: 5px; color: var(--accent); text-decoration: none; font-weight: 600; font-size: 12px; margin-top: 5px; padding: 6px 12px; background: #eff6ff; border-radius: 6px; }
+        .file-link:hover { text-decoration: underline; background: #dbeafe; }
+
+        /* Timeline */
         .signature-timeline { display: flex; justify-content: space-between; margin: 20px 0; position: relative; padding: 0 10px; }
         .signature-timeline::before { content: ''; position: absolute; top: 14px; left: 0; width: 100%; height: 2px; background: var(--border); z-index: 1; }
         .step { position: relative; z-index: 2; text-align: center; flex: 1; }
@@ -80,57 +93,31 @@
         .step.active .step-dot { background: var(--accent); border-color: var(--accent); color: white; transform: scale(1.1); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2); }
         .step label { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
         .step.active label { color: var(--accent); }
-
-        /* Chat */
-        .chat-box { flex: 1; overflow-y: auto; padding-right: 5px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
-        .msg { padding: 10px 14px; border-radius: 12px; font-size: 12px; line-height: 1.4; max-width: 85%; }
-        .msg-sys { background: #e2e8f0; color: #475569; font-size: 11px; text-align: center; margin: 5px auto; width: 100%; border-radius: 6px; }
-        .msg-user { background: white; border: 1px solid #e2e8f0; align-self: flex-start; border-bottom-left-radius: 2px; }
-        .msg-me { background: var(--accent); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
-
-        /* Detalles */
-        .detail-row { display: flex; padding: 12px 0; border-bottom: 1px solid #f1f5f9; align-items: center; }
-        .detail-label { width: 180px; font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
-        .detail-value { flex: 1; font-size: 14px; color: #1e293b; font-weight: 500; }
-
-        /* Badges */
-        .badge { padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
-        .badge-info { background: #e0f2fe; color: #0369a1; }
-        .badge-success { background: #d1fae5; color: #065f46; }
-        .badge-warning { background: #fef3c7; color: #92400e; }
-        .badge-danger { background: #fee2e2; color: #991b1b; }
         
         #loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 6000; display: none; align-items: center; justify-content: center; flex-direction: column; }
         .spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* File link style */
-        .file-link { display: inline-flex; align-items: center; gap: 5px; color: var(--accent); text-decoration: none; font-weight: 600; font-size: 12px; margin-top: 5px; padding: 5px 10px; background: #eff6ff; border-radius: 6px; }
-        .file-link:hover { background: #dbeafe; }
     </style>
 </head>
 <body>
 
     <div id="loading-overlay">
         <div class="spinner" style="margin-bottom: 15px;"></div>
-        <h4 style="color:var(--primary)">Procesando...</h4>
+        <h4 style="color:var(--primary)">Procesando Solicitud...</h4>
     </div>
 
     <!-- LOGIN -->
     <div id="login-screen">
         <div class="login-box">
-            <h1 style="color:var(--primary); margin-bottom: 10px; font-weight: 800;">SGC PRO GOLD</h1>
-            <p style="color:#64748b; font-size:13px; margin-bottom:30px;">Gestión de Calidad ISO 9001</p>
-            
+            <h1 style="color:var(--primary); margin-bottom: 10px; font-weight: 800;">SGC PLATINUM</h1>
+            <p style="color:#64748b; font-size:14px; margin-bottom:30px;">Acceso al Sistema ISO 9001</p>
             <div style="text-align: left;">
                 <label>Usuario</label>
-                <input type="text" id="userInput" placeholder="Ej: admin">
+                <input type="text" id="login-user" placeholder="Ej: admin">
                 <label>Contraseña</label>
-                <input type="password" id="passInput" placeholder="••••••">
+                <input type="password" id="login-pass" placeholder="••••••">
             </div>
-            
-            <button class="btn btn-primary" id="btnLogin" style="width: 100%; justify-content: center; padding: 14px;">INICIAR SESIÓN</button>
-            <button id="btnInit" style="opacity: 0.1; border: none; background: none; cursor: pointer; margin-top: 20px;">[Reset Admin]</button>
+            <button class="btn btn-primary" id="btnLogin" style="width: 100%; padding: 15px; margin-top: 10px;">INICIAR SESIÓN</button>
         </div>
     </div>
 
@@ -152,18 +139,14 @@
                 <span class="material-icons-round">history</span> Mis Solicitudes
             </button>
             <button class="nav-link" id="nav-gestionar" onclick="cambiarVista('sec-gestionar', this)">
-                <span class="material-icons-round">grading</span> Gestionar
+                <span class="material-icons-round">grading</span> Gestionar SGC
             </button>
-            
-            <div id="admin-only" style="display:none; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 20px; padding-top: 20px;">
-                <p style="font-size:10px; color:#64748b; font-weight:800; margin-left:12px; margin-bottom:10px;">ADMINISTRACIÓN</p>
-                <button class="nav-link" onclick="cambiarVista('sec-usuarios', this)">
-                    <span class="material-icons-round">people</span> Usuarios
-                </button>
-                <button class="nav-link" onclick="cambiarVista('sec-estructura', this)">
-                    <span class="material-icons-round">account_tree</span> Estructura
-                </button>
-            </div>
+            <button class="nav-link" id="nav-usuarios" onclick="cambiarVista('sec-usuarios', this)">
+                <span class="material-icons-round">people</span> Usuarios y Accesos
+            </button>
+            <button class="nav-link" id="nav-estructura" onclick="cambiarVista('sec-estructura', this)">
+                <span class="material-icons-round">account_tree</span> Estructura
+            </button>
         </nav>
         
         <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 16px;">
@@ -175,234 +158,229 @@
 
     <!-- MAIN CONTENT -->
     <main class="main" id="main">
-        <div class="scrollable-content"> <!-- Scroll independiente -->
-            
-            <!-- DASHBOARD -->
-            <section id="sec-dash" class="section">
-                <h1>Panel de Control</h1>
-                <div class="stats-grid" style="margin-top:20px;">
-                    <div class="stat-card"><h3>Total</h3><p id="c-total" class="stat-value">0</p></div>
-                    <div class="stat-card" style="border-left-color:var(--warning)"><h3>Pendientes</h3><p id="c-pen" class="stat-value">0</p></div>
-                    <div class="stat-card" style="border-left-color:var(--primary)"><h3>En Proceso</h3><p id="c-proc" class="stat-value">0</p></div>
-                    <div class="stat-card" style="border-left-color:var(--success)"><h3>Aprobados</h3><p id="c-ok" class="stat-value">0</p></div>
-                </div>
-            </section>
+        
+        <!-- DASHBOARD -->
+        <section id="sec-dash" class="section">
+            <h1>Panel de Control</h1>
+            <div class="stats-grid" style="margin-top:20px;">
+                <div class="stat-card" style="border-left-color:var(--primary)"><div><h3>Total</h3><p id="dash-total" class="stat-value">0</p></div></div>
+                <div class="stat-card" style="border-left-color:var(--warning)"><div><h3>Pendientes</h3><p id="dash-pend" class="stat-value">0</p></div></div>
+                <div class="stat-card" style="border-left-color:var(--info)"><div><h3>En Revisión</h3><p id="dash-rev" class="stat-value">0</p></div></div>
+                <div class="stat-card" style="border-left-color:var(--success)"><div><h3>Aprobados</h3><p id="dash-ok" class="stat-value">0</p></div></div>
+            </div>
+        </section>
 
-            <!-- CREAR SOLICITUD -->
-            <section id="sec-solicitar" class="section">
-                <div class="card" style="max-width: 800px; margin: auto;">
-                    <h2>Nueva Solicitud FCI-SOL</h2>
+        <!-- CREAR SOLICITUD -->
+        <section id="sec-solicitar" class="section">
+            <div class="card" style="max-width: 900px; margin: auto;">
+                <h2>Nueva Solicitud FCI-SOL</h2>
+                <div class="grid-2">
+                    <div><label>Nombre del Documento</label><input type="text" id="sol-nom"></div>
+                    <div>
+                        <label>Tipo de Acción</label>
+                        <select id="sol-accion" onchange="toggleModPanel(this.value)">
+                            <option value="Creación">Creación</option>
+                            <option value="Modificación">Modificación</option>
+                            <option value="Inactivación">Inactivación</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="panel-mod" class="grid-3" style="display:none; background:#f8fafc; padding:15px; border-radius:10px; margin-bottom:15px;">
+                    <div><label>Código Actual</label><input type="text" id="sol-cod-prev"></div>
+                    <div><label>Versión</label><input type="text" id="sol-ver-prev"></div>
+                    <div><label>Fecha Ult. Ver.</label><input type="date" id="sol-fecha-prev"></div>
+                </div>
+
+                <div class="grid-2">
+                    <div>
+                        <label>Tipo Documento</label>
+                        <select id="sol-tipo-doc">
+                            <option>Guía</option><option>Manual</option><option>Instructivo</option><option>Procedimiento</option><option>Formato</option>
+                        </select>
+                    </div>
+                    <div><label>Gerencia</label><select id="sol-ger"></select></div>
+                </div>
+                <div class="grid-2">
+                    <div><label>Departamento</label><select id="sol-dep"></select></div>
+                    <div>
+                        <label>Adjuntar Documento (PDF/Word)</label>
+                        <input type="file" id="sol-file" accept=".pdf,.doc,.docx" style="margin-bottom:0; background:white;">
+                    </div>
+                </div>
+                
+                <label>Justificación Técnica</label>
+                <textarea id="sol-motivo" rows="4"></textarea>
+                <button class="btn btn-primary" id="btnSendSol" style="width:100%;">ENVIAR SOLICITUD</button>
+            </div>
+        </section>
+
+        <!-- MIS SOLICITUDES -->
+        <section id="sec-historial" class="section">
+            <h1>Mis Solicitudes</h1>
+            <div class="card" style="padding:0; overflow:hidden; margin-top:20px;">
+                <table>
+                    <thead><tr><th>ID</th><th>Documento</th><th>Estado</th><th>Acción</th></tr></thead>
+                    <tbody id="tbody-historial"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- GESTIONAR -->
+        <section id="sec-gestionar" class="section">
+            <h1>Bandeja de Gestión SGC</h1>
+            <div class="card" style="padding:0; overflow:hidden; margin-top:20px;">
+                <table>
+                    <thead><tr><th>ID</th><th>Solicitante</th><th>Documento</th><th>Estado Actual</th><th>Acción</th></tr></thead>
+                    <tbody id="tbody-gestionar"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- USUARIOS -->
+        <section id="sec-usuarios" class="section">
+            <h1>Gestión de Usuarios</h1>
+            <div class="grid-2" style="grid-template-columns: 400px 1fr; margin-top:20px;">
+                <div class="card">
+                    <h3 style="margin-bottom:15px;">Registrar Usuario</h3>
                     <div class="grid-2">
-                        <div><label>Nombre del Documento</label><input type="text" id="sol-nom"></div>
-                        <div>
-                            <label>Tipo de Acción</label>
-                            <select id="sol-accion" onchange="toggleModPanel(this.value)">
-                                <option>Creación</option>
-                                <option>Modificación</option>
-                                <option>Inactivación</option>
-                            </select>
-                        </div>
+                        <div><label>Nombre</label><input type="text" id="u-nom"></div>
+                        <div><label>Usuario ID</label><input type="text" id="u-usr"></div>
+                    </div>
+                    <div class="grid-2">
+                        <div><label>Contraseña</label><input type="text" id="u-pas" value="123"></div>
+                        <div><label>Gerencia</label><select id="u-ger-sel"></select></div>
+                    </div>
+
+                    <label style="margin-top:10px;">Permisos Específicos</label>
+                    <div style="border:1px solid #eee; padding:10px; border-radius:10px; margin-bottom:15px; display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
+                        <div class="access-item"><input type="checkbox" id="p-solicitar"> <span>Solicitar</span></div>
+                        <div class="access-item"><input type="checkbox" id="p-ver-propias" checked> <span>Ver Propias</span></div>
+                        <div class="access-item"><input type="checkbox" id="p-ver-ger"> <span>Ver Gerencia</span></div>
+                        <div class="access-item"><input type="checkbox" id="p-ver-all"> <span>Ver Todo (Admin)</span></div>
+                        <div class="access-item"><input type="checkbox" id="p-gest-sgc"> <span>Gestión SGC</span></div>
+                        <div class="access-item"><input type="checkbox" id="p-ger-apr"> <span>Firma Gerente</span></div>
+                        <div class="access-item"><input type="checkbox" id="p-users"> <span>Usuarios</span></div>
+                        <div class="access-item"><input type="checkbox" id="p-struct"> <span>Estructura</span></div>
                     </div>
                     
-                    <div id="panel-mod" class="grid-3" style="display:none; background:#f8fafc; padding:15px; border-radius:10px; margin-bottom:15px;">
-                        <div><label>Código Actual</label><input type="text" id="sol-cod-prev"></div>
-                        <div><label>Versión</label><input type="text" id="sol-ver-prev"></div>
-                        <div><label>Fecha Ult. Ver.</label><input type="date" id="sol-fecha-prev"></div>
-                    </div>
-
-                    <div class="grid-2">
-                        <div>
-                            <label>Tipo Documento</label>
-                            <select id="sol-tipo-doc">
-                                <option>Guía</option><option>Manual</option><option>Instructivo</option><option>Procedimiento</option><option>Formato</option>
-                            </select>
-                        </div>
-                        <div><label>Gerencia</label><select id="sol-ger"></select></div>
-                    </div>
-                    <div class="grid-2">
-                        <div><label>Departamento</label><select id="sol-dep"></select></div>
-                        <div>
-                            <label>Adjuntar Documento (PDF/Word)</label>
-                            <input type="file" id="sol-file" accept=".pdf,.doc,.docx" style="margin-bottom:0; background:white;">
-                        </div>
-                    </div>
-                    
-                    <label>Justificación Técnica</label>
-                    <textarea id="sol-motivo" rows="4"></textarea>
-                    <button class="btn btn-primary" id="btnSendSol" style="width:100%;">ENVIAR SOLICITUD</button>
+                    <button class="btn btn-primary" id="btnSaveUser" style="width:100%;">GUARDAR USUARIO</button>
                 </div>
-            </section>
-
-            <!-- MIS SOLICITUDES -->
-            <section id="sec-historial" class="section">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <h1>Mis Solicitudes</h1>
-                    <input type="text" id="search-hist" placeholder="Buscar..." style="width:250px;">
-                </div>
-                <div class="card" style="padding:0; overflow:hidden;">
-                    <table>
-                        <thead><tr><th>ID</th><th>Documento</th><th>Estado</th><th>Acción</th></tr></thead>
-                        <tbody id="tbody-historial"></tbody>
+                <div class="card" style="padding:0; height:fit-content;">
+                    <table id="table-users">
+                        <thead><tr><th>Nombre</th><th>Usuario</th><th>Gerencia</th><th>X</th></tr></thead>
+                        <tbody id="tbody-users"></tbody>
                     </table>
                 </div>
-            </section>
+            </div>
+        </section>
 
-            <!-- GESTIONAR -->
-            <section id="sec-gestionar" class="section">
-                <h1>Bandeja de Gestión SGC</h1>
-                <div class="card" style="padding:0; overflow:hidden; margin-top:20px;">
-                    <table>
-                        <thead><tr><th>ID</th><th>Solicitante</th><th>Documento</th><th>Estado Actual</th><th>Acción</th></tr></thead>
-                        <tbody id="tbody-gestionar"></tbody>
-                    </table>
+        <!-- ESTRUCTURA -->
+        <section id="sec-estructura" class="section">
+            <h1>Configuración de Áreas</h1>
+            <div class="grid-2" style="margin-top:20px;">
+                <div class="card">
+                    <h3>Gerencias</h3>
+                    <div style="display: flex; gap: 10px; margin: 15px 0;">
+                        <input type="text" id="g-nom" placeholder="Nueva Gerencia" style="margin: 0;">
+                        <button class="btn btn-success" id="btnSaveGer">+</button>
+                    </div>
+                    <div id="list-ger"></div>
                 </div>
-            </section>
-
-            <!-- USUARIOS -->
-            <section id="sec-usuarios" class="section">
-                <h1>Gestión de Usuarios y Permisos</h1>
-                <div class="grid-2" style="grid-template-columns: 400px 1fr; margin-top:20px;">
-                    <div class="card">
-                        <h3 style="margin-bottom:15px;">Registrar Usuario</h3>
-                        <div class="grid-2">
-                            <div><label>Nombre</label><input type="text" id="u-nom"></div>
-                            <div><label>Usuario ID</label><input type="text" id="u-usr"></div>
-                        </div>
-                        <div class="grid-2">
-                            <div><label>Contraseña</label><input type="text" id="u-pas" value="123"></div>
-                            <div>
-                                <label>Rol</label>
-                                <select id="u-rol">
-                                    <option value="solicitante">Solicitante</option>
-                                    <option value="gerente">Gerente de Área</option>
-                                    <option value="verifier">Verificador</option>
-                                    <option value="admin">Administrador SGC</option>
-                                </select>
-                            </div>
-                        </div>
-                        <label>Asignar Gerencia</label>
-                        <select id="u-ger-sel"></select>
-
-                        <label style="margin-top:10px;">Permisos Específicos</label>
-                        <div style="border:1px solid #eee; padding:10px; border-radius:10px; margin-bottom:15px; display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
-                            <div style="display:flex; align-items:center; gap:5px;"><input type="checkbox" id="p-solicitar" style="width:auto; margin:0;"> <span style="font-size:11px">Solicitar</span></div>
-                            <div style="display:flex; align-items:center; gap:5px;"><input type="checkbox" id="p-ver-propias" checked style="width:auto; margin:0;"> <span style="font-size:11px">Ver Propias</span></div>
-                            <div style="display:flex; align-items:center; gap:5px;"><input type="checkbox" id="p-ver-ger" style="width:auto; margin:0;"> <span style="font-size:11px">Ver Gerencia</span></div>
-                            <div style="display:flex; align-items:center; gap:5px;"><input type="checkbox" id="p-gest-sgc" style="width:auto; margin:0;"> <span style="font-size:11px">Gestión SGC</span></div>
-                            <div style="display:flex; align-items:center; gap:5px;"><input type="checkbox" id="p-ger-apr" style="width:auto; margin:0;"> <span style="font-size:11px">Firma Gerente</span></div>
-                            <div style="display:flex; align-items:center; gap:5px;"><input type="checkbox" id="p-admin" style="width:auto; margin:0;"> <span style="font-size:11px">Admin Total</span></div>
-                        </div>
-                        
-                        <button class="btn btn-primary" id="btnSaveUser" style="width:100%;">GUARDAR USUARIO</button>
+                <div class="card">
+                    <h3>Departamentos</h3>
+                    <div style="display: flex; gap: 10px; margin: 15px 0;">
+                        <input type="text" id="d-nom" placeholder="Nuevo Departamento" style="margin: 0;">
+                        <button class="btn btn-success" id="btnSaveDep">+</button>
                     </div>
-                    <div class="card" style="padding:0; height:fit-content;">
-                        <table id="table-users">
-                            <thead><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Gerencia</th><th>X</th></tr></thead>
-                            <tbody id="tbody-users"></tbody>
-                        </table>
-                    </div>
+                    <div id="list-dep"></div>
                 </div>
-            </section>
-
-            <!-- ESTRUCTURA -->
-            <section id="sec-estructura" class="section">
-                <h1>Configuración de Áreas</h1>
-                <div class="grid-2" style="margin-top:20px;">
-                    <div class="card">
-                        <h3>Gerencias</h3>
-                        <div style="display:flex; gap:10px; margin: 15px 0;">
-                            <input type="text" id="g-nom" placeholder="Nueva Gerencia" style="margin:0;">
-                            <button class="btn btn-success" id="btnSaveGer">+</button>
-                        </div>
-                        <div id="list-ger"></div>
-                    </div>
-                    <div class="card">
-                        <h3>Departamentos</h3>
-                        <div style="display:flex; gap:10px; margin: 15px 0;">
-                            <input type="text" id="d-nom" placeholder="Nuevo Departamento" style="margin:0;">
-                            <button class="btn btn-success" id="btnSaveDep">+</button>
-                        </div>
-                        <div id="list-dep"></div>
-                    </div>
-                </div>
-            </section>
-        </div>
+            </div>
+        </section>
     </main>
 
     <!-- Modal Detalle -->
     <div class="modal-overlay" id="modal">
         <div class="modal-content">
             <div class="modal-main">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
                     <div>
-                        <p id="m-id" style="color:var(--accent); font-weight:800; font-size:12px; margin-bottom:5px;"></p>
-                        <h2 id="m-tit" style="font-size:26px;"></h2>
+                        <span id="m-id" style="font-weight: 800; color: var(--primary); font-size: 18px;"></span>
+                        <div id="m-badges" style="margin-top: 5px;"></div>
                     </div>
-                    <span id="m-est" class="badge"></span>
+                    <button class="btn btn-danger" onclick="closeModal()">Cerrar</button>
                 </div>
+                
+                <h2 id="m-tit" style="margin: 20px 0 10px 0;"></h2>
 
-                <!-- Timeline -->
+                <!-- Timeline Visual de 4 Pasos -->
                 <div class="signature-timeline">
                     <div class="step" id="s1"><div class="step-dot">1</div><label>Documentado</label></div>
                     <div class="step" id="s2"><div class="step-dot">2</div><label>Verificado</label></div>
-                    <div class="step" id="s3"><div class="step-dot">3</div><label>Aprobado SGD</label></div>
+                    <div class="step" id="s3"><div class="step-dot">3</div><label>Aprobado SGC</label></div>
                     <div class="step" id="s4"><div class="step-dot">4</div><label>Gerente Solicitud</label></div>
                 </div>
+
+                <!-- Detalles -->
+                <div class="detail-row"><div class="detail-label">SOLICITANTE</div><div class="detail-value" id="m-sol"></div></div>
+                <div class="detail-row"><div class="detail-label">GERENCIA / DEP</div><div class="detail-value" id="m-ger"></div></div>
+                <div id="m-iso-data" style="display: none; background: #fffbeb; padding: 10px; margin: 10px 0; border-radius: 8px;">
+                    <div class="detail-row" style="border:none; padding: 5px 0;"><div class="detail-label">REFERENCIA</div><div class="detail-value" id="m-ref"></div></div>
+                    <div class="detail-row" style="border:none; padding: 5px 0;"><div class="detail-label">VERSIÓN BASE</div><div class="detail-value" id="m-ver"></div></div>
+                </div>
                 
-                <div class="grid-2" style="background:#f8fafc; padding:20px; border-radius:16px; margin-bottom:20px;">
-                    <div><label>Solicitante</label><p id="m-sol" style="font-weight:600;"></p></div>
-                    <div><label>Gerencia</label><p id="m-ger"></p></div>
-                    <div><label>Acción</label><p id="m-accion" style="font-weight:700; color:var(--primary);"></p></div>
-                    <div><label>Adjunto</label><div id="m-file-container"></div></div>
+                <div style="margin-top: 20px;">
+                    <label>JUSTIFICACIÓN TÉCNICA</label>
+                    <p id="m-jus" style="font-size: 14px; line-height: 1.6; color: #334155; background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid var(--border);"></p>
                 </div>
 
-                <div id="m-extra-panel" style="display:none; margin-bottom:20px; border:2px dashed var(--border); padding:20px; border-radius:16px;">
-                    <div class="grid-3">
-                        <div><label>Código</label><p id="m-cod"></p></div>
-                        <div><label>Versión</label><p id="m-ver"></p></div>
-                        <div><label>Fecha Ult. Ver.</label><p id="m-fecha-ult"></p></div>
-                    </div>
-                </div>
-
-                <label>Justificación</label>
-                <div style="padding:15px; background:white; border:1px solid var(--border); border-radius:12px; min-height:80px; margin-bottom:20px; font-size:14px;"><p id="m-jus"></p></div>
-                
-                <!-- Acciones de Gestión -->
-                <div id="m-actions" style="display:none; flex-direction:column; gap:15px; border-top:1px solid #eee; padding-top:20px;">
-                    <div style="background:#f0fdf4; padding:15px; border-radius:10px; border:1px solid #bbf7d0;">
-                        <label style="color:#166534">Seleccionar Estado para Avanzar/Retroceder:</label>
-                        <div style="display:flex; gap:5px; flex-wrap:wrap; margin-top:5px;">
-                            <button class="btn btn-info" onclick="setEstado('Consulta')">Consulta</button>
-                            <button class="btn btn-warning" onclick="setEstado('Reunión')">Reunión</button>
-                            <button class="btn btn-primary" onclick="avanzarFirma('Documentado')">1. Documentado</button>
-                            <button class="btn btn-primary" onclick="avanzarFirma('Verificado')">2. Verificado</button>
-                            <button class="btn btn-primary" onclick="avanzarFirma('Aprobado SGD')">3. Aprobado SGD</button>
-                            <button class="btn btn-success" onclick="avanzarFirma('Gerente Solicitud')">4. Gerente Solicitud</button>
+                <div style="margin-top: 20px; background: #eff6ff; padding: 15px; border-radius: 12px; border: 1px solid #bfdbfe;">
+                    <div class="detail-row" style="border: none; padding: 0;">
+                        <div class="detail-label" style="color: var(--primary);">DOCUMENTO ADJUNTO</div>
+                        <div class="detail-value" id="m-file-area">
+                            <!-- Link dinámico -->
                         </div>
                     </div>
-
-                    <div style="display:flex; gap:10px; margin-top:10px;">
-                        <input type="text" id="m-comentario" placeholder="Añadir comentario de gestión..." style="flex:1; margin:0;">
-                        <button class="btn btn-danger" onclick="rechazar()">Rechazar</button>
-                    </div>
                 </div>
 
-                <div id="m-finalizado" style="display:none; padding:25px; background:#f0fdf4; border-radius:16px; color:#166534; text-align:center;">
-                    <span class="material-icons-round" style="font-size:40px; margin-bottom:10px; display:block;">check_circle</span>
-                    <p style="font-weight:700;">PROCESO CONCLUIDO</p>
+                <!-- Panel de Gestión: Consulta/Reunión/Firma -->
+                <div id="m-actions" style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #f1f5f9; display: none;">
+                    <p style="font-size: 11px; font-weight: 800; color: var(--secondary); margin-bottom: 15px;">ACCIONES DE GESTIÓN:</p>
+                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                        <button class="btn btn-info" onclick="gestionar('Consulta')">Consultar</button>
+                        <button class="btn btn-warning" onclick="gestionar('Reunión')">Reunión</button>
+                        
+                        <!-- Botón Dinámico de Firma -->
+                        <button class="btn btn-primary" id="btn-firma-next" onclick="firmarPaso()">
+                            <span class="material-icons-round">draw</span> 
+                            <span id="btn-firma-label">Firmar Etapa</span>
+                        </button>
+                        
+                        <button class="btn btn-danger" onclick="rechazar()">Rechazar</button>
+                    </div>
+
+                    <!-- Campos para Consultas/Rechazos -->
+                    <div style="margin-top:15px; display:none;" id="action-inputs">
+                        <input type="text" id="m-extra-input" placeholder="Escriba motivo, fecha o consulta..." style="margin-bottom:5px;">
+                        <!-- Input para adjuntar archivo en gestión (ej: corrección) -->
+                        <div style="background:#f0fdf4; padding:10px; border-radius:8px; margin-bottom:5px; border:1px solid #bbf7d0;">
+                             <label style="color:#15803d">Adjuntar Documento de Soporte (Opcional)</label>
+                             <input type="file" id="m-file-gestion" style="margin-bottom:0; background:white;">
+                        </div>
+                        <button class="btn btn-success" id="btnConfirmAction" style="width:100%">Confirmar Acción</button>
+                    </div>
                 </div>
             </div>
             
             <div class="modal-side">
                 <h4 style="margin-bottom:20px; display:flex; align-items:center; gap:8px;">
-                    <span class="material-icons-round" style="color:var(--accent)">forum</span> Seguimiento
+                    <span class="material-icons-round" style="color:var(--accent)">forum</span> Bitácora
                 </h4>
                 <div id="chat-box"></div>
-                <div style="margin-top:auto; padding-top:20px; display:flex; gap:5px;">
-                    <input type="text" id="chat-in" placeholder="Escribir..." style="margin:0; font-size:12px;">
-                    <button class="btn btn-primary" id="btnChatSend" style="padding:10px;"><span class="material-icons-round">send</span></button>
+                <div style="margin-top: auto; padding-top:20px; display:flex; gap:5px;">
+                    <input type="text" id="chat-in" placeholder="Escribir..." style="margin: 0; font-size:12px;">
+                    <button class="btn btn-primary" id="btnChatSend" style="padding: 10px;"><span class="material-icons-round">send</span></button>
                 </div>
-                <button class="btn btn-ghost" onclick="closeModal()" style="width:100%; margin-top:10px;">Cerrar</button>
             </div>
         </div>
     </div>
@@ -412,7 +390,7 @@
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, getDoc, updateDoc, setDoc, query, where, deleteDoc, arrayUnion, runTransaction } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-        // Configuración Automática o Manual
+        // Configuración Automática
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
             apiKey: "AIzaSyDdzCiachuhbE9jATz-TesPI2vUVIJrHjM",
             authDomain: "sistemadegestion-7400d.firebaseapp.com",
@@ -426,48 +404,67 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        // CONFIG CLOUDINARY
+        const CLOUD_NAME = "df79cjklp";
+        const UPLOAD_PRESET = "fci_documentos";
+
         // Iniciar Auth Anónima
         signInAnonymously(auth).catch((error) => console.error("Error Auth:", error));
 
         let currentUser = null;
         let selectedId = null;
+        let tempAction = "";
         
-        // Estados firmes
         const MAPA_ESTADOS = {
             "Documentado": 1,
             "Verificado": 2,
-            "Aprobado SGD": 3,
-            "Gerente Solicitud": 4
+            "Aprobado SGC": 3,
+            "Aprobado Gerencia": 4
         };
 
-        const toBase64 = file => new Promise((res, rej) => {
-            const r = new FileReader(); r.readAsDataURL(file);
-            r.onload = () => res(r.result); r.onerror = e => rej(e);
-        });
+        const PASOS_NOMBRES = ["Documentado", "Verificado", "Aprobado SGC", "Aprobado Gerencia"];
 
-        window.cambiarVista = (id, btn) => {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            if(btn) btn.classList.add('active');
-        };
+        const showLoading = (show) => document.getElementById('loading-overlay').style.display = show ? 'flex' : 'none';
 
-        window.toggleModPanel = (v) => document.getElementById('panel-mod').style.display = (v === 'Creación') ? 'none' : 'grid';
-        window.closeModal = () => document.getElementById('modal').style.display = 'none';
+        // SUBIDA A CLOUDINARY
+        async function uploadCloud(file) {
+            if(!file) return null;
+            const fd = new FormData();
+            fd.append('file', file);
+            fd.append('upload_preset', UPLOAD_PRESET);
+            try {
+                const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, { method: 'POST', body: fd });
+                const data = await res.json();
+                return data.secure_url;
+            } catch(e) { console.error(e); return null; }
+        }
 
-        // LOGIN
+        async function getNextFCI() {
+            const ref = doc(db, "Contadores", "solicitudes");
+            let id = "";
+            await runTransaction(db, async (t) => {
+                const snap = await t.get(ref);
+                let count = 1;
+                if (sfDoc.exists()) count = sfDoc.data().count + 1;
+                t.set(ref, { count });
+                id = `FCI-SOL-${String(count).padStart(4, '0')}`;
+            });
+            return id;
+        }
+
+        // --- LOGIN ---
         document.getElementById('btnLogin').onclick = async () => {
             const u = document.getElementById('login-user').value.toLowerCase().trim();
             const p = document.getElementById('login-pass').value.trim();
 
-            // Auto-creación de admin si no existe y las credenciales coinciden
+            // Auto-creación de admin si no existe
             if(u === 'admin' && p === '1130') {
                 const adminRef = doc(db, "Usuarios", "admin");
                 const adminSnap = await getDoc(adminRef);
                 if(!adminSnap.exists()) {
                     await setDoc(adminRef, {
                         nombre: "Admin Maestro", usuario: "admin", pass: "1130", gerencia: "SGC",
-                        permisos: { can_solicit:true, can_admin_sgc:true, can_manager:true, view_own:true, view_ger:true, view_all:true, manage_users:true, manage_struct:true, admin:true }
+                        permisos: { can_solicit:true, p_gest_sgc:true, p_ger_apr:true, p_ver_propias:true, p_ver_ger:true, p_ver_all:true, p_users:true, p_struct:true }
                     });
                 }
             }
@@ -480,8 +477,6 @@
                     document.getElementById('sidebar').style.display = 'flex';
                     document.getElementById('main').style.display = 'block';
                     document.getElementById('curr-name').innerText = currentUser.nombre;
-                    document.getElementById('curr-role').innerText = currentUser.role;
-                    
                     configurarMenu();
                     cargarDatos();
                 } else alert("Credenciales incorrectas.");
@@ -491,13 +486,13 @@
         function configurarMenu() {
             const p = currentUser.permisos || {};
             if(p.can_solicit) document.getElementById('nav-realizar').classList.add('visible');
-            if(p.view_own || p.view_ger || p.view_all) document.getElementById('nav-historial').classList.add('visible');
-            if(p.gest_sgc || p.admin) document.getElementById('nav-gestionar').classList.add('visible');
+            if(p.p_ver_propias || p.p_ver_ger || p.p_ver_all) document.getElementById('nav-historial').classList.add('visible');
+            if(p.p_gest_sgc || p.p_ger_apr) document.getElementById('nav-gestionar').classList.add('visible');
             
-            if(p.admin) {
+            if(p.p_users || p.p_struct) {
                 document.getElementById('admin-only').style.display = 'block';
-                document.getElementById('nav-usuarios').classList.add('visible');
-                document.getElementById('nav-estructura').classList.add('visible');
+                if(p.p_users) document.getElementById('nav-usuarios').classList.add('visible');
+                if(p.p_struct) document.getElementById('nav-estructura').classList.add('visible');
             }
             document.getElementById('nav-dashboard').classList.add('visible');
             document.getElementById('nav-dashboard').click();
@@ -509,7 +504,7 @@
                 let h = "", l = "";
                 s.forEach(d => {
                     h += `<option value="${d.data().nombre}">${d.data().nombre}</option>`;
-                    l += `<div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #eee;">${d.data().nombre} <span onclick="del('Gerencias','${d.id}')" style="color:red; cursor:pointer;">✕</span></div>`;
+                    l += `<div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #eee; font-size:13px;">${d.data().nombre} <span onclick="delDoc('Gerencias','${d.id}')" style="color:red; cursor:pointer;">✕</span></div>`;
                 });
                 document.getElementById('sol-ger').innerHTML = h;
                 document.getElementById('u-ger-sel').innerHTML = h;
@@ -520,7 +515,7 @@
                 let h = "", l = "";
                 s.forEach(d => {
                     h += `<option value="${d.data().nombre}">${d.data().nombre}</option>`;
-                    l += `<div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #eee;">${d.data().nombre} <span onclick="del('Departamentos','${d.id}')" style="color:red; cursor:pointer;">✕</span></div>`;
+                    l += `<div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #eee; font-size:13px;">${d.data().nombre} <span onclick="delDoc('Departamentos','${d.id}')" style="color:red; cursor:pointer;">✕</span></div>`;
                 });
                 document.getElementById('sol-dep').innerHTML = h;
                 document.getElementById('list-dep').innerHTML = l;
@@ -535,41 +530,37 @@
 
                 s.forEach(d => {
                     const sol = d.data();
-                    const p = currentUser.permisos;
+                    const p = currentUser.permisos || {};
 
-                    // Stats
                     stats.total++;
                     if(sol.estado === 'Pendiente') stats.pen++;
                     else if(sol.estado === 'Aprobado Gerencia' || sol.estado === 'Finalizado') stats.ok++;
                     else stats.rev++;
 
-                    // Bandeja Personal
-                    let ver = p.view_all || (p.view_ger && sol.gerencia === currentUser.gerencia) || (p.view_own && sol.uid === currentUser.usuario);
+                    // Filtro Ver
+                    let ver = p.p_ver_all || (p.p_ver_ger && sol.gerencia === currentUser.gerencia) || (p.p_ver_propias && sol.uid === currentUser.usuario);
                     if(ver) {
                         tbHist.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.titulo}</td><td><span class="badge badge-info">${sol.estado}</span></td><td><button class="btn btn-ghost" onclick="verDetalle('${d.id}')">Ver</button></td></tr>`;
                     }
-
-                    // Bandeja Gestión (Admin o Gerente con permiso)
-                    let gestionar = p.admin || (p.gest_sgc) || (p.ger_apr && sol.gerencia === currentUser.gerencia);
+                    // Filtro Gestionar
+                    let gestionar = p.p_gest_sgc || (p.p_ger_apr && sol.gerencia === currentUser.gerencia);
                     if(gestionar) {
                         tbGest.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.solicitante}</td><td>${sol.titulo}</td><td>${sol.estado}</td><td><button class="btn btn-primary" onclick="verDetalle('${d.id}')">Gestionar</button></td></tr>`;
                     }
                 });
                 
-                document.getElementById('c-total').innerText = stats.total;
-                document.getElementById('c-pen').innerText = stats.pen;
-                document.getElementById('c-rev').innerText = stats.rev;
-                document.getElementById('c-ok').innerText = stats.ok;
+                document.getElementById('dash-total').innerText = stats.total;
+                document.getElementById('dash-pend').innerText = stats.pen;
             });
 
-            // Usuarios (Admin)
-            if(currentUser.permisos.manage_users) {
+            // Usuarios
+            if(currentUser.permisos.p_users) {
                 onSnapshot(collection(db, "Usuarios"), s => {
-                    const tb = document.getElementById('table-users').querySelector('tbody');
+                    const tb = document.getElementById('tbody-users');
                     tb.innerHTML = "";
                     s.forEach(d => {
                         const u = d.data();
-                        tb.innerHTML += `<tr><td>${u.nombre}</td><td>${u.usuario}</td><td>${u.role}</td><td>${u.gerencia}</td><td><button onclick="del('Usuarios','${d.id}')" style="color:red; background:none; border:none; cursor:pointer;">✕</button></td></tr>`;
+                        tb.innerHTML += `<tr><td>${u.nombre}</td><td>${u.usuario}</td><td>${u.gerencia}</td><td><button onclick="delDoc('Usuarios','${d.id}')" style="color:red; background:none; border:none; cursor:pointer;">✕</button></td></tr>`;
                     });
                 });
             }
@@ -597,7 +588,7 @@
                 document.getElementById('m-fecha-ult').innerText = s.fecha_ref;
             } else document.getElementById('m-extra-panel').style.display = 'none';
 
-            // Timeline
+            // Timeline Visual
             for(let i=1; i<=4; i++) {
                 const step = document.getElementById('s'+i);
                 step.className = 'step';
@@ -606,93 +597,80 @@
             }
 
             // Permisos de Gestión
-            const p = currentUser.permisos;
-            const gestionar = p.admin || p.gest_sgc || (p.ger_apr && s.gerencia === currentUser.gerencia);
+            const p = currentUser.permisos || {};
+            const gestionar = p.p_gest_sgc || (p.p_ger_apr && s.gerencia === currentUser.gerencia);
             document.getElementById('m-actions').style.display = gestionar ? 'flex' : 'none';
 
+            // Botón Firma
+            const nextPaso = PASOS_NOMBRES[s.idx];
+            document.getElementById('btn-firma-label').innerText = nextPaso ? `Firmar: ${nextPaso}` : "Finalizado";
+            
             // Chat
             const cb = document.getElementById('chat-box');
             cb.innerHTML = s.chat.map(c => `
                 <div class="chat-msg ${c.u === currentUser.nombre ? 'msg-me' : 'msg-user'}">
-                    <b style="font-size:10px">${c.u}</b><br>${c.m}<br><span style="font-size:9px; opacity:0.6">${c.t}</span>
+                    <b style="font-size:10px">${c.u}</b><br>${c.m}<br>
+                    ${c.adjunto ? `<a href="${c.adjunto}" target="_blank" style="font-size:10px; color:blue;">📎 Ver Adjunto</a>` : ''}
+                    <span style="font-size:9px; opacity:0.6">${c.t}</span>
                 </div>
-            `).reverse().join('');
+            `).join('');
 
             document.getElementById('modal').style.display = 'flex';
         };
 
-        // ACCIONES DE GESTIÓN
-        window.avanzarFirma = async (etapa) => {
-            const idx = MAPA_ESTADOS[etapa];
-            const msg = document.getElementById('m-comentario').value;
-            
-            await updateDoc(doc(db, "Solicitudes", selectedId), {
-                idx: idx,
-                estado: etapa,
-                chat: arrayUnion({u: currentUser.nombre, m: `Avance a ${etapa}: ${msg}`, t: new Date().toLocaleString()})
-            });
-            document.getElementById('m-comentario').value = "";
-            verDetalle(selectedId);
+        // GESTIÓN
+        window.gestionar = (tipo) => {
+            tempAction = tipo;
+            document.getElementById('m-input-area').style.display = 'flex';
+            document.getElementById('m-extra-input').placeholder = tipo === 'Reunión' ? 'Fecha y Motivo...' : 'Detalle de la consulta...';
         };
 
-        window.setEstado = async (estado) => {
-            const msg = document.getElementById('m-comentario').value;
-            if(!msg) return alert("Ingrese un comentario");
+        window.firmarPaso = async () => {
+            const snap = await getDoc(doc(db, "Solicitudes", selectedId));
+            const s = snap.data();
+            const nIdx = s.idx + 1;
+            const nEst = nIdx < 4 ? PASOS_NOMBRES[nIdx] : "Aprobado Final";
 
             await updateDoc(doc(db, "Solicitudes", selectedId), {
-                estado: estado,
-                chat: arrayUnion({u: currentUser.nombre, m: `${estado.toUpperCase()}: ${msg}`, t: new Date().toLocaleString()})
+                idx: nIdx,
+                estado: nEst,
+                chat: arrayUnion({u: currentUser.nombre, m: `Firma registrada. Nuevo estado: ${nEst}`, t: new Date().toLocaleString()})
             });
-            document.getElementById('m-comentario').value = "";
-            verDetalle(selectedId);
+            document.getElementById('modal').style.display = 'none';
         };
 
         window.rechazar = async () => {
-            const msg = document.getElementById('m-comentario').value;
-            if(!msg) return alert("Ingrese el motivo del rechazo");
-
+            if(!confirm("¿Rechazar?")) return;
             await updateDoc(doc(db, "Solicitudes", selectedId), {
                 estado: "Rechazado",
-                chat: arrayUnion({u: currentUser.nombre, m: `RECHAZADO: ${msg}`, t: new Date().toLocaleString()})
+                chat: arrayUnion({u: currentUser.nombre, m: "Rechazado.", t: new Date().toLocaleString()})
             });
-            document.getElementById('m-comentario').value = "";
-            verDetalle(selectedId);
+            document.getElementById('modal').style.display = 'none';
         };
 
-        document.getElementById('btnChatSend').onclick = async () => {
-            const t = document.getElementById('chat-in').value;
-            if(!t) return;
-            await updateDoc(doc(db, "Solicitudes", selectedId), {
-                chat: arrayUnion({u: currentUser.nombre, m: t, t: new Date().toLocaleString()})
-            });
-            document.getElementById('chat-in').value = "";
-            verDetalle(selectedId);
-        };
-
-        // CREAR SOLICITUD
-        document.getElementById('btnSendSol').onclick = async () => {
-            const f = document.getElementById('sol-file');
-            let b64 = f.files[0] ? await toBase64(f.files[0]) : null;
-
-            // Transacción para ID Consecutivo
-            const counterRef = doc(db, "Contadores", "solicitudes");
-            let newId = "";
+        document.getElementById('btnConfirmAction').onclick = async () => {
+            const txt = document.getElementById('m-extra-input').value;
+            const fileGest = document.getElementById('m-file-gestion').files[0];
+            let urlGest = fileGest ? await uploadCloud(fileGest) : null;
             
-            try {
-                await runTransaction(db, async (transaction) => {
-                    const sfDoc = await transaction.get(counterRef);
-                    let count = 1;
-                    if (sfDoc.exists()) {
-                        count = sfDoc.data().count + 1;
-                    }
-                    transaction.set(counterRef, { count: count });
-                    newId = `FCI-SOL-${String(count).padStart(4, '0')}`;
-                });
-            } catch (e) {
-                console.error("Error ID", e);
-                newId = `FCI-${Date.now()}`;
-            }
+            let nEst = "En " + tempAction;
+            await updateDoc(doc(db, "Solicitudes", selectedId), {
+                estado: nEst,
+                chat: arrayUnion({u: currentUser.nombre, m: `${tempAction}: ${txt}`, adjunto: urlGest, t: new Date().toLocaleString()})
+            });
+            document.getElementById('m-input-area').style.display = 'none';
+            document.getElementById('modal').style.display = 'none';
+        };
 
+        // CREAR
+        document.getElementById('btnSendSol').onclick = async () => {
+            const f = document.getElementById('sol-file').files[0];
+            const url = await uploadCloud(f);
+
+            // Generar ID
+            let newId = "FCI-" + Date.now(); 
+            // Nota: En producción usar runTransaction para ID consecutivo, simplificado aquí para evitar errores de permisos si las reglas no están perfectas.
+            
             const data = {
                 customId: newId,
                 titulo: document.getElementById('sol-tit').value,
@@ -709,51 +687,60 @@
                 idx: 0,
                 estado: "Pendiente",
                 fecha: new Date().toISOString(),
-                adjunto: b64,
-                chat: [{u: "SISTEMA", m: "Solicitud iniciada.", t: new Date().toLocaleString()}]
+                adjunto: url,
+                chat: [{u: "SISTEMA", m: "Solicitud iniciada", t: new Date().toLocaleString()}]
             };
 
             await addDoc(collection(db, "Solicitudes"), data);
-            alert("Solicitud Creada: " + newId);
+            alert("Enviada");
             cambiarVista('sec-historial', document.getElementById('nav-hist'));
         };
 
-        // ADMIN USUARIOS
+        // UTILS
+        window.cambiarVista = (id, btn) => {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if(btn) btn.classList.add('active');
+        };
+        window.toggleModPanel = v => document.getElementById('panel-mod').style.display = v === 'Creación' ? 'none' : 'grid';
+        window.closeModal = () => document.getElementById('modal').style.display = 'none';
+        
+        window.delDoc = async (c, id) => { if(confirm("¿Eliminar?")) await deleteDoc(doc(db, c, id)); };
+
+        // Save User
         document.getElementById('btnSaveUser').onclick = async () => {
             const u = document.getElementById('u-usr').value.toLowerCase();
             const perms = {
-                crear: document.getElementById('p-crear').checked,
-                ver_propias: document.getElementById('p-ver-propias').checked,
-                ver_ger: document.getElementById('p-ver-ger').checked,
-                ger_apr: document.getElementById('p-ger-apr').checked,
-                gest_sgc: document.getElementById('p-gest-sgc').checked,
-                admin: document.getElementById('p-admin').checked,
-                manage_users: document.getElementById('p-admin').checked, // Admin hereda gestión
-                manage_struct: document.getElementById('p-admin').checked
+                can_solicit: document.getElementById('p-solicitar').checked,
+                p_ver_propias: document.getElementById('p-ver-propias').checked,
+                p_ver_ger: document.getElementById('p-ver-ger').checked,
+                p_ver_all: document.getElementById('p-ver-all').checked,
+                p_gest_sgc: document.getElementById('p-gest-sgc').checked,
+                p_ger_apr: document.getElementById('p-ger-apr').checked,
+                p_users: document.getElementById('p-users').checked,
+                p_struct: document.getElementById('p-struct').checked,
+                admin: document.getElementById('p-admin').checked
             };
-
             await setDoc(doc(db, "Usuarios", u), {
                 nombre: document.getElementById('u-nom').value,
                 usuario: u,
-                pass: document.getElementById('u-pass').value,
-                role: document.getElementById('u-rol').value,
+                pass: document.getElementById('u-pas').value,
                 gerencia: document.getElementById('u-ger-sel').value,
                 permisos: perms
             });
-            alert("Usuario Guardado");
+            alert("Guardado");
         };
-
-        const toBase64 = file => new Promise((res, rej) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => res(reader.result);
-            reader.onerror = error => rej(error);
-        });
 
         document.getElementById('btnSaveGer').onclick = async () => { await addDoc(collection(db, "Gerencias"), {nombre: document.getElementById('g-nom').value}); document.getElementById('g-nom').value=""; };
         document.getElementById('btnSaveDep').onclick = async () => { await addDoc(collection(db, "Departamentos"), {nombre: document.getElementById('d-nom').value}); document.getElementById('d-nom').value=""; };
-        window.del = async (c, id) => { if(confirm("¿Eliminar?")) await deleteDoc(doc(db, c, id)); };
-
+        document.getElementById('btnChatSend').onclick = async () => {
+            const t = document.getElementById('chat-in').value;
+            if(!t) return;
+            await updateDoc(doc(db, "Solicitudes", selectedId), { chat: arrayUnion({u: currentUser.nombre, m: t, t: new Date().toLocaleString()}) });
+            document.getElementById('chat-in').value = "";
+            verDetalle(selectedId);
+        };
     </script>
 </body>
 </html>
