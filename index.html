@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestión Integral</title>
+    <title>SGC Pro Platinum | Gestión Integral</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
@@ -133,7 +133,7 @@
                 <span class="material-icons-round">dashboard</span> Dashboard
             </button>
             <button class="nav-link" id="nav-crear" onclick="cambiarVista('sec-crear', this)">
-                <span class="material-icons-round">add_circle</span> Nueva Solicitud
+                <span class="material-icons-round">add_box</span> Crear Solicitud
             </button>
             <button class="nav-link" id="nav-hist" onclick="cambiarVista('sec-hist', this)">
                 <span class="material-icons-round">history</span> Mis Solicitudes
@@ -169,10 +169,22 @@
         <section id="sec-dash" class="section">
             <h1>Panel General</h1>
             <div class="stats-grid" style="margin-top:20px;">
-                <div class="stat-card"><h3>Total Solicitudes</h3><p id="dash-total" style="font-size:32px; font-weight:800;">0</p></div>
-                <div class="stat-card"><h3>Pendientes</h3><p id="dash-pend" style="font-size:32px; font-weight:800; color:var(--warning);">0</p></div>
-                <div class="stat-card"><h3>En Gestión</h3><p id="dash-proc" style="font-size:32px; font-weight:800; color:var(--primary);">0</p></div>
-                <div class="stat-card"><h3>Aprobados</h3><p id="dash-ok" style="font-size:32px; font-weight:800; color:var(--success);">0</p></div>
+                <div class="stat-card" style="border-left: 5px solid var(--primary);">
+                    <label>Total Solicitudes</label>
+                    <h2 id="dash-total" style="font-size:32px; margin:0;">0</h2>
+                </div>
+                <div class="stat-card" style="border-left: 5px solid var(--warning);">
+                    <label>Pendientes</label>
+                    <h2 id="dash-pend" style="font-size:32px; margin:0;">0</h2>
+                </div>
+                <div class="stat-card" style="border-left: 5px solid var(--info);">
+                    <label>En Gestión</label>
+                    <h2 id="dash-proc" style="font-size:32px; margin:0;">0</h2>
+                </div>
+                <div class="stat-card" style="border-left: 5px solid var(--success);">
+                    <label>Aprobados</label>
+                    <h2 id="dash-ok" style="font-size:32px; margin:0;">0</h2>
+                </div>
             </div>
         </section>
 
@@ -416,7 +428,7 @@
         // Login Logic (Auto-Create Admin)
         document.getElementById('btnLogin').onclick = async () => {
             const u = document.getElementById('login-user').value.toLowerCase().trim();
-            const p = document.getElementById('login-pass').value;
+            const p = document.getElementById('login-pass').value.trim();
 
             // Auto-crear si no existe
             if(u === 'admin' && p === '1130') {
@@ -463,16 +475,23 @@
             const path = (c) => collection(db, "artifacts", appId, "public", "data", c);
 
             onSnapshot(path("Gerencias"), s => {
-                let h = ""; s.forEach(d => h += `<option>${d.data().nombre}</option>`);
-                ['sol-ger', 'u-ger-sel'].forEach(id => document.getElementById(id).innerHTML = h);
-                let l = ""; s.forEach(d => l += `<div style="display:flex;justify-content:space-between;padding:5px;">${d.data().nombre}<span style="color:red;cursor:pointer" onclick="del('Gerencias','${d.id}')">X</span></div>`);
+                let h = "", l = "";
+                s.forEach(d => {
+                    h += `<option>${d.data().nombre}</option>`;
+                    l += `<div style="display:flex;justify-content:space-between;padding:5px;">${d.data().nombre}<span style="color:red;cursor:pointer" onclick="del('Gerencias','${d.id}')">X</span></div>`;
+                });
+                document.getElementById('sol-ger').innerHTML = h;
+                document.getElementById('u-ger-sel').innerHTML = h;
                 document.getElementById('list-ger').innerHTML = l;
             });
 
             onSnapshot(path("Departamentos"), s => {
-                let h = ""; s.forEach(d => h += `<option>${d.data().nombre}</option>`);
+                let h = "", l = "";
+                s.forEach(d => {
+                    h += `<option>${d.data().nombre}</option>`;
+                    l += `<div style="display:flex;justify-content:space-between;padding:5px;">${d.data().nombre}<span style="color:red;cursor:pointer" onclick="del('Departamentos','${d.id}')">X</span></div>`;
+                });
                 document.getElementById('sol-dep').innerHTML = h;
-                let l = ""; s.forEach(d => l += `<div style="display:flex;justify-content:space-between;padding:5px;">${d.data().nombre}<span style="color:red;cursor:pointer" onclick="del('Departamentos','${d.id}')">X</span></div>`);
                 document.getElementById('list-dep').innerHTML = l;
             });
 
@@ -504,17 +523,16 @@
                     const p = currentUser.permisos;
                     // Visibilidad Historial
                     if(p.p_ver_all || (p.p_ver_ger && sol.gerencia === currentUser.gerencia) || (p.p_ver_propias && sol.uid === currentUser.usuario)) {
-                        tbHist.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.titulo}</td><td><span class="badge ${sol.idx===4?'badge-success':'badge-warning'}">${sol.estado}</span></td><td><button class="btn btn-ghost" onclick="verDetalle('${d.id}')">Ver</button></td></tr>`;
+                        tbHist.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.titulo}</td><td><span class="badge badge-info">${sol.estado}</span></td><td><button class="btn btn-ghost" onclick="verDetalle('${d.id}')">Ver</button></td></tr>`;
                     }
                     // Visibilidad Gestión
                     if(p.p_gest_sgc || (p.p_ger_apr && sol.gerencia === currentUser.gerencia)) {
                         tbGest.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.solicitante}</td><td>${sol.titulo}</td><td>${sol.estado}</td><td><button class="btn btn-primary" onclick="verDetalle('${d.id}')">Gestionar</button></td></tr>`;
                     }
                 });
-
-                document.getElementById('count-total').innerText = stats.t;
-                document.getElementById('count-pend').innerText = stats.p;
-                document.getElementById('count-ok').innerText = stats.o;
+                
+                document.getElementById('dash-total').innerText = stats.t;
+                document.getElementById('dash-pend').innerText = stats.p;
             });
         }
 
