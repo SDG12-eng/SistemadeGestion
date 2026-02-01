@@ -53,10 +53,11 @@
         .btn-warning { background: var(--warning); color: white; }
         .btn-danger { background: var(--danger); color: white; }
         .btn-info { background: var(--info); color: white; }
+        .btn-ghost { background: #f1f5f9; color: #475569; }
 
         table { width: 100%; border-collapse: collapse; }
         th { text-align: left; padding: 15px; background: #f8fafc; border-bottom: 2px solid var(--border); font-size: 11px; color: #64748b; text-transform: uppercase; }
-        td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
 
         .badge { padding: 4px 10px; border-radius: 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
         .badge-info { background: #e0f2fe; color: #0369a1; }
@@ -65,8 +66,7 @@
         .badge-danger { background: #fee2e2; color: #991b1b; }
 
         /* Switches & Permisos */
-        .permiso-box { display: flex; align-items: center; justify-content: space-between; padding: 10px; background: #f8fafc; border-radius: 8px; margin-bottom: 5px; border: 1px solid #eee; }
-        .permiso-box span { font-size: 12px; font-weight: 600; color: #475569; }
+        .access-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; background: #f8fafc; border-radius: 8px; margin-bottom: 5px; border: 1px solid #eee; }
         .switch { position: relative; display: inline-block; width: 34px; height: 18px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; inset: 0; background-color: #cbd5e1; transition: .4s; border-radius: 18px; }
@@ -77,10 +77,7 @@
         /* Modal */
         .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); display: none; align-items: center; justify-content: center; z-index: 4000; backdrop-filter: blur(4px); }
         .modal-content { background: white; width: 95%; max-width: 1200px; height: 90vh; border-radius: 24px; display: grid; grid-template-columns: 1fr 380px; overflow: hidden; }
-        .modal-main { padding: 30px; overflow-y: auto; border-right: 1px solid var(--border); }
-        .modal-side { background: #f8fafc; padding: 20px; display: flex; flex-direction: column; border-left: 1px solid var(--border); }
-
-        /* Chat */
+        
         #chat-box { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 10px; margin-bottom: 10px; }
         .chat-msg { padding: 10px; background: white; border-radius: 8px; border-left: 4px solid var(--accent); box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-size: 12px; }
 
@@ -97,6 +94,9 @@
         #loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 6000; display: none; align-items: center; justify-content: center; flex-direction: column; }
         .spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .file-link { color: var(--accent); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+        .file-link:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -113,9 +113,9 @@
             <p style="color:#64748b; font-size:13px; margin-bottom:30px;">Gestión de Calidad ISO 9001</p>
             <div style="text-align: left;">
                 <label>Usuario</label>
-                <input type="text" id="login-user" placeholder="admin">
+                <input type="text" id="login-user" placeholder="Ej: admin">
                 <label>Contraseña</label>
-                <input type="password" id="login-pass" placeholder="••••">
+                <input type="password" id="login-pass" placeholder="••••••">
             </div>
             <button class="btn btn-primary" id="btnLogin" style="width: 100%; padding: 15px; margin-top: 10px;">INICIAR SESIÓN</button>
         </div>
@@ -259,7 +259,7 @@
                     <h3>Registrar Usuario</h3>
                     <div class="grid-2">
                         <div><label>Nombre</label><input type="text" id="u-nom"></div>
-                        <div><label>ID Usuario</label><input type="text" id="u-usr"></div>
+                        <div><label>Usuario ID</label><input type="text" id="u-usr"></div>
                     </div>
                     <div class="grid-2">
                         <div><label>Contraseña</label><input type="text" id="u-pas" value="123"></div>
@@ -268,12 +268,12 @@
 
                     <label>Permisos de Acceso</label>
                     <div style="border:1px solid #eee; padding:10px; border-radius:10px; margin-bottom:15px; display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
-                        <div class="permiso-box"><span>Solicitar</span><label class="switch"><input type="checkbox" id="p-solicitar"><span class="slider"></span></label></div>
-                        <div class="permiso-box"><span>Ver Propias</span><label class="switch"><input type="checkbox" id="p-ver-propias" checked><span class="slider"></span></label></div>
-                        <div class="permiso-box"><span>Ver Gerencia</span><label class="switch"><input type="checkbox" id="p-ver-ger"><span class="slider"></span></label></div>
-                        <div class="permiso-box"><span>Admin SGC</span><label class="switch"><input type="checkbox" id="p-gest-sgc"><span class="slider"></span></label></div>
-                        <div class="permiso-box"><span>Gerente (Aprueba)</span><label class="switch"><input type="checkbox" id="p-ger-apr"><span class="slider"></span></label></div>
-                        <div class="permiso-box"><span>Admin Total</span><label class="switch"><input type="checkbox" id="p-admin"><span class="slider"></span></label></div>
+                        <div class="access-item"><span>Solicitar</span><label class="switch"><input type="checkbox" id="p-solicitar"><span class="slider"></span></label></div>
+                        <div class="access-item"><span>Ver Propias</span><label class="switch"><input type="checkbox" id="p-ver-propias" checked><span class="slider"></span></label></div>
+                        <div class="access-item"><span>Ver Gerencia</span><label class="switch"><input type="checkbox" id="p-ver-ger"><span class="slider"></span></label></div>
+                        <div class="access-item"><span>Admin SGC</span><label class="switch"><input type="checkbox" id="p-gest-sgc"><span class="slider"></span></label></div>
+                        <div class="access-item"><span>Gerente (Aprueba)</span><label class="switch"><input type="checkbox" id="p-ger-apr"><span class="slider"></span></label></div>
+                        <div class="access-item"><span>Admin Total</span><label class="switch"><input type="checkbox" id="p-admin"><span class="slider"></span></label></div>
                     </div>
                     
                     <button class="btn btn-primary" id="btnSaveUser" style="width:100%">GUARDAR USUARIO</button>
@@ -477,7 +477,7 @@
             onSnapshot(path("Gerencias"), s => {
                 let h = "", l = "";
                 s.forEach(d => {
-                    h += `<option>${d.data().nombre}</option>`;
+                    h += `<option value="${d.data().nombre}">${d.data().nombre}</option>`;
                     l += `<div style="display:flex;justify-content:space-between;padding:5px;">${d.data().nombre}<span style="color:red;cursor:pointer" onclick="del('Gerencias','${d.id}')">X</span></div>`;
                 });
                 document.getElementById('sol-ger').innerHTML = h;
@@ -488,7 +488,7 @@
             onSnapshot(path("Departamentos"), s => {
                 let h = "", l = "";
                 s.forEach(d => {
-                    h += `<option>${d.data().nombre}</option>`;
+                    h += `<option value="${d.data().nombre}">${d.data().nombre}</option>`;
                     l += `<div style="display:flex;justify-content:space-between;padding:5px;">${d.data().nombre}<span style="color:red;cursor:pointer" onclick="del('Departamentos','${d.id}')">X</span></div>`;
                 });
                 document.getElementById('sol-dep').innerHTML = h;
@@ -515,23 +515,26 @@
 
                 s.forEach(d => {
                     const sol = d.data();
-                    stats.t++;
+                    const p = currentUser.permisos || {};
+
+                    stats.total++;
                     if(sol.estado === 'Pendiente') stats.p++;
                     else if(sol.estado.includes('Aprobado')) stats.o++;
                     else stats.r++;
 
-                    const p = currentUser.permisos;
-                    // Visibilidad Historial
-                    if(p.p_ver_all || (p.p_ver_ger && sol.gerencia === currentUser.gerencia) || (p.p_ver_propias && sol.uid === currentUser.usuario)) {
+                    // Filtro Visibilidad
+                    let ver = p.p_ver_all || (p.p_ver_ger && sol.gerencia === currentUser.gerencia) || (p.p_ver_propias && sol.uid === currentUser.usuario);
+                    if(ver) {
                         tbHist.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.titulo}</td><td><span class="badge badge-info">${sol.estado}</span></td><td><button class="btn btn-ghost" onclick="verDetalle('${d.id}')">Ver</button></td></tr>`;
                     }
-                    // Visibilidad Gestión
-                    if(p.p_gest_sgc || (p.p_ger_apr && sol.gerencia === currentUser.gerencia)) {
+                    // Filtro Gestión
+                    let gestionar = p.p_gest_sgc || (p.p_ger_apr && sol.gerencia === currentUser.gerencia);
+                    if(gestionar) {
                         tbGest.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.solicitante}</td><td>${sol.titulo}</td><td>${sol.estado}</td><td><button class="btn btn-primary" onclick="verDetalle('${d.id}')">Gestionar</button></td></tr>`;
                     }
                 });
                 
-                document.getElementById('dash-total').innerText = stats.t;
+                document.getElementById('dash-total').innerText = stats.total;
                 document.getElementById('dash-pend').innerText = stats.p;
             });
         }
@@ -551,7 +554,7 @@
             document.getElementById('m-jus').innerText = s.justificacion;
 
             // Archivo
-            document.getElementById('m-file-container').innerHTML = s.adjunto ? `<a href="${s.adjunto}" target="_blank" class="file-link">Descargar Archivo</a>` : "Sin archivo";
+            document.getElementById('m-file-link').innerHTML = s.adjunto ? `<a href="${s.adjunto}" target="_blank" class="file-link">Descargar Archivo</a>` : "Sin archivo";
             if(s.accion !== 'Creación') {
                 document.getElementById('m-extra-panel').style.display = 'block';
                 document.getElementById('m-cod').innerText = s.cod_ref;
@@ -642,7 +645,7 @@
                 tipoDoc: document.getElementById('sol-tipo-doc').value,
                 gerencia: document.getElementById('sol-ger').value,
                 departamento: document.getElementById('sol-dep').value,
-                justificacion: document.getElementById('sol-motivo').value,
+                motivo: document.getElementById('sol-motivo').value,
                 cod_ref: document.getElementById('sol-cod-prev').value,
                 ver_ref: document.getElementById('sol-ver-prev').value,
                 fecha_ref: document.getElementById('sol-fecha-prev').value,
@@ -680,6 +683,7 @@
                 nombre: document.getElementById('u-nom').value,
                 usuario: u,
                 pass: document.getElementById('u-pass').value,
+                role: document.getElementById('u-rol').value,
                 gerencia: document.getElementById('u-ger-sel').value,
                 permisos: perms
             });
