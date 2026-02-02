@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGC| Gestión Integral</title>
+    <title>SGC Pro Platinum | Gestión Integral</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     
     <style>
         :root {
@@ -46,6 +47,7 @@
         
         label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 6px; display: block; letter-spacing: 0.5px; }
         input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 15px; font-size: 14px; background: #fdfdfd; color: inherit; }
+        input:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
 
         .btn { padding: 12px 20px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; font-size: 13px; }
         .btn-primary { background: var(--primary); color: white; }
@@ -91,7 +93,6 @@
         .step label { font-size: 9px; text-transform: uppercase; color: #94a3b8; }
         .step.active label { color: var(--primary); font-weight: 800; }
         
-        /* Utility */
         .completed .step-dot { background: var(--success); border-color: var(--success); color: white; }
 
         #loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 6000; display: none; align-items: center; justify-content: center; flex-direction: column; }
@@ -247,16 +248,19 @@
         <section id="sec-usuarios" class="section">
             <div class="grid-2">
                 <div class="card">
-                    <h3>Registrar Usuario</h3>
+                    <h3 id="user-form-title">Registrar / Editar Usuario</h3>
                     <div class="grid-2">
                         <div><label>Nombre</label><input type="text" id="u-nom"></div>
-                        <div><label>Usuario ID</label><input type="text" id="u-usr"></div>
+                        <div><label>Usuario ID (Login)</label><input type="text" id="u-usr"></div>
                     </div>
                     <div class="grid-2">
                         <div><label>Contraseña</label><input type="text" id="u-pas" value="123"></div>
                         <div><label>Gerencia</label><select id="u-ger-sel"></select></div>
                     </div>
-                    <div><label>Rol (Texto)</label><input type="text" id="u-rol"></div>
+                    <div class="grid-2">
+                        <div><label>Rol (Texto)</label><input type="text" id="u-rol"></div>
+                        <div><label>Email (Notificaciones)</label><input type="email" id="u-email" placeholder="ejemplo@fcipty.com"></div>
+                    </div>
 
                     <label>Permisos de Acceso</label>
                     <div style="border:1px solid #eee; padding:10px; border-radius:10px; margin-bottom:15px; display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
@@ -271,9 +275,10 @@
                     </div>
                     
                     <button class="btn btn-primary" id="btnSaveUser" style="width:100%">GUARDAR USUARIO</button>
+                    <button class="btn btn-ghost" id="btnCancelEdit" style="width:100%; margin-top:5px; display:none;" onclick="resetUserForm()">CANCELAR EDICIÓN</button>
                 </div>
                 <div class="card" style="padding:0; overflow:hidden;">
-                    <table id="table-users"><thead><tr><th>Usuario</th><th>Gerencia</th><th>Permisos</th><th>X</th></tr></thead><tbody></tbody></table>
+                    <table id="table-users"><thead><tr><th>Usuario</th><th>Email</th><th>Rol/Gerencia</th><th>Acciones</th></tr></thead><tbody></tbody></table>
                 </div>
             </div>
         </section>
@@ -343,7 +348,14 @@
                     </div>
 
                     <div id="m-input-area" style="display:none; margin-top:15px;">
+                        
+                        <div id="reunion-container" style="display:none; margin-bottom:10px;">
+                            <label style="color:var(--warning)">Fecha y Hora de Reunión</label>
+                            <input type="datetime-local" id="m-date-meeting">
+                        </div>
+
                         <input type="text" id="m-extra-input" placeholder="Motivo / Consulta / Comentario" style="margin-bottom:5px;">
+                        
                         <div style="background:#f0fdf4; padding:10px; border-radius:8px; border:1px solid #bbf7d0;">
                              <label style="color:#15803d; margin-bottom:5px;">Adjuntar Corrección (Opcional)</label>
                              <input type="file" id="m-file-gestion" style="margin-bottom:0; background:white;">
@@ -365,7 +377,9 @@
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, getDoc, updateDoc, setDoc, query, where, deleteDoc, arrayUnion, runTransaction } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-        // Configuración REAL de Firebase
+        // ==========================================
+        //  CONFIGURACIÓN (¡REVISA ESTO!)
+        // ==========================================
         const firebaseConfig = {
           apiKey: "AIzaSyDdzCiachuhbE9jATz-TesPI2vUVIJrHjM",
           authDomain: "sistemadegestion-7400d.firebaseapp.com",
@@ -375,12 +389,24 @@
           appId: "1:709030283072:web:5997837b36a448e9515ca5"
         };
 
+        // DATOS EMAILJS (ACTUALIZADOS)
+        const EMAIL_SERVICE_ID = "service_a7yozqh"; 
+        const EMAIL_TEMPLATE_ID = "template_7hlhnt8"; 
+        const EMAIL_PUBLIC_KEY = "2jVnfkJKKG0bpKN-U"; 
+
+        // EMAIL DEL ADMINISTRADOR SGC (Para recibir alertas de creación)
+        const EMAIL_ADMIN_SGC = "archivos@fcipty.com"; 
+
+        // Inicialización
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        
-        // Nombre de la App en la BD (para separar datos si es necesario)
         const appId = 'sgc-final-v6';
+        
+        // Inicializar EmailJS
+        (function() {
+            emailjs.init(EMAIL_PUBLIC_KEY);
+        })();
 
         // CLOUDINARY
         const CLOUD_NAME = "df79cjklp";
@@ -388,19 +414,39 @@
 
         let currentUser = null;
         let selectedId = null;
+        let selectedDocData = null; // Para tener acceso a datos del doc en modales
         let tempAction = "";
         const PASOS_NOMBRES = ["Documentado", "Verificado", "Aprobado SGC", "Aprobado Gerencia"];
+
+        // ==========================================
+        //  LÓGICA DE EMAIL
+        // ==========================================
+        function sendNotification(toEmail, title, message) {
+            if(!toEmail || !toEmail.includes('@')) return;
+
+            const templateParams = {
+                title: title,       // {{title}} en tu template
+                name: "Sistema SGC",// {{name}} en tu template
+                message: message,   // {{message}} en tu template
+                email: toEmail,     // {{email}} en tu template
+                to_email: toEmail,  // Variable especial para enrutamiento si aplica
+                time: new Date().toLocaleString()
+            };
+
+            emailjs.send(EMAIL_SERVICE_ID, EMAIL_TEMPLATE_ID, templateParams)
+                .then(function(response) {
+                   console.log('EMAIL ENVIADO A:', toEmail, response.status, response.text);
+                }, function(error) {
+                   console.log('FALLO EMAIL...', error);
+                });
+        }
 
         // Init Auth
         const initAuth = async () => {
             try {
-                // Autenticación anónima para permitir lectura inicial
                 await signInAnonymously(auth);
                 document.getElementById('loading-overlay').style.display = 'none';
-            } catch (e) { 
-                console.error("Auth Error:", e);
-                alert("Error de conexión con Firebase. Revisa la consola.");
-            }
+            } catch (e) { console.error("Auth Error:", e); }
         };
         initAuth();
 
@@ -428,40 +474,28 @@
             return id;
         }
 
-        // Login Logic (Auto-Create Admin)
+        // Login Logic
         document.getElementById('btnLogin').onclick = async () => {
             const u = document.getElementById('login-user').value.toLowerCase().trim();
             const p = document.getElementById('login-pass').value.trim();
 
-            if(!u || !p) { alert("Completa los campos"); return; }
-
-            // Auto-crear Admin Maestro si no existe y las credenciales coinciden con el 'backdoor'
             if(u === 'admin' && p === '1130') {
                 const adminRef = doc(db, "artifacts", appId, "public", "data", "Usuarios", "admin");
                 const snap = await getDoc(adminRef);
                 if(!snap.exists()) {
                     await setDoc(adminRef, {
-                        nombre: "Admin Maestro", usuario: "admin", pass: "1130", gerencia: "SGC",
+                        nombre: "Admin Maestro", usuario: "admin", pass: "1130", gerencia: "SGC", email: EMAIL_ADMIN_SGC,
                         permisos: { can_solicit:true, p_gest_sgc:true, p_ger_apr:true, p_ver_propias:true, p_ver_ger:true, p_ver_all:true, p_users:true, p_struct:true, admin:true }
                     });
-                    console.log("Admin creado automáticamente.");
                 }
             }
 
-            // Consulta de Login
-            // IMPORTANTE: Si ves un error en consola con un enlace, haz clic para crear el índice.
             const q = query(collection(db, "artifacts", appId, "public", "data", "Usuarios"), where("usuario", "==", u), where("pass", "==", p));
-            
             onSnapshot(q, snap => {
                 if(!snap.empty) {
                     currentUser = snap.docs[0].data();
                     setupUI();
-                } else {
-                    alert("Usuario o contraseña incorrectos");
-                }
-            }, (error) => {
-                console.error("Error Login:", error);
-                alert("Error al iniciar sesión. Revisa la consola (posible falta de índice).");
+                } else { alert("Credenciales incorrectas"); }
             });
         };
 
@@ -476,7 +510,6 @@
             if(p.can_solicit) document.getElementById('nav-crear').classList.add('visible');
             if(p.p_ver_propias || p.p_ver_ger || p.p_ver_all) document.getElementById('nav-hist').classList.add('visible');
             if(p.p_gest_sgc || p.p_ger_apr) document.getElementById('nav-gest').classList.add('visible');
-            
             if(p.p_users || p.p_struct) document.getElementById('admin-only').style.display = 'block';
             if(p.p_users) document.getElementById('nav-users').classList.add('visible');
             if(p.p_struct) document.getElementById('nav-struct').classList.add('visible');
@@ -510,12 +543,23 @@
                 document.getElementById('list-dep').innerHTML = l;
             });
 
+            // CARGA DE USUARIOS MEJORADA (Tabla con más detalles y edición)
             onSnapshot(path("Usuarios"), s => {
                 const tb = document.getElementById('table-users').querySelector('tbody');
                 tb.innerHTML = "";
                 s.forEach(d => {
                     const u = d.data();
-                    tb.innerHTML += `<tr><td>${u.usuario}</td><td>${u.gerencia}</td><td>${u.permisos.admin ? 'Admin' : 'Usuario'}</td><td><button onclick="del('Usuarios','${d.id}')">X</button></td></tr>`;
+                    const jsonUser = JSON.stringify(u).replace(/"/g, '&quot;');
+                    tb.innerHTML += `
+                        <tr>
+                            <td><b>${u.nombre}</b><br><span style="font-size:10px;color:#64748b">${u.usuario}</span></td>
+                            <td>${u.email || '-'}</td>
+                            <td>${u.gerencia}<br><span class="badge badge-info">${u.role || 'N/A'}</span></td>
+                            <td>
+                                <button class="btn btn-info" style="padding:5px 10px; font-size:10px;" onclick="cargarUsuarioParaEditar('${jsonUser}')">EDITAR</button>
+                                <button class="btn btn-danger" style="padding:5px 10px; font-size:10px;" onclick="del('Usuarios','${d.id}')">X</button>
+                            </td>
+                        </tr>`;
                 });
             });
 
@@ -533,20 +577,17 @@
                     if(sol.estado === 'Pendiente') stats.p++;
                     else if(sol.estado.includes('Aprobado')) stats.o++;
 
-                    // Filtro Visibilidad (Mis Solicitudes)
+                    // Visibilidad
                     let ver = p.p_ver_all || (p.p_ver_ger && sol.gerencia === currentUser.gerencia) || (p.p_ver_propias && sol.uid === currentUser.usuario);
                     if(ver) {
                         tbHist.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.titulo}</td><td><span class="badge badge-info">${sol.estado}</span></td><td><button class="btn btn-ghost" onclick="verDetalle('${d.id}')">Ver</button></td></tr>`;
                     }
-                    
-                    // Filtro Gestión (Bandeja de Entrada)
-                    let puedeGestionar = false;
-                    // SGC gestiona pasos 1 y 2
-                    if(p.p_gest_sgc && sol.idx < 3 && sol.estado !== 'Rechazado' && sol.estado !== 'Aprobado Final') puedeGestionar = true;
-                    // Gerente gestiona paso 3 (su propia gerencia)
-                    if(p.p_ger_apr && sol.idx === 3 && sol.gerencia === currentUser.gerencia && sol.estado !== 'Rechazado') puedeGestionar = true;
+                    // Gestión
+                    let gestionar = false;
+                    if(p.p_gest_sgc && sol.idx < 3 && sol.estado !== 'Rechazado' && sol.estado !== 'Aprobado Final') gestionar = true;
+                    if(p.p_ger_apr && sol.idx === 3 && sol.gerencia === currentUser.gerencia && sol.estado !== 'Rechazado') gestionar = true;
 
-                    if(puedeGestionar) {
+                    if(gestionar) {
                         tbGest.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.solicitante}</td><td>${sol.titulo}</td><td>${sol.estado}</td><td><button class="btn btn-primary" onclick="verDetalle('${d.id}')">Gestionar</button></td></tr>`;
                     }
                 });
@@ -557,10 +598,52 @@
             });
         }
 
+        // ==========================================
+        //  EDICIÓN DE USUARIOS
+        // ==========================================
+        window.cargarUsuarioParaEditar = (userStr) => {
+            const u = JSON.parse(userStr);
+            document.getElementById('user-form-title').innerText = "Editando Usuario: " + u.usuario;
+            document.getElementById('u-nom').value = u.nombre;
+            document.getElementById('u-usr').value = u.usuario;
+            document.getElementById('u-usr').disabled = true; // No permitir cambiar ID
+            document.getElementById('u-pas').value = u.pass;
+            document.getElementById('u-ger-sel').value = u.gerencia;
+            document.getElementById('u-rol').value = u.role || '';
+            document.getElementById('u-email').value = u.email || '';
+
+            // Checkboxes
+            const p = u.permisos;
+            document.getElementById('p-solicitar').checked = p.can_solicit;
+            document.getElementById('p-ver-propias').checked = p.p_ver_propias;
+            document.getElementById('p-ver-ger').checked = p.p_ver_ger;
+            document.getElementById('p-gest-sgc').checked = p.p_gest_sgc;
+            document.getElementById('p-ger-apr').checked = p.p_ger_apr;
+            document.getElementById('p-users').checked = p.p_users;
+            document.getElementById('p-struct').checked = p.p_struct;
+            document.getElementById('p-admin').checked = p.admin;
+
+            document.getElementById('btnSaveUser').innerText = "ACTUALIZAR USUARIO";
+            document.getElementById('btnCancelEdit').style.display = 'inline-flex';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.resetUserForm = () => {
+            document.getElementById('user-form-title').innerText = "Registrar Usuario";
+            document.getElementById('u-usr').disabled = false;
+            document.getElementById('u-usr').value = '';
+            document.getElementById('u-nom').value = '';
+            document.getElementById('u-email').value = '';
+            document.getElementById('btnSaveUser').innerText = "GUARDAR USUARIO";
+            document.getElementById('btnCancelEdit').style.display = 'none';
+        }
+
         // Acciones Detalle
         window.verDetalle = async (id) => {
             selectedId = id;
-            const s = (await getDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", id))).data();
+            const docSnap = await getDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", id));
+            selectedDocData = docSnap.data();
+            const s = selectedDocData;
             
             document.getElementById('m-id').innerText = s.customId;
             document.getElementById('m-tit').innerText = s.titulo;
@@ -571,7 +654,6 @@
             document.getElementById('m-accion').innerText = s.accion;
             document.getElementById('m-jus').innerText = s.justificacion || "Sin justificación";
 
-            // Archivo
             document.getElementById('m-file-link').innerHTML = s.adjunto ? `<a href="${s.adjunto}" target="_blank" class="file-link">Descargar Archivo</a>` : "Sin archivo";
             if(s.accion !== 'Creación') {
                 document.getElementById('m-extra-panel').style.display = 'block';
@@ -580,28 +662,25 @@
                 document.getElementById('m-fecha-ult').innerText = s.fecha_ref;
             } else document.getElementById('m-extra-panel').style.display = 'none';
 
-            // Timeline Visual
             for(let i=1; i<=4; i++) {
                 const st = document.getElementById('s'+i);
-                st.className = 'step'; // reset
+                st.className = 'step'; 
                 if(i <= s.idx) st.classList.add('completed'); 
                 if(i === s.idx + 1 && s.estado !== 'Aprobado Final') st.classList.add('active');
             }
 
-            // Permisos Botones de Gestión
             const p = currentUser.permisos;
             const esSGC = p.p_gest_sgc && s.idx < 3;
             const esGer = p.p_ger_apr && s.idx === 3 && s.gerencia === currentUser.gerencia;
             const activo = s.estado !== 'Aprobado Final' && s.estado !== 'Rechazado';
             
             document.getElementById('m-actions').style.display = (esSGC || esGer) && activo ? 'block' : 'none';
-            document.getElementById('m-input-area').style.display = 'none'; // reset input area
+            document.getElementById('m-input-area').style.display = 'none';
             
             if(activo) {
                 document.getElementById('btn-firma-next').innerText = `Aprobar Etapa (${PASOS_NOMBRES[s.idx] || 'Final'})`;
             }
             
-            // Chat
             const cb = document.getElementById('chat-box');
             cb.innerHTML = s.chat ? s.chat.map(c => `
                 <div class="chat-msg" style="border-left-color:${c.u===currentUser.nombre?'var(--primary)':'#cbd5e1'}">
@@ -613,15 +692,23 @@
             document.getElementById('modal').style.display = 'flex';
         };
 
-        // Acciones Gestión
+        // Acciones Gestión (Reunión con Fecha)
         window.gestionar = (tipo) => {
             tempAction = tipo;
             document.getElementById('m-input-area').style.display = 'block';
-            document.getElementById('m-extra-input').placeholder = tipo === 'Reunión' ? 'Fecha y Hora' : 'Motivo / Consulta';
+            
+            // Mostrar selector de fecha SI es Reunión
+            if(tipo === 'Reunión') {
+                document.getElementById('reunion-container').style.display = 'block';
+                document.getElementById('m-extra-input').placeholder = 'Tema de la reunión...';
+            } else {
+                document.getElementById('reunion-container').style.display = 'none';
+                document.getElementById('m-extra-input').placeholder = 'Motivo / Consulta / Comentario';
+            }
         };
 
         window.firmarPaso = async () => {
-            const s = (await getDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId))).data();
+            const s = selectedDocData;
             const nIdx = s.idx + 1;
             const nEst = nIdx < 4 ? PASOS_NOMBRES[nIdx] : "Aprobado Final";
             
@@ -629,25 +716,41 @@
                 idx: nIdx, estado: nEst,
                 chat: arrayUnion({u: currentUser.nombre, m: `✅ APROBADO FASE: ${nEst}`, t: new Date().toLocaleString()})
             });
+
+            // NOTIFICAR AL SOLICITANTE
+            sendNotification(s.solicitante_email, `Avance: ${s.customId}`, `Tu solicitud ha avanzado al estado: ${nEst}.`);
+
             closeModal();
         };
 
         document.getElementById('btnConfirmAction').onclick = async () => {
             const txt = document.getElementById('m-extra-input').value;
             const f = document.getElementById('m-file-gestion');
-            let b64 = f.files[0] ? await uploadToCloudinary(f.files[0]) : null;
+            
+            // Capturar Fecha si es Reunión
+            let mensajeFinal = `${tempAction}: ${txt}`;
+            if(tempAction === 'Reunión') {
+                const fechaReunion = document.getElementById('m-date-meeting').value;
+                if(!fechaReunion) { alert("Por favor selecciona una fecha para la reunión"); return; }
+                mensajeFinal += `\n📅 Fecha Agendada: ${fechaReunion.replace('T', ' ')}`;
+            }
 
+            let b64 = f.files[0] ? await uploadToCloudinary(f.files[0]) : null;
             let nEst = tempAction === 'Rechazado' ? 'Rechazado' : `En ${tempAction}`;
             
             await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), {
                 estado: nEst,
-                chat: arrayUnion({u: currentUser.nombre, m: `${tempAction}: ${txt}`, archivo: b64, t: new Date().toLocaleString()})
+                chat: arrayUnion({u: currentUser.nombre, m: mensajeFinal, archivo: b64, t: new Date().toLocaleString()})
             });
+
+            // NOTIFICAR AL SOLICITANTE
+             sendNotification(selectedDocData.solicitante_email, `Actualización: ${selectedDocData.customId}`, mensajeFinal);
+
             document.getElementById('m-input-area').style.display = 'none';
             closeModal();
         };
 
-        window.rechazar = () => { tempAction = 'Rechazado'; document.getElementById('m-input-area').style.display='block'; };
+        window.rechazar = () => { tempAction = 'Rechazado'; document.getElementById('m-input-area').style.display='block'; document.getElementById('reunion-container').style.display = 'none'; };
 
         // Crear Solicitud
         document.getElementById('btnSendSol').onclick = async () => {
@@ -671,6 +774,7 @@
                 ver_ref: document.getElementById('sol-ver-prev').value,
                 fecha_ref: document.getElementById('sol-fecha-prev').value,
                 solicitante: currentUser.nombre,
+                solicitante_email: currentUser.email, // GUARDAMOS EMAIL DEL SOLICITANTE
                 uid: currentUser.usuario,
                 idx: 0,
                 estado: "Pendiente",
@@ -680,15 +784,21 @@
             };
 
             await addDoc(collection(db, "artifacts", appId, "public", "data", "Solicitudes"), data);
+            
+            // NOTIFICAR AL ADMIN SGC
+            sendNotification(EMAIL_ADMIN_SGC, "Nueva Solicitud Creada", `El usuario ${currentUser.nombre} ha creado la solicitud ${fci}: ${tit}`);
+
             document.getElementById('loading-overlay').style.display = 'none';
             alert("Solicitud Creada: " + fci);
             cambiarVista('sec-hist', document.getElementById('nav-hist'));
         };
 
-        // Crear Usuario
+        // Guardar/Editar Usuario
         document.getElementById('btnSaveUser').onclick = async () => {
             const u = document.getElementById('u-usr').value.toLowerCase().trim();
             const p = document.getElementById('u-pas').value;
+            const email = document.getElementById('u-email').value;
+
             if(!u || !p) { alert("Usuario y contraseña requeridos"); return; }
 
             const perms = {
@@ -703,24 +813,26 @@
                 admin: document.getElementById('p-admin').checked
             };
             
+            // setDoc con {merge: true} permite crear O actualizar sin borrar datos extra
             await setDoc(doc(db, "artifacts", appId, "public", "data", "Usuarios", u), {
                 nombre: document.getElementById('u-nom').value,
                 usuario: u,
                 pass: p,
                 role: document.getElementById('u-rol').value,
                 gerencia: document.getElementById('u-ger-sel').value,
+                email: email, // Guardamos Email
                 permisos: perms
-            });
-            alert("Usuario Guardado Correctamente");
-            document.getElementById('u-usr').value = "";
-            document.getElementById('u-nom').value = "";
+            }, {merge: true});
+
+            alert("Usuario Guardado/Actualizado Correctamente");
+            resetUserForm();
         };
 
         // Estructura
         document.getElementById('btnSaveGer').onclick = async () => { await addDoc(collection(db, "artifacts", appId, "public", "data", "Gerencias"), {nombre: document.getElementById('g-nom').value}); };
         document.getElementById('btnSaveDep').onclick = async () => { await addDoc(collection(db, "artifacts", appId, "public", "data", "Departamentos"), {nombre: document.getElementById('d-nom').value}); };
 
-        // Globals & Helpers
+        // Globals
         window.cambiarVista = (id, btn) => {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
