@@ -401,6 +401,7 @@
         const EMAIL_PUBLIC_KEY = "2jVnfkJKKG0bpKN-U"; 
 
         const EMAIL_ADMIN_SGC = "Oficinista.archivos@fcipty.com"; 
+        const EMAIL_GROUP_SGC = "grupocalidad@fcipty.com"; // CAMBIA ESTO POR EL CORREO REAL DEL GRUPO
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -421,14 +422,13 @@
         const PASOS_NOMBRES = ["Documentado", "Verificado", "Aprobado SGC", "Aprobado Gerencia"];
 
         function sendNotification(toEmail, title, message) {
-            if(!toEmail || !toEmail.includes('@')) return;
-
+            if(!toEmail) return;
             const templateParams = {
                 title: title,       
                 name: "Sistema SGC",
                 message: message,   
                 email: toEmail,     
-                to_email: toEmail,  
+                to_email: toEmail, // EmailJS enviará a esta lista separada por comas
                 time: new Date().toLocaleString()
             };
 
@@ -441,26 +441,33 @@
         }
 
         // ==========================================
-        //  HELPER: BUSCAR CORREO DEL GERENTE
+        //  HELPER: OBTENER TODOS LOS DESTINATARIOS
         // ==========================================
-        async function getGerenteEmail(gerenciaTarget) {
-            try {
-                // Buscamos usuarios de esa gerencia que tengan permiso de aprobar
-                const q = query(
-                    collection(db, "artifacts", appId, "public", "data", "Usuarios"), 
-                    where("gerencia", "==", gerenciaTarget),
-                    where("permisos.p_ger_apr", "==", true)
-                );
-                const snap = await getDocs(q);
-                if(!snap.empty) {
-                    const data = snap.docs[0].data();
-                    return data.email || null;
-                }
-                return null;
-            } catch(e) {
-                console.error("Error buscando gerente", e);
-                return null;
+        async function getDestinatariosUnificados(data) {
+            let managerEmail = null;
+            if(data.gerencia) {
+                // Buscamos gerente
+                try {
+                    const q = query(
+                        collection(db, "artifacts", appId, "public", "data", "Usuarios"), 
+                        where("gerencia", "==", data.gerencia),
+                        where("permisos.p_ger_apr", "==", true)
+                    );
+                    const snap = await getDocs(q);
+                    if(!snap.empty) managerEmail = snap.docs[0].data().email;
+                } catch(e) { console.error("Error Manager Email", e); }
             }
+
+            // Unimos todos los correos en un Set para evitar duplicados
+            const emails = new Set([
+                EMAIL_ADMIN_SGC,
+                EMAIL_GROUP_SGC,
+                data.solicitante_email,
+                managerEmail
+            ]);
+
+            // Convertimos a string separado por comas, eliminando vacíos
+            return Array.from(emails).filter(e => e && e.includes('@')).join(',');
         }
 
         const initAuth = async () => {
@@ -477,7 +484,7 @@
             try {
                 const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, { method: 'POST', body: fd });
                 const data = await res.json();
-                return data.secure_url; // Cloudinary entrega URL HTTP para cualquier archivo
+                return data.secure_url; 
             } catch(e) { console.error("Cloudinary Error", e); return null; }
         }
 
@@ -661,10 +668,8 @@
             document.getElementById('m-est').innerText = s.estado;
             document.getElementById('m-est').className = `badge ${s.estado.includes('Aprobado')?'badge-success':'badge-warning'}`;
             document.getElementById('m-ger').innerText = s.gerencia;
-            document.getElementById('m-tipo').innerText = s.tipoDoc || "N/A"; // MOSTRAR TIPO DOCUMENTO
+            document.getElementById('m-tipo').innerText = s.tipoDoc || "N/A"; 
             document.getElementById('m-accion').innerText = s.accion;
-            
-            // CORRECCIÓN: Leemos 's.motivo' si 's.justificacion' no existe
             document.getElementById('m-jus').innerText = s.motivo || s.justificacion || "Sin justificación";
 
             document.getElementById('m-file-link').innerHTML = s.adjunto ? `<a href="${s.adjunto}" target="_blank" class="file-link">Descargar Archivo</a>` : "Sin archivo";
@@ -687,10 +692,7 @@
             const esGer = p.p_ger_apr && s.idx === 3 && s.gerencia === currentUser.gerencia;
             const activo = s.estado !== 'Aprobado Final' && s.estado !== 'Rechazado';
             
-            // Admin Panel
             document.getElementById('m-actions').style.display = (esSGC || esGer) && activo ? 'block' : 'none';
-            
-            // Applicant Panel (NUEVO)
             const esDuenio = s.uid === currentUser.usuario;
             document.getElementById('applicant-actions').style.display = (esDuenio && activo) ? 'block' : 'none';
 
@@ -724,7 +726,6 @@
             }
         };
 
-        // NUEVA FUNCIÓN PARA SOLICITANTE
         window.responderSolicitante = () => {
             tempAction = "Respuesta";
             document.getElementById('m-input-area').style.display = 'block';
@@ -742,16 +743,9 @@
                 chat: arrayUnion({u: currentUser.nombre, m: `✅ APROBADO FASE: ${nEst}`, t: new Date().toLocaleString()})
             });
 
-            // 1. AVISAR AL USUARIO
-            sendNotification(s.solicitante_email, `Avance: ${s.customId}`, `Tu solicitud avanzó a: ${nEst}.`);
-
-            // 2. SI EL SIGUIENTE PASO ES GERENCIA (Index 3 es Gerente), AVISAR AL GERENTE
-            if(nIdx === 3) {
-                const gerenteEmail = await getGerenteEmail(s.gerencia);
-                if(gerenteEmail) {
-                    sendNotification(gerenteEmail, `Pendiente Firma: ${s.customId}`, `La solicitud ${s.customId} requiere tu aprobación como Gerente.`);
-                }
-            }
+            // NOTIFICAR A TODOS
+            const dest = await getDestinatariosUnificados(s);
+            sendNotification(dest, `Avance: ${s.customId}`, `La solicitud avanzó a: ${nEst}.`);
 
             closeModal();
         };
@@ -764,14 +758,9 @@
             let nEst = "";
 
             if (tempAction === "Respuesta") {
-                // LOGICA DE RESPUESTA DEL USUARIO
                 mensajeFinal = `Respuesta del Usuario: ${txt}`;
-                nEst = "Respuesta Recibida"; // Cambiamos estado para que admin lo note
-                // Notificar al Admin SGC
-                sendNotification(EMAIL_ADMIN_SGC, `Respuesta en ${selectedDocData.customId}`, `El usuario respondió: ${txt}`);
-
+                nEst = "Respuesta Recibida"; 
             } else {
-                // LOGICA DE GESTION (ADMIN/GERENTE)
                 mensajeFinal = `${tempAction}: ${txt}`;
                 if(tempAction === 'Reunión') {
                     const fechaReunion = document.getElementById('m-date-meeting').value;
@@ -779,8 +768,6 @@
                     mensajeFinal += `\n📅 Fecha Agendada: ${fechaReunion.replace('T', ' ')}`;
                 }
                 nEst = tempAction === 'Rechazado' ? 'Rechazado' : `En ${tempAction}`;
-                // Notificar al Solicitante
-                sendNotification(selectedDocData.solicitante_email, `Actualización: ${selectedDocData.customId}`, mensajeFinal);
             }
 
             let b64 = f.files[0] ? await uploadToCloudinary(f.files[0]) : null;
@@ -789,6 +776,10 @@
                 estado: nEst,
                 chat: arrayUnion({u: currentUser.nombre, m: mensajeFinal, archivo: b64, t: new Date().toLocaleString()})
             });
+
+            // NOTIFICAR A TODOS
+            const dest = await getDestinatariosUnificados(selectedDocData);
+            sendNotification(dest, `Actualización: ${selectedDocData.customId}`, mensajeFinal);
 
             document.getElementById('m-input-area').style.display = 'none';
             closeModal();
@@ -799,7 +790,6 @@
         document.getElementById('btnSendSol').onclick = async () => {
             const tit = document.getElementById('sol-tit').value;
             const gerTarget = document.getElementById('sol-ger').value;
-
             if(!tit) { alert("El título es obligatorio"); return; }
 
             document.getElementById('loading-overlay').style.display = 'flex';
@@ -830,14 +820,9 @@
 
             await addDoc(collection(db, "artifacts", appId, "public", "data", "Solicitudes"), data);
             
-            // 1. NOTIFICAR AL ADMIN SGC
-            sendNotification(EMAIL_ADMIN_SGC, "Nueva Solicitud Creada", `El usuario ${currentUser.nombre} ha creado la solicitud ${fci}: ${tit}`);
-
-            // 2. BUSCAR Y NOTIFICAR AL GERENTE DE ESA AREA
-            const gerenteEmail = await getGerenteEmail(gerTarget);
-            if(gerenteEmail) {
-                sendNotification(gerenteEmail, "Nueva Solicitud en tu Gerencia", `Se ha creado la solicitud ${fci} para ${gerTarget}. Estará pendiente de tu aprobación más adelante.`);
-            }
+            // NOTIFICAR A TODOS LOS INVOLUCRADOS
+            const dest = await getDestinatariosUnificados(data);
+            sendNotification(dest, "Nueva Solicitud Creada", `El usuario ${currentUser.nombre} ha creado la solicitud ${fci}: ${tit}`);
 
             document.getElementById('loading-overlay').style.display = 'none';
             alert("Solicitud Creada: " + fci);
@@ -848,7 +833,6 @@
             const u = document.getElementById('u-usr').value.toLowerCase().trim();
             const p = document.getElementById('u-pas').value;
             const email = document.getElementById('u-email').value;
-
             if(!u || !p) { alert("Usuario y contraseña requeridos"); return; }
 
             const perms = {
