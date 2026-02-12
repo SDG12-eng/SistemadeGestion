@@ -400,8 +400,9 @@
         const EMAIL_TEMPLATE_ID = "template_7hlhnt8"; 
         const EMAIL_PUBLIC_KEY = "2jVnfkJKKG0bpKN-U"; 
 
-        const EMAIL_ADMIN_SGC = "Oficinista.archivos@fcipty.com"; 
-        const EMAIL_GROUP_SGC = "grupocalidad@fcipty.com"; // CAMBIA ESTO POR EL CORREO REAL DEL GRUPO
+        // --- CORREOS FIJOS (Se mantienen siempre) ---
+        const EMAIL_ADMIN_SGC = "oficinista.archivos@fcipty.com"; 
+        const EMAIL_GRUPO_SGC = "actualizacion@fcipty.com"; 
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -441,12 +442,13 @@
         }
 
         // ==========================================
-        //  HELPER: OBTENER TODOS LOS DESTINATARIOS
+        //  HELPER: UNIFICAR TODOS LOS DESTINATARIOS
         // ==========================================
         async function getDestinatariosUnificados(data) {
             let managerEmail = null;
+            
+            // 1. Buscamos el correo del Gerente de esa área específica
             if(data.gerencia) {
-                // Buscamos gerente
                 try {
                     const q = query(
                         collection(db, "artifacts", appId, "public", "data", "Usuarios"), 
@@ -455,18 +457,19 @@
                     );
                     const snap = await getDocs(q);
                     if(!snap.empty) managerEmail = snap.docs[0].data().email;
-                } catch(e) { console.error("Error Manager Email", e); }
+                } catch(e) { console.error("Error buscando gerente", e); }
             }
 
-            // Unimos todos los correos en un Set para evitar duplicados
+            // 2. Creamos la lista UNIFICADA
+            // El 'Set' elimina duplicados si alguien tiene doble rol
             const emails = new Set([
-                EMAIL_ADMIN_SGC,
-                EMAIL_GROUP_SGC,
-                data.solicitante_email,
-                managerEmail
+                EMAIL_ADMIN_SGC,        // Fijo
+                EMAIL_GRUPO_SGC,        // Fijo
+                data.solicitante_email, // Variable (Dueño)
+                managerEmail            // Variable (Gerente)
             ]);
 
-            // Convertimos a string separado por comas, eliminando vacíos
+            // 3. Convertimos a string separado por comas
             return Array.from(emails).filter(e => e && e.includes('@')).join(',');
         }
 
