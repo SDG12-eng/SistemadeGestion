@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA DE GESTIÓN</title>
+    <title>SGC Pro Platinum | Gestión Integral</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
@@ -112,8 +112,8 @@
 
     <div id="login-screen">
         <div class="login-box">
-            <h1 style="color:var(--primary); margin-bottom: 10px; font-weight: 800;">SISTEMA DE GESTIÓN</h1>
-            <p style="color:#64748b; font-size:13px; margin-bottom:30px;">ISO 9001</p>
+            <h1 style="color:var(--primary); margin-bottom: 10px; font-weight: 800;">SGC PLATINUM</h1>
+            <p style="color:#64748b; font-size:13px; margin-bottom:30px;">Gestión de Calidad ISO 9001</p>
             <div style="text-align: left;">
                 <label>Usuario</label>
                 <input type="text" id="login-user" placeholder="Ej: admin">
@@ -127,7 +127,7 @@
     <aside class="sidebar" id="sidebar">
         <div style="padding: 10px 0 30px; display:flex; align-items:center; gap:10px;">
             <span class="material-icons-round" style="color: var(--accent); font-size: 32px;">verified_user</span>
-            <h2 style="font-weight: 800; font-size: 18px;">PANEL PRINCIPAL</h2>
+            <h2 style="font-weight: 800; font-size: 18px;">SGC PRO</h2>
         </div>
         
         <nav style="flex:1">
@@ -385,7 +385,7 @@
         import { getFirestore, collection, addDoc, onSnapshot, doc, getDoc, updateDoc, setDoc, query, where, getDocs, arrayUnion, runTransaction } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
         // ==========================================
-        //  CONFIGURACIÓN
+        //  1. CONFIGURACIÓN Y CORREOS FIJOS
         // ==========================================
         const firebaseConfig = {
           apiKey: "AIzaSyDdzCiachuhbE9jATz-TesPI2vUVIJrHjM",
@@ -396,11 +396,12 @@
           appId: "1:709030283072:web:5997837b36a448e9515ca5"
         };
 
+        // EMAILJS: TUS DATOS
         const EMAIL_SERVICE_ID = "service_a7yozqh"; 
         const EMAIL_TEMPLATE_ID = "template_7hlhnt8"; 
         const EMAIL_PUBLIC_KEY = "2jVnfkJKKG0bpKN-U"; 
 
-        // --- CORREOS FIJOS (Se mantienen siempre) ---
+        // CORREOS QUE SIEMPRE RECIBEN TODO (TO)
         const EMAIL_ADMIN_SGC = "oficinista.archivos@fcipty.com"; 
         const EMAIL_GRUPO_SGC = "emanuel.cedeno@fcipty.com"; 
 
@@ -409,9 +410,7 @@
         const db = getFirestore(app);
         const appId = 'sgc-final-v6';
         
-        (function() {
-            emailjs.init(EMAIL_PUBLIC_KEY);
-        })();
+        (function() { emailjs.init(EMAIL_PUBLIC_KEY); })();
 
         const CLOUD_NAME = "df79cjklp";
         const UPLOAD_PRESET = "fci_documentos";
@@ -422,68 +421,73 @@
         let tempAction = "";
         const PASOS_NOMBRES = ["Documentado", "Verificado", "Aprobado SGC", "Aprobado Gerencia"];
 
-        function sendNotification(toEmailList, title, message) {
-            if(!toEmailList) return;
-            const templateParams = {
-                title: title,       
-                name: "Sistema SGC",
-                message: message,   
-                email: toEmailList, // Lista unificada     
-                to_email: toEmailList, // IMPORTANTE: EmailJS usa esto
-                time: new Date().toLocaleString()
-            };
-
-            emailjs.send(EMAIL_SERVICE_ID, EMAIL_TEMPLATE_ID, templateParams)
-                .then(function(response) {
-                   console.log('EMAIL ENVIADO A:', toEmailList);
-                }, function(error) {
-                   console.log('FALLO EMAIL...', error);
-                });
-        }
-
         // ==========================================
-        //  HELPER: UNIFICAR TODOS LOS DESTINATARIOS
+        //  2. LÓGICA DE CORREOS (CC SEPARADO)
         // ==========================================
-        async function getDestinatariosUnificados(data) {
-            let managerEmail = null;
+        async function getDatosEnvio(solicitudData) {
+            let managerEmail = "";
             
-            // 1. Buscamos el correo del Gerente de esa área específica
-            if(data.gerencia) {
+            // A. Buscar correo del Gerente del área si existe gerencia
+            if(solicitudData.gerencia) {
                 try {
                     const q = query(
                         collection(db, "artifacts", appId, "public", "data", "Usuarios"), 
-                        where("gerencia", "==", data.gerencia),
-                        where("permisos.p_ger_apr", "==", true) // Filtro CLAVE: Busca al que tiene permiso de Gerente
+                        where("gerencia", "==", solicitudData.gerencia),
+                        where("permisos.p_ger_apr", "==", true) // Busca quien tenga permiso de aprobar
                     );
                     const snap = await getDocs(q);
                     if(!snap.empty) {
-                        managerEmail = snap.docs[0].data().email;
-                        console.log(`Gerente encontrado para ${data.gerencia}: ${managerEmail}`);
+                        // Obtenemos el correo del gerente encontrado
+                        managerEmail = snap.docs[0].data().email || "";
+                        console.log("Gerente encontrado para CC:", managerEmail);
                     }
                 } catch(e) { console.error("Error buscando gerente", e); }
             }
 
-            // 2. Creamos la lista UNIFICADA
-            // El 'Set' elimina duplicados si alguien tiene doble rol
-            const emails = new Set([
-                EMAIL_ADMIN_SGC,        // Fijo: Oficinista
-                EMAIL_GRUPO_SGC,        // Fijo: Actualización
-                data.solicitante_email, // Variable: Solicitante (Dueño)
-                managerEmail            // Variable: Gerente de esa área
+            // B. Crear lista de destinatarios PRINCIPALES (TO)
+            const toEmails = new Set([
+                EMAIL_ADMIN_SGC,
+                EMAIL_GRUPO_SGC,
+                solicitudData.solicitante_email // El solicitante va en TO también
             ]);
 
-            // 3. Convertimos a string separado por comas
-            return Array.from(emails).filter(e => e && e.includes('@')).join(',');
+            // Convertimos a string separado por comas
+            const toList = Array.from(toEmails).filter(e => e && e.includes('@')).join(',');
+            
+            // Retornamos objeto con TO y CC por separado
+            return {
+                to: toList,
+                cc: managerEmail // El gerente va solo en CC
+            };
+        }
+
+        function sendNotification(destinatarios, title, message) {
+            if(!destinatarios.to) return;
+            
+            const templateParams = {
+                title: title,       
+                name: "Sistema SGC",
+                message: message,   
+                
+                // VARIABLES CLAVE PARA EMAILJS
+                to_email: destinatarios.to,   // Lista principal
+                cc_email: destinatarios.cc,   // Lista de copias (Gerente)
+                
+                time: new Date().toLocaleString()
+            };
+
+            emailjs.send(EMAIL_SERVICE_ID, EMAIL_TEMPLATE_ID, templateParams)
+                .then(function(res) { console.log('EMAIL ENVIADO. TO:', destinatarios.to, 'CC:', destinatarios.cc); }, 
+                      function(err) { console.log('ERROR EMAIL', err); });
         }
 
         const initAuth = async () => {
-            try {
-                await signInAnonymously(auth);
-                document.getElementById('loading-overlay').style.display = 'none';
-            } catch (e) { console.error("Auth Error:", e); }
+            try { await signInAnonymously(auth); document.getElementById('loading-overlay').style.display = 'none'; } 
+            catch (e) { console.error("Auth Error:", e); }
         };
         initAuth();
 
+        // Utilities Cloudinary y ID
         async function uploadToCloudinary(file) {
             if(!file) return null;
             const fd = new FormData(); fd.append('file', file); fd.append('upload_preset', UPLOAD_PRESET);
@@ -491,7 +495,7 @@
                 const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, { method: 'POST', body: fd });
                 const data = await res.json();
                 return data.secure_url; 
-            } catch(e) { console.error("Cloudinary Error", e); return null; }
+            } catch(e) { return null; }
         }
 
         async function getNextFCI() {
@@ -739,60 +743,7 @@
             document.getElementById('reunion-container').style.display = 'none';
         }
 
-        window.firmarPaso = async () => {
-            const s = selectedDocData;
-            const nIdx = s.idx + 1;
-            const nEst = nIdx < 4 ? PASOS_NOMBRES[nIdx] : "Aprobado Final";
-            
-            await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), {
-                idx: nIdx, estado: nEst,
-                chat: arrayUnion({u: currentUser.nombre, m: `✅ APROBADO FASE: ${nEst}`, t: new Date().toLocaleString()})
-            });
-
-            // NOTIFICAR A TODOS
-            const dest = await getDestinatariosUnificados(s);
-            sendNotification(dest, `Avance: ${s.customId}`, `La solicitud avanzó a: ${nEst}.`);
-
-            closeModal();
-        };
-
-        document.getElementById('btnConfirmAction').onclick = async () => {
-            const txt = document.getElementById('m-extra-input').value;
-            const f = document.getElementById('m-file-gestion');
-            
-            let mensajeFinal = "";
-            let nEst = "";
-
-            if (tempAction === "Respuesta") {
-                mensajeFinal = `Respuesta del Usuario: ${txt}`;
-                nEst = "Respuesta Recibida"; 
-            } else {
-                mensajeFinal = `${tempAction}: ${txt}`;
-                if(tempAction === 'Reunión') {
-                    const fechaReunion = document.getElementById('m-date-meeting').value;
-                    if(!fechaReunion) { alert("Por favor selecciona una fecha para la reunión"); return; }
-                    mensajeFinal += `\n📅 Fecha Agendada: ${fechaReunion.replace('T', ' ')}`;
-                }
-                nEst = tempAction === 'Rechazado' ? 'Rechazado' : `En ${tempAction}`;
-            }
-
-            let b64 = f.files[0] ? await uploadToCloudinary(f.files[0]) : null;
-            
-            await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), {
-                estado: nEst,
-                chat: arrayUnion({u: currentUser.nombre, m: mensajeFinal, archivo: b64, t: new Date().toLocaleString()})
-            });
-
-            // NOTIFICAR A TODOS
-            const dest = await getDestinatariosUnificados(selectedDocData);
-            sendNotification(dest, `Actualización: ${selectedDocData.customId}`, mensajeFinal);
-
-            document.getElementById('m-input-area').style.display = 'none';
-            closeModal();
-        };
-
-        window.rechazar = () => { tempAction = 'Rechazado'; document.getElementById('m-input-area').style.display='block'; document.getElementById('reunion-container').style.display = 'none'; };
-
+        // 3. NUEVA SOLICITUD (Notifica a TODOS desde el inicio)
         document.getElementById('btnSendSol').onclick = async () => {
             const tit = document.getElementById('sol-tit').value;
             const gerTarget = document.getElementById('sol-ger').value;
@@ -815,7 +766,7 @@
                 ver_ref: document.getElementById('sol-ver-prev').value,
                 fecha_ref: document.getElementById('sol-fecha-prev').value,
                 solicitante: currentUser.nombre,
-                solicitante_email: currentUser.email, 
+                solicitante_email: currentUser.email, // Guarda email del creador
                 uid: currentUser.usuario,
                 idx: 0,
                 estado: "Pendiente",
@@ -826,13 +777,67 @@
 
             await addDoc(collection(db, "artifacts", appId, "public", "data", "Solicitudes"), data);
             
-            // NOTIFICAR A TODOS LOS INVOLUCRADOS
-            const dest = await getDestinatariosUnificados(data);
-            sendNotification(dest, "Nueva Solicitud Creada", `El usuario ${currentUser.nombre} ha creado la solicitud ${fci}: ${tit}`);
+            // AQUI ESTÁ EL AJUSTE: Calcula destinatarios y envía
+            const destinatarios = await getDatosEnvio(data);
+            sendNotification(destinatarios, "Nueva Solicitud Creada", `El usuario ${currentUser.nombre} ha creado la solicitud ${fci}: ${tit} para la gerencia ${gerTarget}.`);
 
             document.getElementById('loading-overlay').style.display = 'none';
             alert("Solicitud Creada: " + fci);
             cambiarVista('sec-hist', document.getElementById('nav-hist'));
+        };
+
+        // 4. FIRMAR ETAPA (Notifica a TODOS del avance)
+        window.firmarPaso = async () => {
+            const s = selectedDocData;
+            const nIdx = s.idx + 1;
+            const nEst = nIdx < 4 ? PASOS_NOMBRES[nIdx] : "Aprobado Final";
+            
+            await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), {
+                idx: nIdx, estado: nEst,
+                chat: arrayUnion({u: currentUser.nombre, m: `✅ APROBADO FASE: ${nEst}`, t: new Date().toLocaleString()})
+            });
+
+            // AQUI ESTÁ EL AJUSTE
+            const destinatarios = await getDatosEnvio(s);
+            sendNotification(destinatarios, `Avance: ${s.customId}`, `La solicitud ha avanzado al estado: ${nEst}.`);
+
+            closeModal();
+        };
+
+        // 5. RESPONDER / GESTIONAR / RECHAZAR (Notifica a TODOS del cambio)
+        document.getElementById('btnConfirmAction').onclick = async () => {
+            const txt = document.getElementById('m-extra-input').value;
+            const f = document.getElementById('m-file-gestion');
+            
+            let mensajeFinal = "";
+            let nEst = "";
+
+            if (tempAction === "Respuesta") {
+                mensajeFinal = `Respuesta del Usuario: ${txt}`;
+                nEst = "Respuesta Recibida"; 
+            } else {
+                mensajeFinal = `${tempAction}: ${txt}`;
+                if(tempAction === 'Reunión') {
+                    const fechaReunion = document.getElementById('m-date-meeting').value;
+                    if(!fechaReunion) { alert("Selecciona fecha y hora"); return; }
+                    mensajeFinal += `\n📅 Fecha: ${fechaReunion.replace('T', ' ')}`;
+                }
+                nEst = tempAction === 'Rechazado' ? 'Rechazado' : `En ${tempAction}`;
+            }
+
+            let b64 = f.files[0] ? await uploadToCloudinary(f.files[0]) : null;
+            
+            await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), {
+                estado: nEst,
+                chat: arrayUnion({u: currentUser.nombre, m: mensajeFinal, archivo: b64, t: new Date().toLocaleString()})
+            });
+
+            // AQUI ESTÁ EL AJUSTE: Usamos la función maestra
+            const destinatarios = await getDatosEnvio(selectedDocData);
+            sendNotification(destinatarios, `Actualización: ${selectedDocData.customId}`, mensajeFinal);
+
+            document.getElementById('m-input-area').style.display = 'none';
+            closeModal();
         };
 
         document.getElementById('btnSaveUser').onclick = async () => {
