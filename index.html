@@ -47,7 +47,7 @@
         
         label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 6px; display: block; letter-spacing: 0.5px; }
         input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 15px; font-size: 14px; background: #fdfdfd; color: inherit; }
-        input:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
+        input:disabled { background: #e2e8f0; color: #475569; cursor: not-allowed; font-weight: 600; }
 
         .btn { padding: 12px 20px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; font-size: 13px; }
         .btn-primary { background: var(--primary); color: white; }
@@ -215,8 +215,25 @@
                 <input type="text" id="sol-tit">
                 
                 <div class="grid-2">
-                    <div><label>Gerencia</label><select id="sol-ger"></select></div>
-                    <div><label>Departamento</label><select id="sol-dep"></select></div>
+                    <div>
+                        <label>Gerencia (Selecciona para ver Gerente)</label>
+                        <select id="sol-ger"></select>
+                    </div>
+                    <div>
+                        <label>Departamento</label>
+                        <select id="sol-dep"></select>
+                    </div>
+                </div>
+
+                <div class="grid-2" style="background:#f0fdf4; padding:15px; border-radius:10px; margin-bottom:15px; border:1px solid #bbf7d0;">
+                    <div>
+                        <label style="color:#166534">Gerente Responsable</label>
+                        <input type="text" id="sol-gerente-display" disabled style="background:transparent; border:none; font-weight:bold; color:#15803d; padding:0;">
+                    </div>
+                    <div>
+                        <label style="color:#166534">Email Notificación</label>
+                        <input type="text" id="sol-email-gerente" disabled style="background:transparent; border:none; font-weight:bold; color:#15803d; padding:0;">
+                    </div>
                 </div>
                 
                 <label>Justificación / Motivo</label>
@@ -396,7 +413,6 @@
           appId: "1:709030283072:web:5997837b36a448e9515ca5"
         };
 
-        // EMAILJS: TUS DATOS
         const EMAIL_SERVICE_ID = "service_a7yozqh"; 
         const EMAIL_TEMPLATE_ID = "template_7hlhnt8"; 
         const EMAIL_PUBLIC_KEY = "2jVnfkJKKG0bpKN-U"; 
@@ -419,6 +435,7 @@
         let selectedId = null;
         let selectedDocData = null; 
         let tempAction = "";
+        let allUsers = []; // ARRAY GLOBAL DE USUARIOS PARA BÚSQUEDA RÁPIDA
         const PASOS_NOMBRES = ["Documentado", "Verificado", "Aprobado SGC", "Aprobado Gerencia"];
 
         // ==========================================
@@ -437,7 +454,6 @@
                     );
                     const snap = await getDocs(q);
                     if(!snap.empty) {
-                        // Obtenemos el correo del gerente encontrado
                         managerEmail = snap.docs[0].data().email || "";
                         console.log("Gerente encontrado para CC:", managerEmail);
                     }
@@ -558,7 +574,7 @@
             const path = (c) => collection(db, "artifacts", appId, "public", "data", c);
 
             onSnapshot(path("Gerencias"), s => {
-                let h = "", l = "";
+                let h = "<option value=''>-- Seleccionar --</option>", l = "";
                 s.forEach(d => {
                     h += `<option value="${d.data().nombre}">${d.data().nombre}</option>`;
                     l += `<div style="display:flex;justify-content:space-between;padding:5px;">${d.data().nombre}<span style="color:red;cursor:pointer" onclick="del('Gerencias','${d.id}')">X</span></div>`;
@@ -581,8 +597,12 @@
             onSnapshot(path("Usuarios"), s => {
                 const tb = document.getElementById('table-users').querySelector('tbody');
                 tb.innerHTML = "";
+                allUsers = []; // LIMPIAR LISTA GLOBAL
+                
                 s.forEach(d => {
                     const u = d.data();
+                    allUsers.push(u); // GUARDAR EN MEMORIA PARA BÚSQUEDA RÁPIDA
+                    
                     const jsonUser = JSON.stringify(u).replace(/"/g, '&quot;');
                     tb.innerHTML += `
                         <tr>
@@ -629,6 +649,21 @@
                 document.getElementById('dash-ok').innerText = stats.o;
             });
         }
+
+        // --- LISTENER PARA DETECTAR GERENTE AUTOMÁTICAMENTE ---
+        document.getElementById('sol-ger').addEventListener('change', (e) => {
+            const gerenciaSeleccionada = e.target.value;
+            // Buscar en el array global allUsers
+            const gerente = allUsers.find(u => u.gerencia === gerenciaSeleccionada && u.permisos && u.permisos.p_ger_apr === true);
+            
+            if (gerente) {
+                document.getElementById('sol-gerente-display').value = gerente.nombre;
+                document.getElementById('sol-email-gerente').value = gerente.email || "Sin Email";
+            } else {
+                document.getElementById('sol-gerente-display').value = "No asignado / No encontrado";
+                document.getElementById('sol-email-gerente').value = "";
+            }
+        });
 
         window.cargarUsuarioParaEditar = (userStr) => {
             const u = JSON.parse(userStr);
@@ -754,6 +789,9 @@
             let url = f.files[0] ? await uploadToCloudinary(f.files[0]) : null;
             const fci = await getNextFCI();
 
+            // TOMAR EL EMAIL DEL GERENTE DESDE EL CAMPO VISIBLE (Detectado automáticamente)
+            const gerenteEmailVisible = document.getElementById('sol-email-gerente').value;
+
             const data = {
                 customId: fci,
                 titulo: tit,
@@ -777,8 +815,12 @@
 
             await addDoc(collection(db, "artifacts", appId, "public", "data", "Solicitudes"), data);
             
-            // AQUI ESTÁ EL AJUSTE: Calcula destinatarios y envía
-            const destinatarios = await getDatosEnvio(data);
+            // PREPARAR ENVÍO CON GERENTE DETECTADO
+            const destinatarios = {
+                to: [EMAIL_ADMIN_SGC, EMAIL_GRUPO_SGC, currentUser.email].join(','),
+                cc: gerenteEmailVisible // Usamos el que se mostró en pantalla
+            };
+
             sendNotification(destinatarios, "Nueva Solicitud Creada", `El usuario ${currentUser.nombre} ha creado la solicitud ${fci}: ${tit} para la gerencia ${gerTarget}.`);
 
             document.getElementById('loading-overlay').style.display = 'none';
