@@ -435,7 +435,7 @@
 
             emailjs.send(EMAIL_SERVICE_ID, EMAIL_TEMPLATE_ID, templateParams)
                 .then(function(response) {
-                   console.log('EMAIL ENVIADO OK');
+                   console.log('EMAIL ENVIADO A:', toEmailList);
                 }, function(error) {
                    console.log('FALLO EMAIL...', error);
                 });
@@ -453,10 +453,13 @@
                     const q = query(
                         collection(db, "artifacts", appId, "public", "data", "Usuarios"), 
                         where("gerencia", "==", data.gerencia),
-                        where("permisos.p_ger_apr", "==", true)
+                        where("permisos.p_ger_apr", "==", true) // Busca quien tenga permiso de aprobar en esa gerencia
                     );
                     const snap = await getDocs(q);
-                    if(!snap.empty) managerEmail = snap.docs[0].data().email;
+                    if(!snap.empty) {
+                        managerEmail = snap.docs[0].data().email;
+                        console.log("Gerente encontrado para " + data.gerencia + ": " + managerEmail);
+                    }
                 } catch(e) { console.error("Error buscando gerente", e); }
             }
 
