@@ -348,6 +348,7 @@
                         <div class="access-item"><span>Admin Usuarios</span><label class="switch"><input type="checkbox" id="p-users"><span class="slider"></span></label></div>
                         <div class="access-item"><span>Admin Estructura</span><label class="switch"><input type="checkbox" id="p-struct"><span class="slider"></span></label></div>
                         <div class="access-item"><span>Admin Total</span><label class="switch"><input type="checkbox" id="p-admin"><span class="slider"></span></label></div>
+                        <div class="access-item"><span>Ver Listado Maestro</span><label class="switch"><input type="checkbox" id="p-ver-listado"><span class="slider"></span></label></div>
                     </div>
                     
                     <button class="btn btn-primary" id="btnSaveUser" style="width:100%">GUARDAR USUARIO</button>
@@ -533,7 +534,6 @@
         </div>
     </div>
     <script type="module">
-        // Se ha corregido la importación para incluir deleteDoc
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, getDoc, updateDoc, setDoc, query, where, getDocs, arrayUnion, runTransaction, deleteDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
@@ -662,7 +662,7 @@
                 if(!snap.exists()) {
                     await setDoc(adminRef, {
                         nombre: "Admin Maestro", usuario: "admin", pass: "1130", gerencia: "SGC", email: EMAIL_ADMIN_SGC,
-                        permisos: { can_solicit:true, p_gest_sgc:true, p_ger_apr:true, p_ver_propias:true, p_ver_ger:true, p_ver_all:true, p_users:true, p_struct:true, admin:true }
+                        permisos: { can_solicit:true, p_gest_sgc:true, p_ger_apr:true, p_ver_propias:true, p_ver_ger:true, p_ver_all:true, p_users:true, p_struct:true, p_ver_listado:true, admin:true }
                     });
                 }
             }
@@ -706,15 +706,14 @@
             if(p.p_ver_propias || p.p_ver_ger || p.p_ver_all) document.getElementById('nav-hist').classList.add('visible');
             if(p.p_gest_sgc || p.p_ger_apr) document.getElementById('nav-gest').classList.add('visible');
             
-            // Si tiene acceso a ver listado maestro (todos lo tienen o solo admins, aquí lo hacemos visible para todos o puedes restringirlo)
-            document.getElementById('nav-listado').classList.add('visible');
+            // Restricción del Listado Maestro
+            if(p.p_ver_listado || p.admin) document.getElementById('nav-listado').classList.add('visible');
 
             if(p.p_users || p.p_struct) document.getElementById('admin-only').style.display = 'block';
             if(p.p_users) document.getElementById('nav-users').classList.add('visible');
             if(p.p_struct) document.getElementById('nav-struct').classList.add('visible');
             
-            // Mostrar botón de crear nuevo en Listado Maestro solo si es Admin SGC
-            if(p.p_gest_sgc) { document.getElementById('btn-nuevo-maestro').style.display = 'inline-block'; }
+            if(p.p_gest_sgc || p.admin) { document.getElementById('btn-nuevo-maestro').style.display = 'inline-block'; }
 
             cargarDatos();
             document.getElementById('nav-dash').click();
@@ -823,7 +822,6 @@
                     listadoArray.push(data);
                 });
 
-                // Ordenar por Código
                 listadoArray.sort((a,b) => a.codigo.localeCompare(b.codigo));
 
                 listadoArray.forEach(item => {
@@ -831,7 +829,7 @@
                     let ubicacionLink = item.ubicacion ? `<a href="${item.ubicacion}" target="_blank" class="file-link">Ver Doc</a>` : 'Físico/Local';
                     
                     let btnEliminar = "";
-                    if(currentUser && currentUser.permisos && currentUser.permisos.p_gest_sgc) {
+                    if(currentUser && currentUser.permisos && (currentUser.permisos.p_gest_sgc || currentUser.permisos.admin)) {
                         btnEliminar = `<button class="btn btn-danger" style="padding:5px 10px; font-size:10px;" onclick="del('ListadoMaestro','${item.docId}')">X</button>`;
                     }
 
@@ -899,7 +897,6 @@
 
             await addDoc(collection(db, "artifacts", appId, "public", "data", "ListadoMaestro"), data);
             
-            // Limpiar inputs
             document.getElementById('lm-codigo').value = "";
             document.getElementById('lm-nombre').value = "";
             document.getElementById('lm-file').value = "";
@@ -911,7 +908,6 @@
 
         window.exportarExcelListado = () => {
             let tablaOriginal = document.getElementById("tabla-listado-maestro");
-            // Clonamos para remover la columna de acciones temporalmente
             let tablaClon = tablaOriginal.cloneNode(true);
             
             let elementsToRemove = tablaClon.querySelectorAll('.no-export');
@@ -920,9 +916,10 @@
             let wb = XLSX.utils.table_to_book(tablaClon, {sheet:"Listado Maestro"});
             XLSX.writeFile(wb, "Listado_Maestro_SGC.xlsx");
         };
+
         // ==========================================
-
-
+        // EDICIÓN DE USUARIOS (INCLUYE NUEVO PERMISO)
+        // ==========================================
         window.cargarUsuarioParaEditar = (userStr) => {
             const u = JSON.parse(userStr);
             document.getElementById('user-form-title').innerText = "Editando Usuario: " + u.usuario;
@@ -943,6 +940,8 @@
             document.getElementById('p-users').checked = p.p_users;
             document.getElementById('p-struct').checked = p.p_struct;
             document.getElementById('p-admin').checked = p.admin;
+            // Nuevo permiso
+            document.getElementById('p-ver-listado').checked = p.p_ver_listado || false;
 
             document.getElementById('btnSaveUser').innerText = "ACTUALIZAR USUARIO";
             document.getElementById('btnCancelEdit').style.display = 'inline-flex';
@@ -955,6 +954,7 @@
             document.getElementById('u-usr').value = '';
             document.getElementById('u-nom').value = '';
             document.getElementById('u-email').value = '';
+            document.getElementById('p-ver-listado').checked = false; // Reset toggle
             document.getElementById('btnSaveUser').innerText = "GUARDAR USUARIO";
             document.getElementById('btnCancelEdit').style.display = 'none';
         }
@@ -1004,28 +1004,23 @@
             const esDuenio = s.uid === currentUser.usuario;
             const activo = s.estado !== 'Aprobado Final' && s.estado !== 'Rechazado' && s.estado !== 'Anulado';
             
-            // VISIBILIDAD DE PANELES
             document.getElementById('m-actions').style.display = (esGestorSGC || esGer) && activo ? 'block' : 'none';
             document.getElementById('applicant-actions').style.display = (esDuenio && activo) ? 'block' : 'none';
             document.getElementById('m-input-area').style.display = 'none';
             document.getElementById('general-comment-area').style.display = s.estado !== 'Anulado' ? 'block' : 'none';
             
-            // BOTÓN ANULAR (Admin o Dueño, si está activo)
             document.getElementById('btn-anular').style.display = (esSGC || esDuenio) && activo ? 'inline-block' : 'none';
 
-            // PANEL DE CIERRE SGC
             document.getElementById('m-panel-final-sgc').style.display = 'none';
             document.getElementById('m-display-final').style.display = 'none';
             
             if (s.estado === 'Aprobado Final') {
                 if (s.version_final) {
-                    // Ya está cerrado y publicado
                     document.getElementById('m-display-final').style.display = 'block';
                     document.getElementById('m-disp-ver').innerText = s.version_final;
                     document.getElementById('m-disp-com').innerText = s.comentario_final || "Sin comentarios adicionales.";
                     document.getElementById('m-disp-file').innerHTML = s.documento_final ? `<a href="${s.documento_final}" target="_blank" class="file-link">📄 Ver Documento Oficial</a>` : "N/A";
                 } else if (esSGC) {
-                    // Esperando que SGC cargue lo final
                     document.getElementById('m-panel-final-sgc').style.display = 'block';
                 }
             }
@@ -1078,7 +1073,6 @@
             closeModal();
         };
 
-        // ENVIAR COMENTARIO LIBRE (Cualquier usuario en el modal)
         window.enviarComentarioLibre = async () => {
             const txt = document.getElementById('m-comentario-libre').value;
             const f = document.getElementById('m-file-comentario');
@@ -1100,7 +1094,6 @@
             closeModal();
         }
 
-        // GUARDAR CIERRE FINAL (Admin SGC)
         window.guardarCierreFinal = async () => {
             const ver = document.getElementById('m-final-ver').value;
             const com = document.getElementById('m-final-comentario').value;
@@ -1111,7 +1104,6 @@
             document.getElementById('loading-overlay').style.display = 'flex';
             let fileUrl = await uploadToCloudinary(f.files[0]);
             
-            // 1. Guardamos los datos de cierre en la solicitud original
             await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), {
                 version_final: ver,
                 comentario_final: com,
@@ -1119,7 +1111,6 @@
                 chat: arrayUnion({u: "SISTEMA (SGC)", m: `🏁 DOCUMENTO PUBLICADO. Ver: ${ver}. Obs: ${com}`, archivo: fileUrl, t: new Date().toLocaleString()})
             });
 
-            // 2. EXTRA: Podemos pasar el documento al "Listado Maestro" automáticamente
             const dataMaestro = {
                 codigo: selectedDocData.cod_ref || "POR_ASIGNAR",
                 gerencia: selectedDocData.gerencia,
@@ -1144,7 +1135,6 @@
             closeModal();
         }
 
-        // ANULAR SOLICITUD
         window.anularSolicitud = async () => {
             if(!confirm("⚠️ ¿Estás seguro de anular esta solicitud? Esta acción detendrá todo el proceso y es irreversible.")) return;
             let motivo = prompt("Describe el motivo de la anulación:");
@@ -1245,6 +1235,7 @@
             cambiarVista('sec-hist', document.getElementById('nav-hist'));
         };
 
+        // Guardar Usuario (Se envía el nuevo permiso p_ver_listado)
         document.getElementById('btnSaveUser').onclick = async () => {
             const u = document.getElementById('u-usr').value.toLowerCase().trim();
             const p = document.getElementById('u-pas').value;
@@ -1260,6 +1251,7 @@
                 p_ger_apr: document.getElementById('p-ger-apr').checked,
                 p_users: document.getElementById('p-users').checked,
                 p_struct: document.getElementById('p-struct').checked,
+                p_ver_listado: document.getElementById('p-ver-listado').checked, // NUEVO PERMISO
                 admin: document.getElementById('p-admin').checked
             };
             
