@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGC Pro Platinum | Gestión Integral</title>
+    <title>Sistema de Gestón</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
@@ -61,8 +61,10 @@
         .btn-ghost { background: #f1f5f9; color: #475569; }
 
         table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; padding: 15px; background: #f8fafc; border-bottom: 2px solid var(--border); font-size: 11px; color: #64748b; text-transform: uppercase; }
+        th { text-align: left; padding: 15px; background: #f8fafc; border-bottom: 2px solid var(--border); font-size: 11px; color: #64748b; text-transform: uppercase; white-space: nowrap; }
         td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+        
+        .table-responsive { overflow-x: auto; width: 100%; }
 
         .badge { padding: 4px 10px; border-radius: 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
         .badge-info { background: #e0f2fe; color: #0369a1; }
@@ -265,7 +267,9 @@
                 <div style="padding: 0 15px;">
                     <input type="text" id="search-hist" class="search-bar" placeholder="🔍 Buscar por ID, Título o Estado..." onkeyup="filtrarTabla('search-hist', 'tbody-historial')">
                 </div>
-                <table><thead><tr><th>ID</th><th>Documento</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="tbody-historial"></tbody></table>
+                <div class="table-responsive">
+                    <table><thead><tr><th>ID</th><th>Documento</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="tbody-historial"></tbody></table>
+                </div>
             </div>
         </section>
 
@@ -275,50 +279,44 @@
                 <div style="padding: 0 15px;">
                     <input type="text" id="search-gest" class="search-bar" placeholder="🔍 Buscar por ID, Título, Solicitante..." onkeyup="filtrarTabla('search-gest', 'tbody-gestionar')">
                 </div>
-                <table><thead><tr><th>ID</th><th>Solicitante</th><th>Documento</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="tbody-gestionar"></tbody></table>
+                <div class="table-responsive">
+                    <table><thead><tr><th>ID</th><th>Solicitante</th><th>Documento</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="tbody-gestionar"></tbody></table>
+                </div>
             </div>
         </section>
 
         <section id="sec-listado" class="section">
-            <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
                 <div>
                     <h1>Listado Maestro</h1>
                     <p style="color:#64748b; font-size:12px;">Control centralizado de documentos aprobados</p>
                 </div>
-                <div style="display:flex; gap:10px;">
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
                     <button class="btn btn-success" onclick="exportarExcelListado()">
                         <span class="material-icons-round" style="font-size:16px;">table_view</span> Exportar a Excel
                     </button>
+                    <input type="file" id="import-excel-file" accept=".xlsx, .xls" style="display:none;">
+                    <label for="import-excel-file" class="btn btn-warning" id="btn-import-maestro" style="display:none; cursor:pointer; margin:0;">
+                        <span class="material-icons-round" style="font-size:16px;">upload_file</span> Cargar Excel (Plantilla)
+                    </label>
                     <button class="btn btn-primary" id="btn-nuevo-maestro" onclick="abrirModalListadoMaestro()" style="display:none;">
-                        + Nuevo Registro Manual
+                        + Nuevo Registro
                     </button>
                 </div>
             </div>
 
-            <div class="card" style="padding:0; padding-top:15px; overflow-x:auto; margin-top:20px;">
+            <div class="card" style="padding:0; padding-top:15px; margin-top:20px;">
                 <div style="padding: 0 15px;">
-                    <input type="text" id="search-maestro" class="search-bar" placeholder="🔍 Buscar código, nombre, tipo..." onkeyup="filtrarTabla('search-maestro', 'tbody-listado-maestro')">
+                    <input type="text" id="search-maestro" class="search-bar" placeholder="🔍 Buscar en el listado maestro..." onkeyup="filtrarTabla('search-maestro', 'tbody-listado-maestro')">
                 </div>
-                <table id="tabla-listado-maestro">
-                    <thead>
-                        <tr>
-                            <th>Código</th>
-                            <th>Gerencia</th>
-                            <th>Departamento</th>
-                            <th>Tipo de documento</th>
-                            <th>Nombre del documento</th>
-                            <th>Fecha de Creación</th>
-                            <th>Fecha última versión</th>
-                            <th>Versión</th>
-                            <th>Ubicación del Documento</th>
-                            <th>Estatus</th>
-                            <th>Código Anterior</th>
-                            <th class="no-export">Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbody-listado-maestro">
-                        </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table id="tabla-listado-maestro" style="white-space:nowrap;">
+                        <thead id="thead-listado-maestro">
+                            </thead>
+                        <tbody id="tbody-listado-maestro">
+                            </tbody>
+                    </table>
+                </div>
             </div>
         </section>
         <section id="sec-usuarios" class="section">
@@ -354,7 +352,7 @@
                     <button class="btn btn-primary" id="btnSaveUser" style="width:100%">GUARDAR USUARIO</button>
                     <button class="btn btn-ghost" id="btnCancelEdit" style="width:100%; margin-top:5px; display:none;" onclick="resetUserForm()">CANCELAR EDICIÓN</button>
                 </div>
-                <div class="card" style="padding:0; overflow:hidden;">
+                <div class="card table-responsive" style="padding:0;">
                     <table id="table-users"><thead><tr><th>Usuario</th><th>Email</th><th>Rol/Gerencia</th><th>Acciones</th></tr></thead><tbody></tbody></table>
                 </div>
             </div>
@@ -371,6 +369,22 @@
                     <h3>Departamentos</h3>
                     <div style="display:flex; gap:10px; margin:10px 0;"><input type="text" id="d-nom" style="margin:0;"><button class="btn btn-success" id="btnSaveDep">+</button></div>
                     <div id="list-dep"></div>
+                </div>
+            </div>
+            
+            <h3 style="margin:30px 0 15px; color:var(--primary);">Configuración Listado Maestro</h3>
+            <div class="grid-2">
+                <div class="card" style="border: 1px solid var(--accent);">
+                    <h3>Columnas Dinámicas (Tabla Excel)</h3>
+                    <p style="font-size:10px; color:#64748b;">Agrega o elimina columnas de tu base de datos central. Importar un Excel sobreescribirá esto.</p>
+                    <div style="display:flex; gap:10px; margin:10px 0;"><input type="text" id="col-nom" placeholder="Ej: Nueva Columna" style="margin:0;"><button class="btn btn-success" onclick="agregarColumna()">+</button></div>
+                    <div id="list-columnas"></div>
+                </div>
+                <div class="card" style="border: 1px solid var(--warning);">
+                    <h3>Estatus de Documentos</h3>
+                    <p style="font-size:10px; color:#64748b;">Los estados que se pueden seleccionar al editar un documento (Ej: Vigente, Obsoleto).</p>
+                    <div style="display:flex; gap:10px; margin:10px 0;"><input type="text" id="est-nom" style="margin:0;"><button class="btn btn-success" onclick="agregarEstatus()">+</button></div>
+                    <div id="list-estatus"></div>
                 </div>
             </div>
         </section>
@@ -498,37 +512,20 @@
 
     <div class="modal-overlay" id="modal-form-listado">
         <div class="modal-content" style="max-width: 800px; display:block; padding: 30px; height:auto; max-height:90vh; overflow-y:auto;">
-           <h2 style="color:var(--primary); margin-bottom: 20px;">Agregar Registro al Listado Maestro</h2>
+           <h2 style="color:var(--primary); margin-bottom: 20px;" id="lm-modal-title">Agregar Registro al Listado Maestro</h2>
            
-           <div class="grid-2">
-               <div><label>Código de Documento</label><input type="text" id="lm-codigo" placeholder="Ej: FCI-GOP-F-032"></div>
-               <div><label>Gerencia</label><select id="lm-gerencia"></select></div>
-               <div><label>Departamento</label><select id="lm-departamento"></select></div>
-               <div><label>Tipo de Documento</label>
-                    <select id="lm-tipo">
-                        <option>Guía</option><option>Manual</option><option>Instructivo</option><option>Procedimiento</option><option>Formato</option><option>Otros</option>
-                    </select>
-               </div>
-               <div style="grid-column: span 2;"><label>Nombre del Documento</label><input type="text" id="lm-nombre" placeholder="Título completo..."></div>
-               <div><label>Fecha de Creación</label><input type="date" id="lm-fecha-creacion"></div>
-               <div><label>Fecha Última Versión</label><input type="date" id="lm-fecha-version"></div>
-               <div><label>Versión</label><input type="text" id="lm-version" placeholder="Ej: V-01"></div>
-               <div><label>Estatus</label>
-                    <select id="lm-estatus">
-                        <option>Vigente</option>
-                        <option>Obsoleto</option>
-                        <option>En Revisión</option>
-                    </select>
-               </div>
-               <div><label>Código Anterior (Opcional)</label><input type="text" id="lm-codigo-ant" placeholder="Si aplica..."></div>
-               <div style="grid-column: span 2;">
-                   <label style="color:var(--primary)">Ubicación del Documento (Subir Archivo)</label>
-                   <input type="file" id="lm-file" accept=".pdf,.doc,.docx,.xls,.xlsx" style="background:#eff6ff; border: 1px dashed var(--primary);">
+           <div class="grid-2" id="dinamic-form-maestro"></div>
+           
+           <div style="background:#eff6ff; padding:15px; border-radius:10px; margin-top:15px; border:1px dashed var(--primary);">
+               <label style="color:var(--primary); font-size:11px;">Herramienta: Subir archivo y generar URL (Para pegar arriba si es necesario)</label>
+               <div style="display:flex; gap:10px; align-items:center; margin-top:5px;">
+                   <input type="file" id="lm-generic-file" style="margin:0; background:white; flex:1;">
+                   <button class="btn btn-info" onclick="subirArchivoGenericoLM()">Subir y Copiar URL</button>
                </div>
            </div>
-           
+
            <div style="display:flex; gap:10px; margin-top:20px;">
-               <button class="btn btn-primary" onclick="guardarRegistroMaestro()" style="flex:1;">Guardar Registro</button>
+               <button class="btn btn-primary" onclick="guardarRegistroMaestro()" style="flex:1;">Guardar Documento</button>
                <button class="btn btn-dark" onclick="document.getElementById('modal-form-listado').style.display='none'" style="flex:1;">Cancelar</button>
            </div>
         </div>
@@ -536,10 +533,11 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        // IMPORTACIÓN CORREGIDA CON DELETEDOC
         import { getFirestore, collection, addDoc, onSnapshot, doc, getDoc, updateDoc, setDoc, query, where, getDocs, arrayUnion, runTransaction, deleteDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
         // ==========================================
-        //  CONFIGURACIÓN
+        //  CONFIGURACIÓN FIREBASE
         // ==========================================
         const firebaseConfig = {
           apiKey: "AIzaSyDdzCiachuhbE9jATz-TesPI2vUVIJrHjM",
@@ -554,7 +552,6 @@
         const EMAIL_TEMPLATE_ID = "template_7hlhnt8"; 
         const EMAIL_PUBLIC_KEY = "2jVnfkJKKG0bpKN-U"; 
 
-        // --- CORREOS FIJOS ---
         const EMAIL_ADMIN_SGC = "oficinista.archivos@fcipty.com"; 
         const EMAIL_GRUPO_SGC = "actualizacion@fcipty.com"; 
 
@@ -573,10 +570,17 @@
         let selectedDocData = null; 
         let tempAction = "";
         let allUsers = []; 
+        
+        // Variables Listado Maestro
+        let columnasMaestro = [];
+        let estatusMaestro = [];
+        let dataMaestro = [];
+        let editandoMaestroId = null;
+
         const PASOS_NOMBRES = ["Documentado", "Verificado", "Aprobado SGC", "Aprobado Gerencia"];
 
         // ==========================================
-        //  LÓGICA DE CORREOS
+        //  CORREOS
         // ==========================================
         async function getDatosEnvio(solicitudData) {
             let managerEmail = "";
@@ -596,20 +600,13 @@
         function sendNotification(destinatarios, title, message) {
             if(!destinatarios.to) return;
             const templateParams = {
-                title: title,       
-                name: "Sistema SGC",
-                message: message,   
-                to_email: destinatarios.to,   
-                cc_email: destinatarios.cc,   
+                title: title, name: "Sistema SGC", message: message,   
+                to_email: destinatarios.to, cc_email: destinatarios.cc,   
                 time: new Date().toLocaleString()
             };
-
             emailjs.send(EMAIL_SERVICE_ID, EMAIL_TEMPLATE_ID, templateParams).catch(err => console.log('ERROR EMAIL', err));
         }
 
-        // ==========================================
-        //  INICIO DE SESIÓN PERSISTENTE
-        // ==========================================
         const initAuth = async () => {
             try {
                 await signInAnonymously(auth);
@@ -684,7 +681,7 @@
             }
         };
 
-        // Filtro de Tablas Genérico
+        // Búsqueda en Tablas
         window.filtrarTabla = (inputId, tablaId) => {
             const filter = document.getElementById(inputId).value.toLowerCase();
             const rows = document.getElementById(tablaId).getElementsByTagName('tr');
@@ -706,14 +703,17 @@
             if(p.p_ver_propias || p.p_ver_ger || p.p_ver_all) document.getElementById('nav-hist').classList.add('visible');
             if(p.p_gest_sgc || p.p_ger_apr) document.getElementById('nav-gest').classList.add('visible');
             
-            // Restricción del Listado Maestro
-            if(p.p_ver_listado || p.admin) document.getElementById('nav-listado').classList.add('visible');
+            // Acceso Listado Maestro
+            if(p.p_ver_listado || p.admin || p.p_gest_sgc) document.getElementById('nav-listado').classList.add('visible');
 
             if(p.p_users || p.p_struct) document.getElementById('admin-only').style.display = 'block';
             if(p.p_users) document.getElementById('nav-users').classList.add('visible');
             if(p.p_struct) document.getElementById('nav-struct').classList.add('visible');
             
-            if(p.p_gest_sgc || p.admin) { document.getElementById('btn-nuevo-maestro').style.display = 'inline-block'; }
+            if(p.p_gest_sgc || p.admin) { 
+                document.getElementById('btn-nuevo-maestro').style.display = 'inline-block'; 
+                document.getElementById('btn-import-maestro').style.display = 'inline-flex'; 
+            }
 
             cargarDatos();
             document.getElementById('nav-dash').click();
@@ -729,19 +729,15 @@
                     l += `<div style="display:flex;justify-content:space-between;padding:5px;">${d.data().nombre}<span style="color:red;cursor:pointer" onclick="del('Gerencias','${d.id}')">X</span></div>`;
                 });
                 document.getElementById('sol-ger').innerHTML = h;
-                document.getElementById('lm-gerencia').innerHTML = h; // Para modal listado
                 document.getElementById('u-ger-sel').innerHTML = h;
                 document.getElementById('list-ger').innerHTML = l;
             });
 
             onSnapshot(path("Departamentos"), s => {
-                let h = "", l = "";
+                let l = "";
                 s.forEach(d => {
-                    h += `<option value="${d.data().nombre}">${d.data().nombre}</option>`;
                     l += `<div style="display:flex;justify-content:space-between;padding:5px;">${d.data().nombre}<span style="color:red;cursor:pointer" onclick="del('Departamentos','${d.id}')">X</span></div>`;
                 });
-                document.getElementById('sol-dep').innerHTML = h;
-                document.getElementById('lm-departamento').innerHTML = h; // Para modal listado
                 document.getElementById('list-dep').innerHTML = l;
             });
 
@@ -757,102 +753,284 @@
                 });
             });
 
+            // ==========================================
+            // CARGAR CONFIGURACIÓN DINÁMICA (Columnas y Estatus)
+            // ==========================================
+            const docConfigMaestro = doc(db, "artifacts", appId, "public", "data", "Configuracion", "MaestroSettings");
+            onSnapshot(docConfigMaestro, d => {
+                if(d.exists()) {
+                    columnasMaestro = d.data().columnas || ['Código', 'Gerencia', 'Departamento', 'Tipo de documento', 'Nombre del documento', 'Fecha de Creación', 'Fecha última versión', 'Versión', 'Ubicación del Documento', 'Estatus', 'Código Anterior'];
+                    estatusMaestro = d.data().estatus || ['Vigente', 'Obsoleto', 'En Revisión'];
+                } else {
+                    columnasMaestro = ['Código', 'Gerencia', 'Departamento', 'Tipo de documento', 'Nombre del documento', 'Fecha de Creación', 'Fecha última versión', 'Versión', 'Ubicación del Documento', 'Estatus', 'Código Anterior'];
+                    estatusMaestro = ['Vigente', 'Obsoleto', 'En Revisión'];
+                    setDoc(docConfigMaestro, { columnas: columnasMaestro, estatus: estatusMaestro });
+                }
+                renderListasConfig();
+                renderTablaMaestro();
+            });
+
+            // ==========================================
+            // CARGAR SOLICITUDES
+            // ==========================================
             onSnapshot(path("Solicitudes"), s => {
                 const tbHist = document.getElementById('tbody-historial');
                 const tbGest = document.getElementById('tbody-gestionar');
                 tbHist.innerHTML = ""; tbGest.innerHTML = "";
                 let stats = { total:0, p:0, o:0 };
-
                 let solicitudesList = [];
-                s.forEach(d => {
-                    let data = d.data();
-                    data.docId = d.id;
-                    solicitudesList.push(data);
-                });
+                s.forEach(d => { let data = d.data(); data.docId = d.id; solicitudesList.push(data); });
 
-                solicitudesList.sort((a, b) => {
-                    if(a.customId > b.customId) return 1;
-                    if(a.customId < b.customId) return -1;
-                    return 0;
-                });
+                solicitudesList.sort((a, b) => { return a.customId > b.customId ? 1 : -1; });
 
                 solicitudesList.forEach(sol => {
                     const p = currentUser.permisos || {};
-
                     stats.total++;
                     if(sol.estado === 'Pendiente') stats.p++;
                     else if(sol.estado.includes('Aprobado Final')) stats.o++;
 
                     let ver = p.p_ver_all || (p.p_ver_ger && sol.gerencia === currentUser.gerencia) || (p.p_ver_propias && sol.uid === currentUser.usuario);
-                    
                     let badgeClass = 'badge-info';
                     if(sol.estado.includes('Aprobado')) badgeClass = 'badge-success';
                     if(sol.estado === 'Anulado' || sol.estado === 'Rechazado') badgeClass = 'badge-danger';
                     if(sol.estado === 'Pendiente') badgeClass = 'badge-warning';
 
-                    if(ver) {
-                        tbHist.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.titulo}</td><td><span class="badge ${badgeClass}">${sol.estado}</span></td><td><button class="btn btn-ghost" onclick="verDetalle('${sol.docId}')">Ver</button></td></tr>`;
-                    }
+                    if(ver) tbHist.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.titulo}</td><td><span class="badge ${badgeClass}">${sol.estado}</span></td><td><button class="btn btn-ghost" onclick="verDetalle('${sol.docId}')">Ver</button></td></tr>`;
                     
                     let gestionar = false;
                     if(p.p_gest_sgc && sol.idx < 3 && sol.estado !== 'Rechazado' && sol.estado !== 'Aprobado Final' && sol.estado !== 'Anulado') gestionar = true;
                     if(p.p_ger_apr && sol.idx === 3 && sol.gerencia === currentUser.gerencia && sol.estado !== 'Rechazado' && sol.estado !== 'Anulado') gestionar = true;
 
-                    if(gestionar) {
-                        tbGest.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.solicitante}</td><td>${sol.titulo}</td><td><span class="badge ${badgeClass}">${sol.estado}</span></td><td><button class="btn btn-primary" onclick="verDetalle('${sol.docId}')">Gestionar</button></td></tr>`;
-                    }
+                    if(gestionar) tbGest.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.solicitante}</td><td>${sol.titulo}</td><td><span class="badge ${badgeClass}">${sol.estado}</span></td><td><button class="btn btn-primary" onclick="verDetalle('${sol.docId}')">Gestionar</button></td></tr>`;
                 });
-                
                 document.getElementById('dash-total').innerText = stats.total;
                 document.getElementById('dash-pend').innerText = stats.p;
                 document.getElementById('dash-ok').innerText = stats.o;
             });
 
             // ==========================================
-            // CARGAR DATOS DEL LISTADO MAESTRO
+            // CARGAR LISTADO MAESTRO (DATOS)
             // ==========================================
             onSnapshot(path("ListadoMaestro"), s => {
-                const tbListado = document.getElementById('tbody-listado-maestro');
-                tbListado.innerHTML = "";
-                
-                let listadoArray = [];
-                s.forEach(d => {
-                    let data = d.data();
-                    data.docId = d.id;
-                    listadoArray.push(data);
-                });
-
-                listadoArray.sort((a,b) => a.codigo.localeCompare(b.codigo));
-
-                listadoArray.forEach(item => {
-                    let badgeEst = item.estatus === 'Vigente' ? 'badge-success' : (item.estatus === 'Obsoleto' ? 'badge-danger' : 'badge-warning');
-                    let ubicacionLink = item.ubicacion ? `<a href="${item.ubicacion}" target="_blank" class="file-link">Ver Doc</a>` : 'Físico/Local';
-                    
-                    let btnEliminar = "";
-                    if(currentUser && currentUser.permisos && (currentUser.permisos.p_gest_sgc || currentUser.permisos.admin)) {
-                        btnEliminar = `<button class="btn btn-danger" style="padding:5px 10px; font-size:10px;" onclick="del('ListadoMaestro','${item.docId}')">X</button>`;
-                    }
-
-                    tbListado.innerHTML += `
-                        <tr>
-                            <td><b>${item.codigo}</b></td>
-                            <td>${item.gerencia}</td>
-                            <td>${item.departamento}</td>
-                            <td>${item.tipo}</td>
-                            <td>${item.nombre}</td>
-                            <td>${item.fecha_creacion}</td>
-                            <td>${item.fecha_version}</td>
-                            <td><b>${item.version}</b></td>
-                            <td>${ubicacionLink}</td>
-                            <td><span class="badge ${badgeEst}">${item.estatus}</span></td>
-                            <td>${item.codigo_ant || '-'}</td>
-                            <td class="no-export">${btnEliminar}</td>
-                        </tr>
-                    `;
-                });
+                dataMaestro = [];
+                s.forEach(d => { let data = d.data(); data.docId = d.id; dataMaestro.push(data); });
+                renderTablaMaestro();
             });
         }
 
+        // ==========================================
+        //  FUNCIONES DEL LISTADO MAESTRO DINÁMICO
+        // ==========================================
+        
+        window.renderListasConfig = () => {
+            let hCol = "";
+            columnasMaestro.forEach((c, idx) => {
+                hCol += `<div style="display:flex;justify-content:space-between;padding:5px;">${c}<span style="color:red;cursor:pointer" onclick="eliminarColumna(${idx})">X</span></div>`;
+            });
+            document.getElementById('list-columnas').innerHTML = hCol;
+
+            let hEst = "";
+            estatusMaestro.forEach((e, idx) => {
+                hEst += `<div style="display:flex;justify-content:space-between;padding:5px;">${e}<span style="color:red;cursor:pointer" onclick="eliminarEstatus(${idx})">X</span></div>`;
+            });
+            document.getElementById('list-estatus').innerHTML = hEst;
+        }
+
+        window.agregarColumna = async () => {
+            let val = document.getElementById('col-nom').value.trim();
+            if(!val) return;
+            columnasMaestro.push(val);
+            await updateDoc(doc(db, "artifacts", appId, "public", "data", "Configuracion", "MaestroSettings"), { columnas: columnasMaestro });
+            document.getElementById('col-nom').value = "";
+        }
+        window.eliminarColumna = async (idx) => {
+            if(!confirm("¿Eliminar columna? (Los datos en la base no se borran, solo se ocultan)")) return;
+            columnasMaestro.splice(idx, 1);
+            await updateDoc(doc(db, "artifacts", appId, "public", "data", "Configuracion", "MaestroSettings"), { columnas: columnasMaestro });
+        }
+        window.agregarEstatus = async () => {
+            let val = document.getElementById('est-nom').value.trim();
+            if(!val) return;
+            estatusMaestro.push(val);
+            await updateDoc(doc(db, "artifacts", appId, "public", "data", "Configuracion", "MaestroSettings"), { estatus: estatusMaestro });
+            document.getElementById('est-nom').value = "";
+        }
+        window.eliminarEstatus = async (idx) => {
+            estatusMaestro.splice(idx, 1);
+            await updateDoc(doc(db, "artifacts", appId, "public", "data", "Configuracion", "MaestroSettings"), { estatus: estatusMaestro });
+        }
+
+        window.renderTablaMaestro = () => {
+            const thead = document.getElementById("thead-listado-maestro");
+            const tbody = document.getElementById("tbody-listado-maestro");
+            if(!thead || !tbody) return;
+
+            // Render HEAD
+            let headHTML = "<tr>";
+            columnasMaestro.forEach(col => { headHTML += `<th>${col}</th>`; });
+            if(currentUser && currentUser.permisos && (currentUser.permisos.p_gest_sgc || currentUser.permisos.admin)) {
+                headHTML += `<th class="no-export">Acción</th>`;
+            }
+            headHTML += "</tr>";
+            thead.innerHTML = headHTML;
+
+            // Render BODY
+            tbody.innerHTML = "";
+            let dataSort = [...dataMaestro];
+            if(columnasMaestro.length > 0) {
+                let firstCol = columnasMaestro[0];
+                dataSort.sort((a,b) => (a[firstCol]||"").toString().localeCompare(b[firstCol]||""));
+            }
+
+            dataSort.forEach(item => {
+                let rowHTML = "<tr>";
+                columnasMaestro.forEach(col => {
+                    let val = item[col] || "";
+                    if(val.toString().startsWith("http")) {
+                        rowHTML += `<td><a href="${val}" target="_blank" class="file-link">📁 Ver Archivo</a></td>`;
+                    } else if(col.toLowerCase().includes('estatus')) {
+                         let badge = val === 'Vigente' ? 'badge-success' : (val==='Obsoleto'?'badge-danger':'badge-warning');
+                         rowHTML += `<td><span class="badge ${badge}">${val}</span></td>`;
+                    } else {
+                        rowHTML += `<td>${val}</td>`;
+                    }
+                });
+                
+                // Botones de acción solo para admin SGC
+                if(currentUser && currentUser.permisos && (currentUser.permisos.p_gest_sgc || currentUser.permisos.admin)) {
+                    let btnAcciones = `<button class="btn btn-info" style="padding:5px; font-size:10px; margin-right:5px;" onclick="abrirModalListadoMaestro('${item.docId}')">EDITAR</button>`;
+                    btnAcciones += `<button class="btn btn-danger" style="padding:5px 8px; font-size:10px;" onclick="del('ListadoMaestro','${item.docId}')">X</button>`;
+                    rowHTML += `<td class="no-export">${btnAcciones}</td>`;
+                }
+                rowHTML += "</tr>";
+                tbody.innerHTML += rowHTML;
+            });
+        };
+
+        window.abrirModalListadoMaestro = (docId = null) => {
+            editandoMaestroId = docId;
+            document.getElementById('lm-modal-title').innerText = docId ? "Editar Documento Maestro" : "Nuevo Documento Maestro";
+            
+            const container = document.getElementById('dinamic-form-maestro');
+            container.innerHTML = "";
+            
+            let datosEdit = {};
+            if(docId) {
+                const item = dataMaestro.find(x => x.docId === docId);
+                if(item) datosEdit = item;
+            }
+
+            // Generar inputs dinámicos basados en la estructura
+            columnasMaestro.forEach(col => {
+                let val = datosEdit[col] || "";
+                let html = `<div><label>${col}</label>`;
+                
+                if(col.toLowerCase().includes('estatus')) {
+                    html += `<select id="in_dyn_${col}">`;
+                    estatusMaestro.forEach(est => {
+                        html += `<option value="${est}" ${val===est?'selected':''}>${est}</option>`;
+                    });
+                    html += `</select>`;
+                } else if(col.toLowerCase().includes('fecha')) {
+                    html += `<input type="date" id="in_dyn_${col}" value="${val}">`;
+                } else {
+                    html += `<input type="text" id="in_dyn_${col}" value="${val}" placeholder="Escribe aquí...">`;
+                }
+                html += `</div>`;
+                container.innerHTML += html;
+            });
+
+            document.getElementById('modal-form-listado').style.display = 'flex';
+        };
+
+        window.guardarRegistroMaestro = async () => {
+            let data = {};
+            columnasMaestro.forEach(col => {
+                data[col] = document.getElementById(`in_dyn_${col}`).value;
+            });
+
+            document.getElementById('loading-overlay').style.display = 'flex';
+            if(editandoMaestroId) {
+                await updateDoc(doc(db, "artifacts", appId, "public", "data", "ListadoMaestro", editandoMaestroId), data);
+            } else {
+                data.registrado_por = currentUser.nombre;
+                data.fecha_registro = new Date().toISOString();
+                await addDoc(collection(db, "artifacts", appId, "public", "data", "ListadoMaestro"), data);
+            }
+            document.getElementById('loading-overlay').style.display = 'none';
+            document.getElementById('modal-form-listado').style.display = 'none';
+        };
+
+        window.subirArchivoGenericoLM = async () => {
+            const f = document.getElementById('lm-generic-file').files[0];
+            if(!f) return alert("Selecciona un archivo.");
+            document.getElementById('loading-overlay').style.display = 'flex';
+            let url = await uploadToCloudinary(f);
+            document.getElementById('loading-overlay').style.display = 'none';
+            if(url) {
+                // Busca automáticamente algún campo que diga "ubicacion" o "archivo"
+                const inputs = Array.from(document.querySelectorAll("#dinamic-form-maestro input"));
+                const targetInput = inputs.find(el => el.id.toLowerCase().includes('ubicaci') || el.id.toLowerCase().includes('archivo'));
+                if(targetInput) {
+                    targetInput.value = url;
+                    alert("Archivo subido y enlace colocado en el campo correcto automáticamente.");
+                } else {
+                    alert("Archivo subido. Copia este enlace y pégalo en el campo correspondiente:\n" + url);
+                }
+                document.getElementById('lm-generic-file').value = "";
+            }
+        };
+
+        // --- IMPORTACIÓN MÁGICA DE EXCEL ---
+        document.getElementById('import-excel-file').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+            document.getElementById('loading-overlay').style.display = 'flex';
+            const reader = new FileReader();
+            reader.onload = async (evt) => {
+                try {
+                    const data = new Uint8Array(evt.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const sheetName = workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[sheetName];
+                    const json = XLSX.utils.sheet_to_json(sheet, {defval: ""});
+                    
+                    if(json.length > 0) {
+                        // 1. Extraer columnas y GUARDARLAS (Re-estructura la tabla automáticamente)
+                        const colsExcel = Object.keys(json[0]);
+                        await setDoc(doc(db, "artifacts", appId, "public", "data", "Configuracion", "MaestroSettings"), { columnas: colsExcel, estatus: estatusMaestro }, {merge: true});
+                        
+                        // 2. Subir todos los registros masivamente
+                        for(let row of json) {
+                            row.importado_por = currentUser.nombre;
+                            row.fecha_importacion = new Date().toISOString();
+                            await addDoc(collection(db, "artifacts", appId, "public", "data", "ListadoMaestro"), row);
+                        }
+                        alert(`Se importaron ${json.length} registros exitosamente. La tabla se adaptó a las columnas de tu Excel.`);
+                    }
+                } catch(error) {
+                    console.error(error);
+                    alert("Hubo un error leyendo el Excel. Verifica que el archivo no esté corrupto.");
+                }
+                document.getElementById('loading-overlay').style.display = 'none';
+                e.target.value = ''; // reset
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        window.exportarExcelListado = () => {
+            let tablaOriginal = document.getElementById("tabla-listado-maestro");
+            let tablaClon = tablaOriginal.cloneNode(true);
+            let elementsToRemove = tablaClon.querySelectorAll('.no-export');
+            elementsToRemove.forEach(el => el.parentNode.removeChild(el));
+
+            let wb = XLSX.utils.table_to_book(tablaClon, {sheet:"Listado Maestro"});
+            XLSX.writeFile(wb, "Listado_Maestro_SGC.xlsx");
+        };
+
+        // ==========================================
+        // FUNCIONES DE USUARIO Y SOLICITUDES (INTACTAS)
+        // ==========================================
         document.getElementById('sol-ger').addEventListener('change', (e) => {
             const gSelected = e.target.value;
             const gerente = allUsers.find(u => u.gerencia === gSelected && u.permisos && u.permisos.p_ger_apr === true);
@@ -864,100 +1042,6 @@
                 document.getElementById('sol-email-gerente').value = "";
             }
         });
-
-        // ==========================================
-        //  FUNCIONES DEL LISTADO MAESTRO
-        // ==========================================
-        window.abrirModalListadoMaestro = () => { document.getElementById('modal-form-listado').style.display = 'flex'; };
-        
-        window.guardarRegistroMaestro = async () => {
-            const cod = document.getElementById('lm-codigo').value;
-            const nom = document.getElementById('lm-nombre').value;
-            if(!cod || !nom) return alert("Código y Nombre son obligatorios");
-
-            document.getElementById('loading-overlay').style.display = 'flex';
-            const f = document.getElementById('lm-file');
-            let fileUrl = f.files[0] ? await uploadToCloudinary(f.files[0]) : "";
-
-            const data = {
-                codigo: cod,
-                gerencia: document.getElementById('lm-gerencia').value,
-                departamento: document.getElementById('lm-departamento').value,
-                tipo: document.getElementById('lm-tipo').value,
-                nombre: nom,
-                fecha_creacion: document.getElementById('lm-fecha-creacion').value,
-                fecha_version: document.getElementById('lm-fecha-version').value,
-                version: document.getElementById('lm-version').value,
-                estatus: document.getElementById('lm-estatus').value,
-                codigo_ant: document.getElementById('lm-codigo-ant').value,
-                ubicacion: fileUrl,
-                registrado_por: currentUser.nombre,
-                fecha_registro: new Date().toISOString()
-            };
-
-            await addDoc(collection(db, "artifacts", appId, "public", "data", "ListadoMaestro"), data);
-            
-            document.getElementById('lm-codigo').value = "";
-            document.getElementById('lm-nombre').value = "";
-            document.getElementById('lm-file').value = "";
-            
-            document.getElementById('loading-overlay').style.display = 'none';
-            document.getElementById('modal-form-listado').style.display = 'none';
-            alert("Registro agregado al Listado Maestro.");
-        };
-
-        window.exportarExcelListado = () => {
-            let tablaOriginal = document.getElementById("tabla-listado-maestro");
-            let tablaClon = tablaOriginal.cloneNode(true);
-            
-            let elementsToRemove = tablaClon.querySelectorAll('.no-export');
-            elementsToRemove.forEach(el => el.parentNode.removeChild(el));
-
-            let wb = XLSX.utils.table_to_book(tablaClon, {sheet:"Listado Maestro"});
-            XLSX.writeFile(wb, "Listado_Maestro_SGC.xlsx");
-        };
-
-        // ==========================================
-        // EDICIÓN DE USUARIOS (INCLUYE NUEVO PERMISO)
-        // ==========================================
-        window.cargarUsuarioParaEditar = (userStr) => {
-            const u = JSON.parse(userStr);
-            document.getElementById('user-form-title').innerText = "Editando Usuario: " + u.usuario;
-            document.getElementById('u-nom').value = u.nombre;
-            document.getElementById('u-usr').value = u.usuario;
-            document.getElementById('u-usr').disabled = true; 
-            document.getElementById('u-pas').value = u.pass;
-            document.getElementById('u-ger-sel').value = u.gerencia;
-            document.getElementById('u-rol').value = u.role || '';
-            document.getElementById('u-email').value = u.email || '';
-
-            const p = u.permisos;
-            document.getElementById('p-solicitar').checked = p.can_solicit;
-            document.getElementById('p-ver-propias').checked = p.p_ver_propias;
-            document.getElementById('p-ver-ger').checked = p.p_ver_ger;
-            document.getElementById('p-gest-sgc').checked = p.p_gest_sgc;
-            document.getElementById('p-ger-apr').checked = p.p_ger_apr;
-            document.getElementById('p-users').checked = p.p_users;
-            document.getElementById('p-struct').checked = p.p_struct;
-            document.getElementById('p-admin').checked = p.admin;
-            // Nuevo permiso
-            document.getElementById('p-ver-listado').checked = p.p_ver_listado || false;
-
-            document.getElementById('btnSaveUser').innerText = "ACTUALIZAR USUARIO";
-            document.getElementById('btnCancelEdit').style.display = 'inline-flex';
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        };
-
-        window.resetUserForm = () => {
-            document.getElementById('user-form-title').innerText = "Registrar Usuario";
-            document.getElementById('u-usr').disabled = false;
-            document.getElementById('u-usr').value = '';
-            document.getElementById('u-nom').value = '';
-            document.getElementById('u-email').value = '';
-            document.getElementById('p-ver-listado').checked = false; // Reset toggle
-            document.getElementById('btnSaveUser').innerText = "GUARDAR USUARIO";
-            document.getElementById('btnCancelEdit').style.display = 'none';
-        }
 
         window.verDetalle = async (id) => {
             selectedId = id;
@@ -1041,7 +1125,6 @@
         window.gestionar = (tipo) => {
             tempAction = tipo;
             document.getElementById('m-input-area').style.display = 'block';
-            
             if(tipo === 'Reunión') {
                 document.getElementById('reunion-container').style.display = 'block';
                 document.getElementById('m-extra-input').placeholder = 'Tema de la reunión...';
@@ -1111,21 +1194,25 @@
                 chat: arrayUnion({u: "SISTEMA (SGC)", m: `🏁 DOCUMENTO PUBLICADO. Ver: ${ver}. Obs: ${com}`, archivo: fileUrl, t: new Date().toLocaleString()})
             });
 
-            const dataMaestro = {
-                codigo: selectedDocData.cod_ref || "POR_ASIGNAR",
-                gerencia: selectedDocData.gerencia,
-                departamento: selectedDocData.departamento,
-                tipo: selectedDocData.tipoDoc,
-                nombre: selectedDocData.titulo,
-                fecha_creacion: new Date().toISOString().split('T')[0],
-                fecha_version: new Date().toISOString().split('T')[0],
-                version: ver,
+            // Agrega registro automático al listado maestro solo con las columnas que el sistema conozca en ese momento
+            let dataMaestro = {
                 estatus: "Vigente",
-                codigo_ant: selectedDocData.cod_ref || "",
-                ubicacion: fileUrl,
-                registrado_por: "Sistema (Auto)",
+                registrado_por: "Sistema (Automático)",
                 fecha_registro: new Date().toISOString()
             };
+            // Intentar mapear nombres comunes basados en el listado
+            columnasMaestro.forEach(c => {
+                let low = c.toLowerCase();
+                if(low.includes('código') || low === 'codigo') dataMaestro[c] = selectedDocData.cod_ref || "POR_ASIGNAR";
+                else if(low.includes('gerencia')) dataMaestro[c] = selectedDocData.gerencia;
+                else if(low.includes('departamento')) dataMaestro[c] = selectedDocData.departamento;
+                else if(low.includes('tipo')) dataMaestro[c] = selectedDocData.tipoDoc;
+                else if(low.includes('nombre')) dataMaestro[c] = selectedDocData.titulo;
+                else if(low.includes('vers')) dataMaestro[c] = ver;
+                else if(low.includes('ubicaci') || low.includes('archivo') || low.includes('documento')) dataMaestro[c] = fileUrl;
+                else if(low.includes('fecha')) dataMaestro[c] = new Date().toISOString().split('T')[0];
+            });
+
             await addDoc(collection(db, "artifacts", appId, "public", "data", "ListadoMaestro"), dataMaestro);
 
             const dest = await getDatosEnvio(selectedDocData);
@@ -1235,7 +1322,7 @@
             cambiarVista('sec-hist', document.getElementById('nav-hist'));
         };
 
-        // Guardar Usuario (Se envía el nuevo permiso p_ver_listado)
+        // GESTIÓN DE USUARIOS
         document.getElementById('btnSaveUser').onclick = async () => {
             const u = document.getElementById('u-usr').value.toLowerCase().trim();
             const p = document.getElementById('u-pas').value;
