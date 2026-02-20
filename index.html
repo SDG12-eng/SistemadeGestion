@@ -3,11 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestión</title>
+    <title>SGC Pro Platinum | Gestión Integral</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
         :root {
@@ -116,8 +119,8 @@
 
     <div id="login-screen">
         <div class="login-box">
-            <h1 style="color:var(--primary); margin-bottom: 10px; font-weight: 800;">SGC PLATINUM</h1>
-            <p style="color:#64748b; font-size:13px; margin-bottom:30px;">Gestión de Calidad ISO 9001</p>
+            <h1 style="color:var(--primary); margin-bottom: 10px; font-weight: 800;">SISTEMA DE GESTIÓN</h1>
+            <p style="color:#64748b; font-size:13px; margin-bottom:30px;">ISO 9001</p>
             <div style="text-align: left;">
                 <label>Usuario</label>
                 <input type="text" id="login-user" placeholder="Ej: admin">
@@ -131,7 +134,7 @@
     <aside class="sidebar" id="sidebar">
         <div style="padding: 10px 0 30px; display:flex; align-items:center; gap:10px;">
             <span class="material-icons-round" style="color: var(--accent); font-size: 32px;">verified_user</span>
-            <h2 style="font-weight: 800; font-size: 18px;">SGC PRO</h2>
+            <h2 style="font-weight: 800; font-size: 18px;">PANEL PRINCIPAL</h2>
         </div>
         
         <nav style="flex:1">
@@ -146,6 +149,10 @@
             </button>
             <button class="nav-link" id="nav-gest" onclick="cambiarVista('sec-gest', this)">
                 <span class="material-icons-round">fact_check</span> Gestionar Solicitudes
+            </button>
+
+            <button class="nav-link" id="nav-listado" onclick="cambiarVista('sec-listado', this)">
+                <span class="material-icons-round">library_books</span> Listado Maestro
             </button>
             
             <div id="admin-only" style="display:none; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 20px; padding-top: 20px;">
@@ -245,7 +252,7 @@
 
                 <div style="background: #eff6ff; padding: 20px; border-radius: 12px; border: 1px dashed var(--accent); margin-bottom: 20px;">
                     <label style="color:var(--primary)">Adjuntar Archivo (PDF, Excel, Word, Imagen)</label>
-                    <input type="file" id="sol-file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png" style="margin-bottom:0; background:white;">
+                    <input type="file" id="sol-file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.png" style="margin-bottom:0; background:white;">
                 </div>
 
                 <button class="btn btn-primary" id="btnSendSol" style="width:100%; padding: 15px;">ENVIAR A REVISIÓN</button>
@@ -272,6 +279,48 @@
             </div>
         </section>
 
+        <section id="sec-listado" class="section">
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px;">
+                <div>
+                    <h1>Listado Maestro</h1>
+                    <p style="color:#64748b; font-size:12px;">Control centralizado de documentos aprobados</p>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-success" onclick="exportarExcelListado()">
+                        <span class="material-icons-round" style="font-size:16px;">table_view</span> Exportar a Excel
+                    </button>
+                    <button class="btn btn-primary" id="btn-nuevo-maestro" onclick="abrirModalListadoMaestro()" style="display:none;">
+                        + Nuevo Registro Manual
+                    </button>
+                </div>
+            </div>
+
+            <div class="card" style="padding:0; padding-top:15px; overflow-x:auto; margin-top:20px;">
+                <div style="padding: 0 15px;">
+                    <input type="text" id="search-maestro" class="search-bar" placeholder="🔍 Buscar código, nombre, tipo..." onkeyup="filtrarTabla('search-maestro', 'tbody-listado-maestro')">
+                </div>
+                <table id="tabla-listado-maestro">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Gerencia</th>
+                            <th>Departamento</th>
+                            <th>Tipo de documento</th>
+                            <th>Nombre del documento</th>
+                            <th>Fecha de Creación</th>
+                            <th>Fecha última versión</th>
+                            <th>Versión</th>
+                            <th>Ubicación del Documento</th>
+                            <th>Estatus</th>
+                            <th>Código Anterior</th>
+                            <th class="no-export">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-listado-maestro">
+                        </tbody>
+                </table>
+            </div>
+        </section>
         <section id="sec-usuarios" class="section">
             <div class="grid-2">
                 <div class="card">
@@ -446,7 +495,45 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="modal-form-listado">
+        <div class="modal-content" style="max-width: 800px; display:block; padding: 30px; height:auto; max-height:90vh; overflow-y:auto;">
+           <h2 style="color:var(--primary); margin-bottom: 20px;">Agregar Registro al Listado Maestro</h2>
+           
+           <div class="grid-2">
+               <div><label>Código de Documento</label><input type="text" id="lm-codigo" placeholder="Ej: FCI-GOP-F-032"></div>
+               <div><label>Gerencia</label><select id="lm-gerencia"></select></div>
+               <div><label>Departamento</label><select id="lm-departamento"></select></div>
+               <div><label>Tipo de Documento</label>
+                    <select id="lm-tipo">
+                        <option>Guía</option><option>Manual</option><option>Instructivo</option><option>Procedimiento</option><option>Formato</option><option>Otros</option>
+                    </select>
+               </div>
+               <div style="grid-column: span 2;"><label>Nombre del Documento</label><input type="text" id="lm-nombre" placeholder="Título completo..."></div>
+               <div><label>Fecha de Creación</label><input type="date" id="lm-fecha-creacion"></div>
+               <div><label>Fecha Última Versión</label><input type="date" id="lm-fecha-version"></div>
+               <div><label>Versión</label><input type="text" id="lm-version" placeholder="Ej: V-01"></div>
+               <div><label>Estatus</label>
+                    <select id="lm-estatus">
+                        <option>Vigente</option>
+                        <option>Obsoleto</option>
+                        <option>En Revisión</option>
+                    </select>
+               </div>
+               <div><label>Código Anterior (Opcional)</label><input type="text" id="lm-codigo-ant" placeholder="Si aplica..."></div>
+               <div style="grid-column: span 2;">
+                   <label style="color:var(--primary)">Ubicación del Documento (Subir Archivo)</label>
+                   <input type="file" id="lm-file" accept=".pdf,.doc,.docx,.xls,.xlsx" style="background:#eff6ff; border: 1px dashed var(--primary);">
+               </div>
+           </div>
+           
+           <div style="display:flex; gap:10px; margin-top:20px;">
+               <button class="btn btn-primary" onclick="guardarRegistroMaestro()" style="flex:1;">Guardar Registro</button>
+               <button class="btn btn-dark" onclick="document.getElementById('modal-form-listado').style.display='none'" style="flex:1;">Cancelar</button>
+           </div>
+        </div>
+    </div>
     <script type="module">
+        // Se ha corregido la importación para incluir deleteDoc
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, getDoc, updateDoc, setDoc, query, where, getDocs, arrayUnion, runTransaction, deleteDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
@@ -597,7 +684,7 @@
             }
         };
 
-        // Filtro de Tablas
+        // Filtro de Tablas Genérico
         window.filtrarTabla = (inputId, tablaId) => {
             const filter = document.getElementById(inputId).value.toLowerCase();
             const rows = document.getElementById(tablaId).getElementsByTagName('tr');
@@ -618,9 +705,16 @@
             if(p.can_solicit) document.getElementById('nav-crear').classList.add('visible');
             if(p.p_ver_propias || p.p_ver_ger || p.p_ver_all) document.getElementById('nav-hist').classList.add('visible');
             if(p.p_gest_sgc || p.p_ger_apr) document.getElementById('nav-gest').classList.add('visible');
+            
+            // Si tiene acceso a ver listado maestro (todos lo tienen o solo admins, aquí lo hacemos visible para todos o puedes restringirlo)
+            document.getElementById('nav-listado').classList.add('visible');
+
             if(p.p_users || p.p_struct) document.getElementById('admin-only').style.display = 'block';
             if(p.p_users) document.getElementById('nav-users').classList.add('visible');
             if(p.p_struct) document.getElementById('nav-struct').classList.add('visible');
+            
+            // Mostrar botón de crear nuevo en Listado Maestro solo si es Admin SGC
+            if(p.p_gest_sgc) { document.getElementById('btn-nuevo-maestro').style.display = 'inline-block'; }
 
             cargarDatos();
             document.getElementById('nav-dash').click();
@@ -636,6 +730,7 @@
                     l += `<div style="display:flex;justify-content:space-between;padding:5px;">${d.data().nombre}<span style="color:red;cursor:pointer" onclick="del('Gerencias','${d.id}')">X</span></div>`;
                 });
                 document.getElementById('sol-ger').innerHTML = h;
+                document.getElementById('lm-gerencia').innerHTML = h; // Para modal listado
                 document.getElementById('u-ger-sel').innerHTML = h;
                 document.getElementById('list-ger').innerHTML = l;
             });
@@ -647,6 +742,7 @@
                     l += `<div style="display:flex;justify-content:space-between;padding:5px;">${d.data().nombre}<span style="color:red;cursor:pointer" onclick="del('Departamentos','${d.id}')">X</span></div>`;
                 });
                 document.getElementById('sol-dep').innerHTML = h;
+                document.getElementById('lm-departamento').innerHTML = h; // Para modal listado
                 document.getElementById('list-dep').innerHTML = l;
             });
 
@@ -668,7 +764,6 @@
                 tbHist.innerHTML = ""; tbGest.innerHTML = "";
                 let stats = { total:0, p:0, o:0 };
 
-                // 1. Extraer a un arreglo y Ordenar de 1 a Final
                 let solicitudesList = [];
                 s.forEach(d => {
                     let data = d.data();
@@ -682,7 +777,6 @@
                     return 0;
                 });
 
-                // 2. Renderizar ya ordenadas
                 solicitudesList.forEach(sol => {
                     const p = currentUser.permisos || {};
 
@@ -714,6 +808,51 @@
                 document.getElementById('dash-pend').innerText = stats.p;
                 document.getElementById('dash-ok').innerText = stats.o;
             });
+
+            // ==========================================
+            // CARGAR DATOS DEL LISTADO MAESTRO
+            // ==========================================
+            onSnapshot(path("ListadoMaestro"), s => {
+                const tbListado = document.getElementById('tbody-listado-maestro');
+                tbListado.innerHTML = "";
+                
+                let listadoArray = [];
+                s.forEach(d => {
+                    let data = d.data();
+                    data.docId = d.id;
+                    listadoArray.push(data);
+                });
+
+                // Ordenar por Código
+                listadoArray.sort((a,b) => a.codigo.localeCompare(b.codigo));
+
+                listadoArray.forEach(item => {
+                    let badgeEst = item.estatus === 'Vigente' ? 'badge-success' : (item.estatus === 'Obsoleto' ? 'badge-danger' : 'badge-warning');
+                    let ubicacionLink = item.ubicacion ? `<a href="${item.ubicacion}" target="_blank" class="file-link">Ver Doc</a>` : 'Físico/Local';
+                    
+                    let btnEliminar = "";
+                    if(currentUser && currentUser.permisos && currentUser.permisos.p_gest_sgc) {
+                        btnEliminar = `<button class="btn btn-danger" style="padding:5px 10px; font-size:10px;" onclick="del('ListadoMaestro','${item.docId}')">X</button>`;
+                    }
+
+                    tbListado.innerHTML += `
+                        <tr>
+                            <td><b>${item.codigo}</b></td>
+                            <td>${item.gerencia}</td>
+                            <td>${item.departamento}</td>
+                            <td>${item.tipo}</td>
+                            <td>${item.nombre}</td>
+                            <td>${item.fecha_creacion}</td>
+                            <td>${item.fecha_version}</td>
+                            <td><b>${item.version}</b></td>
+                            <td>${ubicacionLink}</td>
+                            <td><span class="badge ${badgeEst}">${item.estatus}</span></td>
+                            <td>${item.codigo_ant || '-'}</td>
+                            <td class="no-export">${btnEliminar}</td>
+                        </tr>
+                    `;
+                });
+            });
         }
 
         document.getElementById('sol-ger').addEventListener('change', (e) => {
@@ -727,6 +866,62 @@
                 document.getElementById('sol-email-gerente').value = "";
             }
         });
+
+        // ==========================================
+        //  FUNCIONES DEL LISTADO MAESTRO
+        // ==========================================
+        window.abrirModalListadoMaestro = () => { document.getElementById('modal-form-listado').style.display = 'flex'; };
+        
+        window.guardarRegistroMaestro = async () => {
+            const cod = document.getElementById('lm-codigo').value;
+            const nom = document.getElementById('lm-nombre').value;
+            if(!cod || !nom) return alert("Código y Nombre son obligatorios");
+
+            document.getElementById('loading-overlay').style.display = 'flex';
+            const f = document.getElementById('lm-file');
+            let fileUrl = f.files[0] ? await uploadToCloudinary(f.files[0]) : "";
+
+            const data = {
+                codigo: cod,
+                gerencia: document.getElementById('lm-gerencia').value,
+                departamento: document.getElementById('lm-departamento').value,
+                tipo: document.getElementById('lm-tipo').value,
+                nombre: nom,
+                fecha_creacion: document.getElementById('lm-fecha-creacion').value,
+                fecha_version: document.getElementById('lm-fecha-version').value,
+                version: document.getElementById('lm-version').value,
+                estatus: document.getElementById('lm-estatus').value,
+                codigo_ant: document.getElementById('lm-codigo-ant').value,
+                ubicacion: fileUrl,
+                registrado_por: currentUser.nombre,
+                fecha_registro: new Date().toISOString()
+            };
+
+            await addDoc(collection(db, "artifacts", appId, "public", "data", "ListadoMaestro"), data);
+            
+            // Limpiar inputs
+            document.getElementById('lm-codigo').value = "";
+            document.getElementById('lm-nombre').value = "";
+            document.getElementById('lm-file').value = "";
+            
+            document.getElementById('loading-overlay').style.display = 'none';
+            document.getElementById('modal-form-listado').style.display = 'none';
+            alert("Registro agregado al Listado Maestro.");
+        };
+
+        window.exportarExcelListado = () => {
+            let tablaOriginal = document.getElementById("tabla-listado-maestro");
+            // Clonamos para remover la columna de acciones temporalmente
+            let tablaClon = tablaOriginal.cloneNode(true);
+            
+            let elementsToRemove = tablaClon.querySelectorAll('.no-export');
+            elementsToRemove.forEach(el => el.parentNode.removeChild(el));
+
+            let wb = XLSX.utils.table_to_book(tablaClon, {sheet:"Listado Maestro"});
+            XLSX.writeFile(wb, "Listado_Maestro_SGC.xlsx");
+        };
+        // ==========================================
+
 
         window.cargarUsuarioParaEditar = (userStr) => {
             const u = JSON.parse(userStr);
@@ -916,6 +1111,7 @@
             document.getElementById('loading-overlay').style.display = 'flex';
             let fileUrl = await uploadToCloudinary(f.files[0]);
             
+            // 1. Guardamos los datos de cierre en la solicitud original
             await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), {
                 version_final: ver,
                 comentario_final: com,
@@ -923,8 +1119,26 @@
                 chat: arrayUnion({u: "SISTEMA (SGC)", m: `🏁 DOCUMENTO PUBLICADO. Ver: ${ver}. Obs: ${com}`, archivo: fileUrl, t: new Date().toLocaleString()})
             });
 
+            // 2. EXTRA: Podemos pasar el documento al "Listado Maestro" automáticamente
+            const dataMaestro = {
+                codigo: selectedDocData.cod_ref || "POR_ASIGNAR",
+                gerencia: selectedDocData.gerencia,
+                departamento: selectedDocData.departamento,
+                tipo: selectedDocData.tipoDoc,
+                nombre: selectedDocData.titulo,
+                fecha_creacion: new Date().toISOString().split('T')[0],
+                fecha_version: new Date().toISOString().split('T')[0],
+                version: ver,
+                estatus: "Vigente",
+                codigo_ant: selectedDocData.cod_ref || "",
+                ubicacion: fileUrl,
+                registrado_por: "Sistema (Auto)",
+                fecha_registro: new Date().toISOString()
+            };
+            await addDoc(collection(db, "artifacts", appId, "public", "data", "ListadoMaestro"), dataMaestro);
+
             const dest = await getDatosEnvio(selectedDocData);
-            sendNotification(dest, `Cierre Exitoso: ${selectedDocData.customId}`, `La solicitud ha sido finalizada y el documento versión ${ver} está publicado.`);
+            sendNotification(dest, `Cierre Exitoso: ${selectedDocData.customId}`, `La solicitud ha sido finalizada y el documento versión ${ver} está publicado y agregado al Listado Maestro.`);
 
             document.getElementById('loading-overlay').style.display = 'none';
             closeModal();
