@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA DE GESTIÓN</title>
+    <title>SGC Pro Platinum | Gestión Integral</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
@@ -49,7 +49,8 @@
         .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
         
         label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 6px; display: block; letter-spacing: 0.5px; }
-        input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 15px; font-size: 14px; background: #fdfdfd; color: inherit; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 15px; font-size: 14px; background: #fdfdfd; color: inherit; outline:none; transition: 0.2s; }
+        input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
         input:disabled { background: #e2e8f0; color: #475569; cursor: not-allowed; font-weight: 600; }
 
         .btn { padding: 12px 20px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; font-size: 13px; }
@@ -59,6 +60,7 @@
         .btn-danger { background: var(--danger); color: white; }
         .btn-info { background: var(--info); color: white; }
         .btn-ghost { background: #f1f5f9; color: #475569; }
+        .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
 
         table { width: 100%; border-collapse: collapse; }
         th { text-align: left; padding: 15px; background: #f8fafc; border-bottom: 2px solid var(--border); font-size: 11px; color: #64748b; text-transform: uppercase; white-space: nowrap; }
@@ -82,6 +84,14 @@
         input:checked + .slider { background-color: var(--accent); }
         input:checked + .slider:before { transform: translateX(16px); }
 
+        /* Diseño Corporativo para Ajustes/Estructura */
+        .settings-list { max-height: 250px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: #fdfdfd; margin-top: 10px; }
+        .settings-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 500; transition: background 0.2s; color: #334155; }
+        .settings-item:last-child { border-bottom: none; }
+        .settings-item:hover { background: #f1f5f9; }
+        .btn-icon-danger { background: none; border: none; color: var(--danger); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: 6px; transition: 0.2s; }
+        .btn-icon-danger:hover { background: #fee2e2; }
+
         /* Modal */
         .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); display: none; align-items: center; justify-content: center; z-index: 4000; backdrop-filter: blur(4px); }
         .modal-content { background: white; width: 95%; max-width: 1200px; height: 90vh; border-radius: 24px; display: grid; grid-template-columns: 1fr 380px; overflow: hidden; }
@@ -98,7 +108,6 @@
         .step.done .step-dot { border-color: var(--success); background: var(--success); color: white; }
         .step label { font-size: 9px; text-transform: uppercase; color: #94a3b8; }
         .step.active label { color: var(--primary); font-weight: 800; }
-        
         .completed .step-dot { background: var(--success); border-color: var(--success); color: white; }
 
         #loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 6000; display: none; align-items: center; justify-content: center; flex-direction: column; }
@@ -116,13 +125,13 @@
 
     <div id="loading-overlay">
         <div class="spinner" style="margin-bottom: 15px;"></div>
-        <h4 style="color:var(--primary)">Cargando...</h4>
+        <h4 style="color:var(--primary)">Procesando...</h4>
     </div>
 
     <div id="login-screen">
         <div class="login-box">
             <h1 style="color:var(--primary); margin-bottom: 10px; font-weight: 800;">SISTEMA DE GESTIÓN</h1>
-            <p style="color:#64748b; font-size:13px; margin-bottom:30px;">ISO 9001</p>
+            <p style="color:#64748b; font-size:13px; margin-bottom:30px;">ISO 9001 - SGC Pro</p>
             <div style="text-align: left;">
                 <label>Usuario</label>
                 <input type="text" id="login-user" placeholder="Ej: admin">
@@ -300,7 +309,7 @@
                         <span class="material-icons-round" style="font-size:16px;">upload_file</span> Cargar Excel (Plantilla)
                     </label>
                     <button class="btn btn-primary" id="btn-nuevo-maestro" onclick="abrirModalListadoMaestro()" style="display:none;">
-                        + Nuevo Registro
+                        <span class="material-icons-round" style="font-size:16px;">add</span> Nuevo Registro
                     </button>
                 </div>
             </div>
@@ -324,29 +333,31 @@
                 <div class="card">
                     <h3 id="user-form-title">Registrar / Editar Usuario</h3>
                     <div class="grid-2">
-                        <div><label>Nombre</label><input type="text" id="u-nom"></div>
-                        <div><label>Usuario ID (Login)</label><input type="text" id="u-usr"></div>
+                        <div><label>Nombre Completo</label><input type="text" id="u-nom"></div>
+                        <div><label>Usuario ID (Login)</label><input type="text" id="u-usr" placeholder="usuario123"></div>
                     </div>
                     <div class="grid-2">
                         <div><label>Contraseña</label><input type="text" id="u-pas" value="123"></div>
                         <div><label>Gerencia</label><select id="u-ger-sel"></select></div>
                     </div>
                     <div class="grid-2">
-                        <div><label>Rol (Texto)</label><input type="text" id="u-rol"></div>
-                        <div><label>Email (Notificaciones)</label><input type="email" id="u-email" placeholder="ejemplo@fcipty.com"></div>
+                        <div><label>Rol (Etiqueta Visual)</label><input type="text" id="u-rol" placeholder="Ej: Especialista SGC"></div>
+                        <div><label>Email Corporativo</label><input type="email" id="u-email" placeholder="ejemplo@fcipty.com"></div>
                     </div>
 
-                    <label>Permisos de Acceso</label>
-                    <div style="border:1px solid #eee; padding:10px; border-radius:10px; margin-bottom:15px; display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
-                        <div class="access-item"><span>Solicitar</span><label class="switch"><input type="checkbox" id="p-solicitar"><span class="slider"></span></label></div>
-                        <div class="access-item"><span>Ver Propias</span><label class="switch"><input type="checkbox" id="p-ver-propias" checked><span class="slider"></span></label></div>
-                        <div class="access-item"><span>Ver Gerencia</span><label class="switch"><input type="checkbox" id="p-ver-ger"><span class="slider"></span></label></div>
-                        <div class="access-item"><span>Admin SGC</span><label class="switch"><input type="checkbox" id="p-gest-sgc"><span class="slider"></span></label></div>
-                        <div class="access-item"><span>Gerente (Aprueba)</span><label class="switch"><input type="checkbox" id="p-ger-apr"><span class="slider"></span></label></div>
+                    <label style="margin-top:10px;">Permisos de Acceso del Usuario</label>
+                    <div style="border:1px solid var(--border); padding:15px; border-radius:10px; margin-bottom:15px; display:grid; grid-template-columns: 1fr 1fr; gap:10px; background:#f8fafc;">
+                        <div class="access-item"><span>Solicitar (Crear)</span><label class="switch"><input type="checkbox" id="p-solicitar"><span class="slider"></span></label></div>
+                        <div class="access-item"><span>Ver Mis Solicitudes</span><label class="switch"><input type="checkbox" id="p-ver-propias" checked><span class="slider"></span></label></div>
+                        <div class="access-item"><span>Ver Solicitudes de Gerencia</span><label class="switch"><input type="checkbox" id="p-ver-ger"><span class="slider"></span></label></div>
+                        <div class="access-item"><span>Gestor SGC (Evalúa pasos 1,2,3)</span><label class="switch"><input type="checkbox" id="p-gest-sgc"><span class="slider"></span></label></div>
+                        <div class="access-item"><span>Gerente (Aprueba final)</span><label class="switch"><input type="checkbox" id="p-ger-apr"><span class="slider"></span></label></div>
                         <div class="access-item"><span>Admin Usuarios</span><label class="switch"><input type="checkbox" id="p-users"><span class="slider"></span></label></div>
                         <div class="access-item"><span>Admin Estructura</span><label class="switch"><input type="checkbox" id="p-struct"><span class="slider"></span></label></div>
-                        <div class="access-item"><span>Admin Total</span><label class="switch"><input type="checkbox" id="p-admin"><span class="slider"></span></label></div>
                         <div class="access-item"><span>Ver Listado Maestro</span><label class="switch"><input type="checkbox" id="p-ver-listado"><span class="slider"></span></label></div>
+                        <div class="access-item" style="grid-column:span 2; border:1px dashed var(--danger); background:#fff5f5;">
+                            <span style="color:var(--danger); font-weight:bold;">Admin Total (Acceso completo)</span><label class="switch"><input type="checkbox" id="p-admin"><span class="slider"></span></label>
+                        </div>
                     </div>
                     
                     <button class="btn btn-primary" id="btnSaveUser" style="width:100%">GUARDAR USUARIO</button>
@@ -359,32 +370,55 @@
         </section>
 
         <section id="sec-estructura" class="section">
+            <h2 style="margin-bottom: 20px; color:var(--primary); display:flex; align-items:center; gap:8px;">
+                <span class="material-icons-round">settings_suggest</span> Configuración del Sistema
+            </h2>
+            
             <div class="grid-2">
-                <div class="card">
-                    <h3>Gerencias</h3>
-                    <div style="display:flex; gap:10px; margin:10px 0;"><input type="text" id="g-nom" style="margin:0;"><button class="btn btn-success" id="btnSaveGer">+</button></div>
-                    <div id="list-ger"></div>
+                <div class="card" style="border-top: 4px solid var(--accent);">
+                    <h3 style="display:flex; align-items:center; gap:5px;"><span class="material-icons-round" style="color:var(--accent);">domain</span> Gerencias</h3>
+                    <p style="font-size:11px; color:#64748b; margin-bottom:10px;">Departamentos principales que evalúan solicitudes.</p>
+                    <div style="display:flex; gap:0; margin-bottom:15px;">
+                        <input type="text" id="g-nom" placeholder="Nueva Gerencia..." style="margin:0; border-radius: 8px 0 0 8px; border-right:none;">
+                        <button class="btn btn-success" id="btnSaveGer" style="border-radius: 0 8px 8px 0;"><span class="material-icons-round">add</span></button>
+                    </div>
+                    <div id="list-ger" class="settings-list"></div>
                 </div>
-                <div class="card">
-                    <h3>Departamentos</h3>
-                    <div style="display:flex; gap:10px; margin:10px 0;"><input type="text" id="d-nom" style="margin:0;"><button class="btn btn-success" id="btnSaveDep">+</button></div>
-                    <div id="list-dep"></div>
+
+                <div class="card" style="border-top: 4px solid var(--info);">
+                    <h3 style="display:flex; align-items:center; gap:5px;"><span class="material-icons-round" style="color:var(--info);">groups</span> Departamentos</h3>
+                    <p style="font-size:11px; color:#64748b; margin-bottom:10px;">Sub-áreas para clasificar mejor los documentos.</p>
+                    <div style="display:flex; gap:0; margin-bottom:15px;">
+                        <input type="text" id="d-nom" placeholder="Nuevo Departamento..." style="margin:0; border-radius: 8px 0 0 8px; border-right:none;">
+                        <button class="btn btn-success" id="btnSaveDep" style="border-radius: 0 8px 8px 0;"><span class="material-icons-round">add</span></button>
+                    </div>
+                    <div id="list-dep" class="settings-list"></div>
                 </div>
             </div>
             
-            <h3 style="margin:30px 0 15px; color:var(--primary);">Configuración Listado Maestro</h3>
+            <h3 style="margin:35px 0 15px; color:var(--primary); display:flex; align-items:center; gap:8px; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+                <span class="material-icons-round">view_column</span> Configuración Dinámica (Listado Maestro)
+            </h3>
+            
             <div class="grid-2">
-                <div class="card" style="border: 1px solid var(--accent);">
-                    <h3>Columnas Dinámicas (Tabla Excel)</h3>
-                    <p style="font-size:10px; color:#64748b;">Agrega o elimina columnas de tu base de datos central. Importar un Excel sobreescribirá esto.</p>
-                    <div style="display:flex; gap:10px; margin:10px 0;"><input type="text" id="col-nom" placeholder="Ej: Nueva Columna" style="margin:0;"><button class="btn btn-success" onclick="agregarColumna()">+</button></div>
-                    <div id="list-columnas"></div>
+                <div class="card" style="border-top: 4px solid #8b5cf6;">
+                    <h3 style="display:flex; align-items:center; gap:5px;"><span class="material-icons-round" style="color:#8b5cf6;">table_chart</span> Columnas de Tabla</h3>
+                    <p style="font-size:11px; color:#64748b; margin-bottom:10px;">Agrega/elimina columnas de la base central (Importar Excel sobreescribe esto).</p>
+                    <div style="display:flex; gap:0; margin-bottom:15px;">
+                        <input type="text" id="col-nom" placeholder="Ej: Nueva Columna" style="margin:0; border-radius: 8px 0 0 8px; border-right:none;">
+                        <button class="btn btn-success" onclick="agregarColumna()" style="border-radius: 0 8px 8px 0;"><span class="material-icons-round">add</span></button>
+                    </div>
+                    <div id="list-columnas" class="settings-list"></div>
                 </div>
-                <div class="card" style="border: 1px solid var(--warning);">
-                    <h3>Estatus de Documentos</h3>
-                    <p style="font-size:10px; color:#64748b;">Los estados que se pueden seleccionar al editar un documento (Ej: Vigente, Obsoleto).</p>
-                    <div style="display:flex; gap:10px; margin:10px 0;"><input type="text" id="est-nom" style="margin:0;"><button class="btn btn-success" onclick="agregarEstatus()">+</button></div>
-                    <div id="list-estatus"></div>
+
+                <div class="card" style="border-top: 4px solid var(--warning);">
+                    <h3 style="display:flex; align-items:center; gap:5px;"><span class="material-icons-round" style="color:var(--warning);">label</span> Estatus de Documentos</h3>
+                    <p style="font-size:11px; color:#64748b; margin-bottom:10px;">Las opciones de ciclo de vida (Ej: Vigente, Obsoleto, En Revisión).</p>
+                    <div style="display:flex; gap:0; margin-bottom:15px;">
+                        <input type="text" id="est-nom" placeholder="Ej: Archivo Muerto" style="margin:0; border-radius: 8px 0 0 8px; border-right:none;">
+                        <button class="btn btn-success" onclick="agregarEstatus()" style="border-radius: 0 8px 8px 0;"><span class="material-icons-round">add</span></button>
+                    </div>
+                    <div id="list-estatus" class="settings-list"></div>
                 </div>
             </div>
         </section>
@@ -492,7 +526,7 @@
 
                 <div id="general-comment-area" style="margin-top:30px; border-top:2px solid #e2e8f0; padding-top:20px;">
                     <p style="font-weight:800; font-size:11px; color:#64748b; margin-bottom:10px;">DEJAR UN COMENTARIO EN LA BITÁCORA:</p>
-                    <textarea id="m-comentario-libre" rows="2" placeholder="Escribe un comentario o consulta directa..." style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px; margin-bottom:10px;"></textarea>
+                    <textarea id="m-comentario-libre" rows="2" placeholder="Escribe un comentario o consulta directa..." style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px; margin-bottom:10px; resize:vertical;"></textarea>
                     <div style="display:flex; gap:10px; align-items:center;">
                         <div style="flex:1;">
                             <label style="font-size:10px;">Adjuntar Referencia (Opcional)</label>
@@ -512,15 +546,18 @@
 
     <div class="modal-overlay" id="modal-form-listado">
         <div class="modal-content" style="max-width: 800px; display:block; padding: 30px; height:auto; max-height:90vh; overflow-y:auto;">
-           <h2 style="color:var(--primary); margin-bottom: 20px;" id="lm-modal-title">Agregar Registro al Listado Maestro</h2>
+           <h2 style="color:var(--primary); margin-bottom: 20px; display:flex; align-items:center; gap:8px;">
+               <span class="material-icons-round">edit_document</span> 
+               <span id="lm-modal-title">Agregar Registro al Listado Maestro</span>
+           </h2>
            
            <div class="grid-2" id="dinamic-form-maestro"></div>
            
            <div style="background:#eff6ff; padding:15px; border-radius:10px; margin-top:15px; border:1px dashed var(--primary);">
-               <label style="color:var(--primary); font-size:11px;">Herramienta: Subir archivo y generar URL (Para pegar arriba si es necesario)</label>
+               <label style="color:var(--primary); font-size:11px;">Herramienta Rápida: Subir archivo y generar URL</label>
                <div style="display:flex; gap:10px; align-items:center; margin-top:5px;">
                    <input type="file" id="lm-generic-file" style="margin:0; background:white; flex:1;">
-                   <button class="btn btn-info" onclick="subirArchivoGenericoLM()">Subir y Copiar URL</button>
+                   <button class="btn btn-info" onclick="subirArchivoGenericoLM()">Subir y Llenar Campo</button>
                </div>
            </div>
 
@@ -530,10 +567,10 @@
            </div>
         </div>
     </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-        // IMPORTACIÓN CORREGIDA CON DELETEDOC
         import { getFirestore, collection, addDoc, onSnapshot, doc, getDoc, updateDoc, setDoc, query, where, getDocs, arrayUnion, runTransaction, deleteDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
         // ==========================================
@@ -552,7 +589,7 @@
         const EMAIL_TEMPLATE_ID = "template_7hlhnt8"; 
         const EMAIL_PUBLIC_KEY = "2jVnfkJKKG0bpKN-U"; 
 
-        const EMAIL_ADMIN_SGC = "sistemadegestion@fcipty.com"; 
+        const EMAIL_ADMIN_SGC = "oficinista.archivos@fcipty.com"; 
         const EMAIL_GRUPO_SGC = "actualizacion@fcipty.com"; 
 
         const app = initializeApp(firebaseConfig);
@@ -591,7 +628,6 @@
                     if(!snap.empty) managerEmail = snap.docs[0].data().email || "";
                 } catch(e) { console.error("Error buscando gerente", e); }
             }
-
             const toEmails = new Set([EMAIL_ADMIN_SGC, EMAIL_GRUPO_SGC, solicitudData.solicitante_email]);
             const toList = Array.from(toEmails).filter(e => e && e.includes('@')).join(',');
             return { to: toList, cc: managerEmail };
@@ -607,6 +643,9 @@
             emailjs.send(EMAIL_SERVICE_ID, EMAIL_TEMPLATE_ID, templateParams).catch(err => console.log('ERROR EMAIL', err));
         }
 
+        // ==========================================
+        //  INICIO DE SESIÓN PERSISTENTE
+        // ==========================================
         const initAuth = async () => {
             try {
                 await signInAnonymously(auth);
@@ -681,7 +720,6 @@
             }
         };
 
-        // Búsqueda en Tablas
         window.filtrarTabla = (inputId, tablaId) => {
             const filter = document.getElementById(inputId).value.toLowerCase();
             const rows = document.getElementById(tablaId).getElementsByTagName('tr');
@@ -702,8 +740,6 @@
             if(p.can_solicit) document.getElementById('nav-crear').classList.add('visible');
             if(p.p_ver_propias || p.p_ver_ger || p.p_ver_all) document.getElementById('nav-hist').classList.add('visible');
             if(p.p_gest_sgc || p.p_ger_apr) document.getElementById('nav-gest').classList.add('visible');
-            
-            // Acceso Listado Maestro
             if(p.p_ver_listado || p.admin || p.p_gest_sgc) document.getElementById('nav-listado').classList.add('visible');
 
             if(p.p_users || p.p_struct) document.getElementById('admin-only').style.display = 'block';
@@ -722,11 +758,12 @@
         function cargarDatos() {
             const path = (c) => collection(db, "artifacts", appId, "public", "data", c);
 
+            // Cargar Gerencias
             onSnapshot(path("Gerencias"), s => {
                 let h = "<option value=''>-- Seleccionar --</option>", l = "";
                 s.forEach(d => {
                     h += `<option value="${d.data().nombre}">${d.data().nombre}</option>`;
-                    l += `<div style="display:flex;justify-content:space-between;padding:5px;">${d.data().nombre}<span style="color:red;cursor:pointer" onclick="del('Gerencias','${d.id}')">X</span></div>`;
+                    l += `<div class="settings-item"><span>${d.data().nombre}</span><button class="btn-icon-danger" onclick="del('Gerencias','${d.id}')"><span class="material-icons-round" style="font-size:16px;">delete</span></button></div>`;
                 });
                 if(document.getElementById('sol-ger')) document.getElementById('sol-ger').innerHTML = h;
                 if(document.getElementById('lm-gerencia')) document.getElementById('lm-gerencia').innerHTML = h;
@@ -734,17 +771,19 @@
                 if(document.getElementById('list-ger')) document.getElementById('list-ger').innerHTML = l;
             });
 
+            // Cargar Departamentos
             onSnapshot(path("Departamentos"), s => {
                 let h = "<option value=''>-- Seleccionar --</option>", l = "";
                 s.forEach(d => {
                     h += `<option value="${d.data().nombre}">${d.data().nombre}</option>`;
-                    l += `<div style="display:flex;justify-content:space-between;padding:5px;">${d.data().nombre}<span style="color:red;cursor:pointer" onclick="del('Departamentos','${d.id}')">X</span></div>`;
+                    l += `<div class="settings-item"><span>${d.data().nombre}</span><button class="btn-icon-danger" onclick="del('Departamentos','${d.id}')"><span class="material-icons-round" style="font-size:16px;">delete</span></button></div>`;
                 });
                 if(document.getElementById('sol-dep')) document.getElementById('sol-dep').innerHTML = h;
                 if(document.getElementById('lm-departamento')) document.getElementById('lm-departamento').innerHTML = h;
                 if(document.getElementById('list-dep')) document.getElementById('list-dep').innerHTML = l;
             });
 
+            // Cargar Usuarios
             onSnapshot(path("Usuarios"), s => {
                 const tb = document.getElementById('tbody-users');
                 if(!tb) return;
@@ -754,6 +793,7 @@
                     const u = d.data();
                     u.docId = d.id;
                     allUsers.push(u); 
+                    // Se pasa solo el ID (usuario) al botón para evitar errores de comillas
                     tb.innerHTML += `<tr>
                         <td><b>${u.nombre}</b><br><span style="font-size:10px;color:#64748b">${u.usuario}</span></td>
                         <td>${u.email || '-'}</td>
@@ -766,9 +806,7 @@
                 });
             });
 
-            // ==========================================
-            // CARGAR CONFIGURACIÓN DINÁMICA (Columnas y Estatus)
-            // ==========================================
+            // Cargar Configuración Listado Maestro (Columnas y Estatus)
             const docConfigMaestro = doc(db, "artifacts", appId, "public", "data", "Configuracion", "MaestroSettings");
             onSnapshot(docConfigMaestro, d => {
                 if(d.exists()) {
@@ -777,15 +815,13 @@
                 } else {
                     columnasMaestro = ['Código', 'Gerencia', 'Departamento', 'Tipo de documento', 'Nombre del documento', 'Fecha de Creación', 'Fecha última versión', 'Versión', 'Ubicación del Documento', 'Estatus', 'Código Anterior'];
                     estatusMaestro = ['Vigente', 'Obsoleto', 'En Revisión'];
-                    setDoc(docConfigMaestro, { columnas: columnasMaestro, estatus: estatusMaestro });
+                    setDoc(docConfigMaestro, { columnas: columnasMaestro, estatus: estatusMaestro }, {merge: true});
                 }
                 renderListasConfig();
                 renderTablaMaestro();
             });
 
-            // ==========================================
-            // CARGAR SOLICITUDES
-            // ==========================================
+            // Cargar Solicitudes
             onSnapshot(path("Solicitudes"), s => {
                 const tbHist = document.getElementById('tbody-historial');
                 const tbGest = document.getElementById('tbody-gestionar');
@@ -824,9 +860,7 @@
                 if(document.getElementById('dash-ok')) document.getElementById('dash-ok').innerText = stats.o;
             });
 
-            // ==========================================
-            // CARGAR LISTADO MAESTRO (DATOS)
-            // ==========================================
+            // Cargar Listado Maestro Datos
             onSnapshot(path("ListadoMaestro"), s => {
                 dataMaestro = [];
                 s.forEach(d => { let data = d.data(); data.docId = d.id; dataMaestro.push(data); });
@@ -837,43 +871,51 @@
         // ==========================================
         //  FUNCIONES DEL LISTADO MAESTRO DINÁMICO
         // ==========================================
-        
         window.renderListasConfig = () => {
             let hCol = "";
             columnasMaestro.forEach((c, idx) => {
-                hCol += `<div style="display:flex;justify-content:space-between;padding:5px;">${c}<span style="color:red;cursor:pointer" onclick="eliminarColumna(${idx})">X</span></div>`;
+                hCol += `<div class="settings-item"><span>${c}</span><button class="btn-icon-danger" onclick="eliminarColumna(${idx})"><span class="material-icons-round" style="font-size:16px;">delete</span></button></div>`;
             });
             if(document.getElementById('list-columnas')) document.getElementById('list-columnas').innerHTML = hCol;
 
             let hEst = "";
             estatusMaestro.forEach((e, idx) => {
-                hEst += `<div style="display:flex;justify-content:space-between;padding:5px;">${e}<span style="color:red;cursor:pointer" onclick="eliminarEstatus(${idx})">X</span></div>`;
+                hEst += `<div class="settings-item"><span>${e}</span><button class="btn-icon-danger" onclick="eliminarEstatus(${idx})"><span class="material-icons-round" style="font-size:16px;">delete</span></button></div>`;
             });
             if(document.getElementById('list-estatus')) document.getElementById('list-estatus').innerHTML = hEst;
         }
 
+        // Se usa setDoc directo con merge para asegurar guardado sin fallos
         window.agregarColumna = async () => {
             let val = document.getElementById('col-nom').value.trim();
             if(!val) return;
+            if (columnasMaestro.includes(val)) return alert("Esa columna ya existe.");
+            
             columnasMaestro.push(val);
-            await updateDoc(doc(db, "artifacts", appId, "public", "data", "Configuracion", "MaestroSettings"), { columnas: columnasMaestro });
+            await setDoc(doc(db, "artifacts", appId, "public", "data", "Configuracion", "MaestroSettings"), { columnas: columnasMaestro, estatus: estatusMaestro }, {merge: true});
             document.getElementById('col-nom').value = "";
         }
+
         window.eliminarColumna = async (idx) => {
-            if(!confirm("¿Eliminar columna? (Los datos en la base no se borran, solo se ocultan)")) return;
+            if(!confirm("¿Eliminar columna? (Los datos guardados en las solicitudes no se borran, solo se oculta la columna visualmente)")) return;
             columnasMaestro.splice(idx, 1);
-            await updateDoc(doc(db, "artifacts", appId, "public", "data", "Configuracion", "MaestroSettings"), { columnas: columnasMaestro });
+            await setDoc(doc(db, "artifacts", appId, "public", "data", "Configuracion", "MaestroSettings"), { columnas: columnasMaestro, estatus: estatusMaestro }, {merge: true});
         }
+
         window.agregarEstatus = async () => {
             let val = document.getElementById('est-nom').value.trim();
             if(!val) return;
+            if (estatusMaestro.includes(val)) return alert("Ese estatus ya existe.");
+            
             estatusMaestro.push(val);
-            await updateDoc(doc(db, "artifacts", appId, "public", "data", "Configuracion", "MaestroSettings"), { estatus: estatusMaestro });
+            await setDoc(doc(db, "artifacts", appId, "public", "data", "Configuracion", "MaestroSettings"), { columnas: columnasMaestro, estatus: estatusMaestro }, {merge: true});
             document.getElementById('est-nom').value = "";
         }
+
         window.eliminarEstatus = async (idx) => {
+            if(!confirm("¿Eliminar este estatus?")) return;
             estatusMaestro.splice(idx, 1);
-            await updateDoc(doc(db, "artifacts", appId, "public", "data", "Configuracion", "MaestroSettings"), { estatus: estatusMaestro });
+            await setDoc(doc(db, "artifacts", appId, "public", "data", "Configuracion", "MaestroSettings"), { columnas: columnasMaestro, estatus: estatusMaestro }, {merge: true});
         }
 
         window.renderTablaMaestro = () => {
@@ -881,7 +923,6 @@
             const tbody = document.getElementById("tbody-listado-maestro");
             if(!thead || !tbody) return;
 
-            // Render HEAD
             let headHTML = "<tr>";
             columnasMaestro.forEach(col => { headHTML += `<th>${col}</th>`; });
             if(currentUser && currentUser.permisos && (currentUser.permisos.p_gest_sgc || currentUser.permisos.admin)) {
@@ -890,12 +931,11 @@
             headHTML += "</tr>";
             thead.innerHTML = headHTML;
 
-            // Render BODY
             tbody.innerHTML = "";
             let dataSort = [...dataMaestro];
             if(columnasMaestro.length > 0) {
                 let firstCol = columnasMaestro[0];
-                dataSort.sort((a,b) => (a[firstCol]||"").toString().localeCompare(b[firstCol]||""));
+                dataSort.sort((a,b) => (a[firstCol]||"").toString().localeCompare((b[firstCol]||"").toString()));
             }
 
             dataSort.forEach(item => {
@@ -904,15 +944,14 @@
                     let val = item[col] || "";
                     if(val.toString().startsWith("http")) {
                         rowHTML += `<td><a href="${val}" target="_blank" class="file-link">📁 Ver Archivo</a></td>`;
-                    } else if(col.toLowerCase().includes('estatus')) {
-                         let badge = val === 'Vigente' ? 'badge-success' : (val==='Obsoleto'?'badge-danger':'badge-warning');
+                    } else if(col.toLowerCase().includes('estatus') || col.toLowerCase().includes('estado')) {
+                         let badge = val.toLowerCase().includes('vigente') || val.toLowerCase().includes('activo') ? 'badge-success' : (val.toLowerCase().includes('obsoleto') || val.toLowerCase().includes('inactivo') ? 'badge-danger' : 'badge-warning');
                          rowHTML += `<td><span class="badge ${badge}">${val}</span></td>`;
                     } else {
                         rowHTML += `<td>${val}</td>`;
                     }
                 });
                 
-                // Botones de acción solo para admin SGC
                 if(currentUser && currentUser.permisos && (currentUser.permisos.p_gest_sgc || currentUser.permisos.admin)) {
                     let btnAcciones = `<button class="btn btn-info" style="padding:5px; font-size:10px; margin-right:5px;" onclick="abrirModalListadoMaestro('${item.docId}')">EDITAR</button>`;
                     btnAcciones += `<button class="btn btn-danger" style="padding:5px 8px; font-size:10px;" onclick="del('ListadoMaestro','${item.docId}')">X</button>`;
@@ -936,13 +975,13 @@
                 if(item) datosEdit = item;
             }
 
-            // Generar inputs dinámicos basados en la estructura
             columnasMaestro.forEach(col => {
                 let val = datosEdit[col] || "";
                 let html = `<div><label>${col}</label>`;
                 
-                if(col.toLowerCase().includes('estatus')) {
+                if(col.toLowerCase().includes('estatus') || col.toLowerCase().includes('estado')) {
                     html += `<select id="in_dyn_${col}">`;
+                    html += `<option value="">-- Seleccionar --</option>`;
                     estatusMaestro.forEach(est => {
                         html += `<option value="${est}" ${val===est?'selected':''}>${est}</option>`;
                     });
@@ -962,7 +1001,8 @@
         window.guardarRegistroMaestro = async () => {
             let data = {};
             columnasMaestro.forEach(col => {
-                data[col] = document.getElementById(`in_dyn_${col}`).value;
+                let inEl = document.getElementById(`in_dyn_${col}`);
+                if(inEl) data[col] = inEl.value;
             });
 
             document.getElementById('loading-overlay').style.display = 'flex';
@@ -979,25 +1019,24 @@
 
         window.subirArchivoGenericoLM = async () => {
             const f = document.getElementById('lm-generic-file').files[0];
-            if(!f) return alert("Selecciona un archivo.");
+            if(!f) return alert("Selecciona un archivo primero.");
             document.getElementById('loading-overlay').style.display = 'flex';
             let url = await uploadToCloudinary(f);
             document.getElementById('loading-overlay').style.display = 'none';
             if(url) {
-                // Busca automáticamente algún campo que diga "ubicacion" o "archivo"
                 const inputs = Array.from(document.querySelectorAll("#dinamic-form-maestro input"));
                 const targetInput = inputs.find(el => el.id.toLowerCase().includes('ubicaci') || el.id.toLowerCase().includes('archivo'));
                 if(targetInput) {
                     targetInput.value = url;
-                    alert("Archivo subido y enlace colocado en el campo correcto automáticamente.");
+                    alert("Archivo subido y enlace colocado en el campo correspondiente automáticamente.");
                 } else {
-                    alert("Archivo subido. Copia este enlace y pégalo en el campo correspondiente:\n" + url);
+                    alert("Archivo subido. Copia este enlace y pégalo en el campo deseado:\n" + url);
                 }
                 document.getElementById('lm-generic-file').value = "";
             }
         };
 
-        // --- IMPORTACIÓN MÁGICA DE EXCEL ---
+        // --- IMPORTACIÓN EXCEL ---
         if(document.getElementById('import-excel-file')){
             document.getElementById('import-excel-file').addEventListener('change', async (e) => {
                 const file = e.target.files[0];
@@ -1013,24 +1052,22 @@
                         const json = XLSX.utils.sheet_to_json(sheet, {defval: ""});
                         
                         if(json.length > 0) {
-                            // 1. Extraer columnas y GUARDARLAS (Re-estructura la tabla automáticamente)
                             const colsExcel = Object.keys(json[0]);
                             await setDoc(doc(db, "artifacts", appId, "public", "data", "Configuracion", "MaestroSettings"), { columnas: colsExcel, estatus: estatusMaestro }, {merge: true});
                             
-                            // 2. Subir todos los registros masivamente
                             for(let row of json) {
                                 row.importado_por = currentUser.nombre;
                                 row.fecha_importacion = new Date().toISOString();
                                 await addDoc(collection(db, "artifacts", appId, "public", "data", "ListadoMaestro"), row);
                             }
-                            alert(`Se importaron ${json.length} registros exitosamente. La tabla se adaptó a las columnas de tu Excel.`);
+                            alert(`Se importaron ${json.length} registros exitosamente.`);
                         }
                     } catch(error) {
                         console.error(error);
-                        alert("Hubo un error leyendo el Excel. Verifica que el archivo no esté corrupto.");
+                        alert("Hubo un error leyendo el Excel.");
                     }
                     document.getElementById('loading-overlay').style.display = 'none';
-                    e.target.value = ''; // reset
+                    e.target.value = ''; 
                 };
                 reader.readAsArrayBuffer(file);
             });
@@ -1038,6 +1075,7 @@
 
         window.exportarExcelListado = () => {
             let tablaOriginal = document.getElementById("tabla-listado-maestro");
+            if(!tablaOriginal) return;
             let tablaClon = tablaOriginal.cloneNode(true);
             let elementsToRemove = tablaClon.querySelectorAll('.no-export');
             elementsToRemove.forEach(el => el.parentNode.removeChild(el));
@@ -1047,7 +1085,7 @@
         };
 
         // ==========================================
-        // FUNCIONES DE USUARIO Y SOLICITUDES (INTACTAS Y CORREGIDAS)
+        //  SOLICITUDES Y GESTIÓN
         // ==========================================
         if(document.getElementById('sol-ger')){
             document.getElementById('sol-ger').addEventListener('change', (e) => {
@@ -1063,7 +1101,7 @@
             });
         }
 
-        // CORRECCIÓN BOMBILLA 2: CARGAR USUARIO USANDO EL ID, NO STRINGIFICANDO
+        // CARGA SEGURA DE USUARIO
         window.cargarUsuarioParaEditar = (usuarioId) => {
             const u = allUsers.find(x => x.usuario === usuarioId);
             if(!u) return;
@@ -1175,7 +1213,6 @@
         window.gestionar = (tipo) => {
             tempAction = tipo;
             document.getElementById('m-input-area').style.display = 'block';
-            
             if(tipo === 'Reunión') {
                 document.getElementById('reunion-container').style.display = 'block';
                 document.getElementById('m-extra-input').placeholder = 'Tema de la reunión...';
@@ -1250,6 +1287,7 @@
                 registrado_por: "Sistema (Automático)",
                 fecha_registro: new Date().toISOString()
             };
+            
             columnasMaestro.forEach(c => {
                 let low = c.toLowerCase();
                 if(low.includes('código') || low === 'codigo') dataMaestro[c] = selectedDocData.cod_ref || "POR_ASIGNAR";
@@ -1405,8 +1443,8 @@
             resetUserForm();
         };
 
-        document.getElementById('btnSaveGer').onclick = async () => { await addDoc(collection(db, "artifacts", appId, "public", "data", "Gerencias"), {nombre: document.getElementById('g-nom').value}); };
-        document.getElementById('btnSaveDep').onclick = async () => { await addDoc(collection(db, "artifacts", appId, "public", "data", "Departamentos"), {nombre: document.getElementById('d-nom').value}); };
+        document.getElementById('btnSaveGer').onclick = async () => { await addDoc(collection(db, "artifacts", appId, "public", "data", "Gerencias"), {nombre: document.getElementById('g-nom').value}); document.getElementById('g-nom').value = ""; };
+        document.getElementById('btnSaveDep').onclick = async () => { await addDoc(collection(db, "artifacts", appId, "public", "data", "Departamentos"), {nombre: document.getElementById('d-nom').value}); document.getElementById('d-nom').value = ""; };
 
         window.cambiarVista = (id, btn) => {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
