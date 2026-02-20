@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestón</title>
+    <title>SISTEMA DE GESTIÓN</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
@@ -353,7 +353,7 @@
                     <button class="btn btn-ghost" id="btnCancelEdit" style="width:100%; margin-top:5px; display:none;" onclick="resetUserForm()">CANCELAR EDICIÓN</button>
                 </div>
                 <div class="card table-responsive" style="padding:0;">
-                    <table id="table-users"><thead><tr><th>Usuario</th><th>Email</th><th>Rol/Gerencia</th><th>Acciones</th></tr></thead><tbody></tbody></table>
+                    <table id="table-users"><thead><tr><th>Usuario</th><th>Email</th><th>Rol/Gerencia</th><th>Acciones</th></tr></thead><tbody id="tbody-users"></tbody></table>
                 </div>
             </div>
         </section>
@@ -552,7 +552,7 @@
         const EMAIL_TEMPLATE_ID = "template_7hlhnt8"; 
         const EMAIL_PUBLIC_KEY = "2jVnfkJKKG0bpKN-U"; 
 
-        const EMAIL_ADMIN_SGC = "sistemadegestion@fcipty.com"; 
+        const EMAIL_ADMIN_SGC = "oficinista.archivos@fcipty.com"; 
         const EMAIL_GRUPO_SGC = "actualizacion@fcipty.com"; 
 
         const app = initializeApp(firebaseConfig);
@@ -728,28 +728,41 @@
                     h += `<option value="${d.data().nombre}">${d.data().nombre}</option>`;
                     l += `<div style="display:flex;justify-content:space-between;padding:5px;">${d.data().nombre}<span style="color:red;cursor:pointer" onclick="del('Gerencias','${d.id}')">X</span></div>`;
                 });
-                document.getElementById('sol-ger').innerHTML = h;
-                document.getElementById('u-ger-sel').innerHTML = h;
-                document.getElementById('list-ger').innerHTML = l;
+                if(document.getElementById('sol-ger')) document.getElementById('sol-ger').innerHTML = h;
+                if(document.getElementById('lm-gerencia')) document.getElementById('lm-gerencia').innerHTML = h;
+                if(document.getElementById('u-ger-sel')) document.getElementById('u-ger-sel').innerHTML = h;
+                if(document.getElementById('list-ger')) document.getElementById('list-ger').innerHTML = l;
             });
 
             onSnapshot(path("Departamentos"), s => {
-                let l = "";
+                let h = "<option value=''>-- Seleccionar --</option>", l = "";
                 s.forEach(d => {
+                    h += `<option value="${d.data().nombre}">${d.data().nombre}</option>`;
                     l += `<div style="display:flex;justify-content:space-between;padding:5px;">${d.data().nombre}<span style="color:red;cursor:pointer" onclick="del('Departamentos','${d.id}')">X</span></div>`;
                 });
-                document.getElementById('list-dep').innerHTML = l;
+                if(document.getElementById('sol-dep')) document.getElementById('sol-dep').innerHTML = h;
+                if(document.getElementById('lm-departamento')) document.getElementById('lm-departamento').innerHTML = h;
+                if(document.getElementById('list-dep')) document.getElementById('list-dep').innerHTML = l;
             });
 
             onSnapshot(path("Usuarios"), s => {
-                const tb = document.getElementById('table-users').querySelector('tbody');
+                const tb = document.getElementById('tbody-users');
+                if(!tb) return;
                 tb.innerHTML = "";
                 allUsers = []; 
                 s.forEach(d => {
                     const u = d.data();
+                    u.docId = d.id;
                     allUsers.push(u); 
-                    const jsonUser = JSON.stringify(u).replace(/"/g, '&quot;');
-                    tb.innerHTML += `<tr><td><b>${u.nombre}</b><br><span style="font-size:10px;color:#64748b">${u.usuario}</span></td><td>${u.email || '-'}</td><td>${u.gerencia}<br><span class="badge badge-info">${u.role || 'N/A'}</span></td><td><button class="btn btn-info" style="padding:5px 10px; font-size:10px;" onclick="cargarUsuarioParaEditar('${jsonUser}')">EDITAR</button> <button class="btn btn-danger" style="padding:5px 10px; font-size:10px;" onclick="del('Usuarios','${d.id}')">X</button></td></tr>`;
+                    tb.innerHTML += `<tr>
+                        <td><b>${u.nombre}</b><br><span style="font-size:10px;color:#64748b">${u.usuario}</span></td>
+                        <td>${u.email || '-'}</td>
+                        <td>${u.gerencia}<br><span class="badge badge-info">${u.role || 'N/A'}</span></td>
+                        <td>
+                            <button class="btn btn-info" style="padding:5px 10px; font-size:10px;" onclick="cargarUsuarioParaEditar('${u.usuario}')">EDITAR</button> 
+                            <button class="btn btn-danger" style="padding:5px 10px; font-size:10px;" onclick="del('Usuarios','${u.usuario}')">X</button>
+                        </td>
+                    </tr>`;
                 });
             });
 
@@ -776,6 +789,8 @@
             onSnapshot(path("Solicitudes"), s => {
                 const tbHist = document.getElementById('tbody-historial');
                 const tbGest = document.getElementById('tbody-gestionar');
+                if(!tbHist || !tbGest) return;
+                
                 tbHist.innerHTML = ""; tbGest.innerHTML = "";
                 let stats = { total:0, p:0, o:0 };
                 let solicitudesList = [];
@@ -803,9 +818,10 @@
 
                     if(gestionar) tbGest.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.solicitante}</td><td>${sol.titulo}</td><td><span class="badge ${badgeClass}">${sol.estado}</span></td><td><button class="btn btn-primary" onclick="verDetalle('${sol.docId}')">Gestionar</button></td></tr>`;
                 });
-                document.getElementById('dash-total').innerText = stats.total;
-                document.getElementById('dash-pend').innerText = stats.p;
-                document.getElementById('dash-ok').innerText = stats.o;
+                
+                if(document.getElementById('dash-total')) document.getElementById('dash-total').innerText = stats.total;
+                if(document.getElementById('dash-pend')) document.getElementById('dash-pend').innerText = stats.p;
+                if(document.getElementById('dash-ok')) document.getElementById('dash-ok').innerText = stats.o;
             });
 
             // ==========================================
@@ -827,13 +843,13 @@
             columnasMaestro.forEach((c, idx) => {
                 hCol += `<div style="display:flex;justify-content:space-between;padding:5px;">${c}<span style="color:red;cursor:pointer" onclick="eliminarColumna(${idx})">X</span></div>`;
             });
-            document.getElementById('list-columnas').innerHTML = hCol;
+            if(document.getElementById('list-columnas')) document.getElementById('list-columnas').innerHTML = hCol;
 
             let hEst = "";
             estatusMaestro.forEach((e, idx) => {
                 hEst += `<div style="display:flex;justify-content:space-between;padding:5px;">${e}<span style="color:red;cursor:pointer" onclick="eliminarEstatus(${idx})">X</span></div>`;
             });
-            document.getElementById('list-estatus').innerHTML = hEst;
+            if(document.getElementById('list-estatus')) document.getElementById('list-estatus').innerHTML = hEst;
         }
 
         window.agregarColumna = async () => {
@@ -982,41 +998,43 @@
         };
 
         // --- IMPORTACIÓN MÁGICA DE EXCEL ---
-        document.getElementById('import-excel-file').addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if(!file) return;
-            document.getElementById('loading-overlay').style.display = 'flex';
-            const reader = new FileReader();
-            reader.onload = async (evt) => {
-                try {
-                    const data = new Uint8Array(evt.target.result);
-                    const workbook = XLSX.read(data, {type: 'array'});
-                    const sheetName = workbook.SheetNames[0];
-                    const sheet = workbook.Sheets[sheetName];
-                    const json = XLSX.utils.sheet_to_json(sheet, {defval: ""});
-                    
-                    if(json.length > 0) {
-                        // 1. Extraer columnas y GUARDARLAS (Re-estructura la tabla automáticamente)
-                        const colsExcel = Object.keys(json[0]);
-                        await setDoc(doc(db, "artifacts", appId, "public", "data", "Configuracion", "MaestroSettings"), { columnas: colsExcel, estatus: estatusMaestro }, {merge: true});
+        if(document.getElementById('import-excel-file')){
+            document.getElementById('import-excel-file').addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if(!file) return;
+                document.getElementById('loading-overlay').style.display = 'flex';
+                const reader = new FileReader();
+                reader.onload = async (evt) => {
+                    try {
+                        const data = new Uint8Array(evt.target.result);
+                        const workbook = XLSX.read(data, {type: 'array'});
+                        const sheetName = workbook.SheetNames[0];
+                        const sheet = workbook.Sheets[sheetName];
+                        const json = XLSX.utils.sheet_to_json(sheet, {defval: ""});
                         
-                        // 2. Subir todos los registros masivamente
-                        for(let row of json) {
-                            row.importado_por = currentUser.nombre;
-                            row.fecha_importacion = new Date().toISOString();
-                            await addDoc(collection(db, "artifacts", appId, "public", "data", "ListadoMaestro"), row);
+                        if(json.length > 0) {
+                            // 1. Extraer columnas y GUARDARLAS (Re-estructura la tabla automáticamente)
+                            const colsExcel = Object.keys(json[0]);
+                            await setDoc(doc(db, "artifacts", appId, "public", "data", "Configuracion", "MaestroSettings"), { columnas: colsExcel, estatus: estatusMaestro }, {merge: true});
+                            
+                            // 2. Subir todos los registros masivamente
+                            for(let row of json) {
+                                row.importado_por = currentUser.nombre;
+                                row.fecha_importacion = new Date().toISOString();
+                                await addDoc(collection(db, "artifacts", appId, "public", "data", "ListadoMaestro"), row);
+                            }
+                            alert(`Se importaron ${json.length} registros exitosamente. La tabla se adaptó a las columnas de tu Excel.`);
                         }
-                        alert(`Se importaron ${json.length} registros exitosamente. La tabla se adaptó a las columnas de tu Excel.`);
+                    } catch(error) {
+                        console.error(error);
+                        alert("Hubo un error leyendo el Excel. Verifica que el archivo no esté corrupto.");
                     }
-                } catch(error) {
-                    console.error(error);
-                    alert("Hubo un error leyendo el Excel. Verifica que el archivo no esté corrupto.");
-                }
-                document.getElementById('loading-overlay').style.display = 'none';
-                e.target.value = ''; // reset
-            };
-            reader.readAsArrayBuffer(file);
-        });
+                    document.getElementById('loading-overlay').style.display = 'none';
+                    e.target.value = ''; // reset
+                };
+                reader.readAsArrayBuffer(file);
+            });
+        }
 
         window.exportarExcelListado = () => {
             let tablaOriginal = document.getElementById("tabla-listado-maestro");
@@ -1029,19 +1047,51 @@
         };
 
         // ==========================================
-        // FUNCIONES DE USUARIO Y SOLICITUDES (INTACTAS)
+        // FUNCIONES DE USUARIO Y SOLICITUDES (INTACTAS Y CORREGIDAS)
         // ==========================================
-        document.getElementById('sol-ger').addEventListener('change', (e) => {
-            const gSelected = e.target.value;
-            const gerente = allUsers.find(u => u.gerencia === gSelected && u.permisos && u.permisos.p_ger_apr === true);
-            if (gerente) {
-                document.getElementById('sol-gerente-display').value = gerente.nombre;
-                document.getElementById('sol-email-gerente').value = gerente.email || "Sin Email";
-            } else {
-                document.getElementById('sol-gerente-display').value = "No asignado";
-                document.getElementById('sol-email-gerente').value = "";
-            }
-        });
+        if(document.getElementById('sol-ger')){
+            document.getElementById('sol-ger').addEventListener('change', (e) => {
+                const gSelected = e.target.value;
+                const gerente = allUsers.find(u => u.gerencia === gSelected && u.permisos && u.permisos.p_ger_apr === true);
+                if (gerente) {
+                    document.getElementById('sol-gerente-display').value = gerente.nombre;
+                    document.getElementById('sol-email-gerente').value = gerente.email || "Sin Email";
+                } else {
+                    document.getElementById('sol-gerente-display').value = "No asignado";
+                    document.getElementById('sol-email-gerente').value = "";
+                }
+            });
+        }
+
+        // CORRECCIÓN BOMBILLA 2: CARGAR USUARIO USANDO EL ID, NO STRINGIFICANDO
+        window.cargarUsuarioParaEditar = (usuarioId) => {
+            const u = allUsers.find(x => x.usuario === usuarioId);
+            if(!u) return;
+
+            document.getElementById('user-form-title').innerText = "Editando Usuario: " + u.usuario;
+            document.getElementById('u-nom').value = u.nombre || '';
+            document.getElementById('u-usr').value = u.usuario || '';
+            document.getElementById('u-usr').disabled = true; 
+            document.getElementById('u-pas').value = u.pass || '';
+            document.getElementById('u-ger-sel').value = u.gerencia || '';
+            document.getElementById('u-rol').value = u.role || '';
+            document.getElementById('u-email').value = u.email || '';
+
+            const p = u.permisos || {};
+            document.getElementById('p-solicitar').checked = p.can_solicit || false;
+            document.getElementById('p-ver-propias').checked = p.p_ver_propias || false;
+            document.getElementById('p-ver-ger').checked = p.p_ver_ger || false;
+            document.getElementById('p-gest-sgc').checked = p.p_gest_sgc || false;
+            document.getElementById('p-ger-apr').checked = p.p_ger_apr || false;
+            document.getElementById('p-users').checked = p.p_users || false;
+            document.getElementById('p-struct').checked = p.p_struct || false;
+            document.getElementById('p-ver-listado').checked = p.p_ver_listado || false;
+            document.getElementById('p-admin').checked = p.admin || false;
+
+            document.getElementById('btnSaveUser').innerText = "ACTUALIZAR USUARIO";
+            document.getElementById('btnCancelEdit').style.display = 'inline-flex';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
 
         window.verDetalle = async (id) => {
             selectedId = id;
@@ -1125,6 +1175,7 @@
         window.gestionar = (tipo) => {
             tempAction = tipo;
             document.getElementById('m-input-area').style.display = 'block';
+            
             if(tipo === 'Reunión') {
                 document.getElementById('reunion-container').style.display = 'block';
                 document.getElementById('m-extra-input').placeholder = 'Tema de la reunión...';
@@ -1194,13 +1245,11 @@
                 chat: arrayUnion({u: "SISTEMA (SGC)", m: `🏁 DOCUMENTO PUBLICADO. Ver: ${ver}. Obs: ${com}`, archivo: fileUrl, t: new Date().toLocaleString()})
             });
 
-            // Agrega registro automático al listado maestro solo con las columnas que el sistema conozca en ese momento
             let dataMaestro = {
                 estatus: "Vigente",
                 registrado_por: "Sistema (Automático)",
                 fecha_registro: new Date().toISOString()
             };
-            // Intentar mapear nombres comunes basados en el listado
             columnasMaestro.forEach(c => {
                 let low = c.toLowerCase();
                 if(low.includes('código') || low === 'codigo') dataMaestro[c] = selectedDocData.cod_ref || "POR_ASIGNAR";
@@ -1338,7 +1387,7 @@
                 p_ger_apr: document.getElementById('p-ger-apr').checked,
                 p_users: document.getElementById('p-users').checked,
                 p_struct: document.getElementById('p-struct').checked,
-                p_ver_listado: document.getElementById('p-ver-listado').checked, // NUEVO PERMISO
+                p_ver_listado: document.getElementById('p-ver-listado').checked, 
                 admin: document.getElementById('p-admin').checked
             };
             
