@@ -137,7 +137,7 @@
         .file-link { color: var(--accent); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
         .file-link:hover { text-decoration: underline; }
         
-        .search-bar { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 15px; width: 100%; max-width: 350px; font-size: 13px; margin-bottom: 15px; outline: none; }
+        .search-bar { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 15px; width: 100%; max-width: 350px; font-size: 13px; outline: none; }
         .search-bar:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1); }
     </style>
 </head>
@@ -293,25 +293,31 @@
         </section>
 
         <section id="sec-hist" class="section">
-            <h1>Mis Solicitudes</h1>
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px;">
+                <h1>Mis Solicitudes</h1>
+            </div>
             <div class="card" style="padding:0; padding-top:15px; overflow:hidden; margin-top:20px;">
-                <div style="padding: 0 15px;">
-                    <input type="text" id="search-hist" class="search-bar" placeholder="🔍 Buscar por ID, Título o Estado..." onkeyup="filtrarTabla('search-hist', 'tbody-historial')">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; padding: 0 15px; gap: 10px; flex-wrap: wrap;">
+                    <input type="text" id="search-hist" class="search-bar" placeholder="🔍 Buscar por ID, Título o Estado..." onkeyup="filtrarTabla('search-hist', 'tbody-historial')" style="margin-bottom:0; max-width:300px; flex:1;">
+                    <button class="btn btn-success" onclick="exportarReporteSolicitudes()"><span class="material-icons-round" style="font-size:16px;">table_view</span> Exportar Reporte</button>
                 </div>
                 <div class="table-responsive">
-                    <table><thead><tr><th>ID</th><th>Documento</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="tbody-historial"></tbody></table>
+                    <table id="tabla-mis-solicitudes"><thead><tr><th>ID</th><th>Documento</th><th>Estado</th><th class="no-export">Acción</th></tr></thead><tbody id="tbody-historial"></tbody></table>
                 </div>
             </div>
         </section>
 
         <section id="sec-gest" class="section">
-            <h1>Bandeja de Gestión</h1>
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px;">
+                <h1>Bandeja de Gestión</h1>
+            </div>
             <div class="card" style="padding:0; padding-top:15px; overflow:hidden; margin-top:20px;">
-                <div style="padding: 0 15px;">
-                    <input type="text" id="search-gest" class="search-bar" placeholder="🔍 Buscar por ID, Título, Solicitante..." onkeyup="filtrarTabla('search-gest', 'tbody-gestionar')">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; padding: 0 15px; gap: 10px; flex-wrap: wrap;">
+                    <input type="text" id="search-gest" class="search-bar" placeholder="🔍 Buscar por ID, Título, Solicitante..." onkeyup="filtrarTabla('search-gest', 'tbody-gestionar')" style="margin-bottom:0; max-width:300px; flex:1;">
+                    <button class="btn btn-success" onclick="exportarReporteSolicitudes()"><span class="material-icons-round" style="font-size:16px;">table_view</span> Exportar Reporte</button>
                 </div>
                 <div class="table-responsive">
-                    <table><thead><tr><th>ID</th><th>Solicitante</th><th>Documento</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="tbody-gestionar"></tbody></table>
+                    <table id="tabla-gestion-solicitudes"><thead><tr><th>ID</th><th>Solicitante</th><th>Documento</th><th>Estado</th><th class="no-export">Acción</th></tr></thead><tbody id="tbody-gestionar"></tbody></table>
                 </div>
             </div>
         </section>
@@ -657,6 +663,9 @@
         let estatusMaestro = [];
         let dataMaestro = [];
         let editandoMaestroId = null;
+        
+        // Variable Global para Reportes
+        let globalSolicitudes = [];
 
         const PASOS_NOMBRES = ["Pendiente Documentado", "Pendiente Verificado", "Pendiente Aprobación Gerencia", "Pendiente Aprobación SGC"];
 
@@ -688,6 +697,39 @@
             const y = dObj.getFullYear();
             
             return `${d} ${m} ${y}`;
+        };
+
+        // ==========================================
+        // UTILIDAD: EXPORTAR SOLICITUDES A EXCEL
+        // ==========================================
+        window.exportarReporteSolicitudes = () => {
+            if(globalSolicitudes.length === 0) {
+                alert("No hay solicitudes para exportar."); 
+                return;
+            }
+            
+            let dataExport = globalSolicitudes.map(s => ({
+                "ID Solicitud": s.customId || '',
+                "Título del Documento": s.titulo || '',
+                "Solicitante": s.solicitante || '',
+                "Gerencia": s.gerencia || '',
+                "Departamento": s.departamento || '',
+                "Tipo de Documento": s.tipoDoc || '',
+                "Acción Requerida": s.accion || '',
+                "Motivo / Justificación": s.motivo || '',
+                "Estado Actual": s.estado || '',
+                "Fecha de Creación": s.fecha ? new Date(s.fecha).toLocaleString() : '',
+                "Código Ref. Original": s.cod_ref || '',
+                "Versión Original": s.ver_ref || '',
+                "Código Final Asignado": s.codigo_final || '',
+                "Versión Final Asignada": s.version_final || '',
+                "Fecha Final": s.fecha_final || ''
+            }));
+
+            let wb = XLSX.utils.book_new();
+            let ws = XLSX.utils.json_to_sheet(dataExport);
+            XLSX.utils.book_append_sheet(wb, ws, "Reporte Solicitudes");
+            XLSX.writeFile(wb, "Reporte_General_Solicitudes.xlsx");
         };
 
         async function getDatosEnvio(solicitudData) {
@@ -744,19 +786,19 @@
         }
 
         // ========================================================================================
-        // CORRECCIÓN BOMBILLA: NUEVO SISTEMA PARA EVITAR ERROR 400 AL DESCARGAR CON ESPACIOS/TILDES
+        // CORRECCIÓN: LIMPIEZA EXTREMA PARA CLOUDINARY SIN ROMPER DESCARGAS
         // ========================================================================================
         function getDownloadUrl(cloudUrl, originalName) {
             if(!cloudUrl) return "#";
             if(!cloudUrl.includes('/upload/')) return cloudUrl;
             
-            // Limpiar nombre: quitar acentos, eñes y caracteres especiales que rompan Cloudinary
             let safeName = (originalName || 'Documento')
-                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quitar acentos (ó -> o)
-                .replace(/[^a-zA-Z0-9.\-]/g, '_')                 // Reemplazar espacios y raros por guión bajo
-                .replace(/_+/g, '_');                             // Evitar múltiples guiones bajos juntos
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quitar tildes
+                .replace(/[^a-zA-Z0-9.\-]/g, '_')                 // Quitar espacios y caracteres raros
+                .replace(/_+/g, '_');                             // Evitar guiones bajos dobles
 
-            return cloudUrl.replace('/upload/', `/upload/fl_attachment:${safeName}/`);
+            let urlLimpia = cloudUrl.replace(/\/fl_attachment:[^/]+\//, '/');
+            return urlLimpia.replace('/upload/', `/upload/fl_attachment:${safeName}/`);
         }
 
         async function getNextFCI() {
@@ -801,15 +843,6 @@
             if(confirm("¿Seguro que deseas cerrar sesión?")) {
                 localStorage.removeItem('sgc_session_user');
                 location.reload();
-            }
-        };
-
-        window.filtrarTabla = (inputId, tablaId) => {
-            const filter = document.getElementById(inputId).value.toLowerCase();
-            const rows = document.getElementById(tablaId).getElementsByTagName('tr');
-            for (let i = 0; i < rows.length; i++) {
-                const textInfo = rows[i].innerText.toLowerCase();
-                rows[i].style.display = textInfo.includes(filter) ? '' : 'none';
             }
         };
 
@@ -919,6 +952,8 @@
                 s.forEach(d => { let data = d.data(); data.docId = d.id; solicitudesList.push(data); });
 
                 solicitudesList.sort((a, b) => { return a.customId > b.customId ? 1 : -1; });
+                
+                globalSolicitudes = solicitudesList; // Guardar para exportar a Excel
 
                 solicitudesList.forEach(sol => {
                     const p = currentUser.permisos || {};
@@ -1022,9 +1057,8 @@
                 columnasMaestro.forEach(col => {
                     let val = item[col] || "";
                     if(val.toString().startsWith("http")) {
-                        // REUSAR FUNCION PARA DESCARGAS DEL MAESTRO
-                        let dUrl = getDownloadUrl(val, "Documento_Maestro");
-                        rowHTML += `<td><a href="${dUrl}" target="_blank" class="file-link">📁 Descargar Archivo</a></td>`;
+                        let dUrl = getDownloadUrl(val, item['Nombre del documento'] || "Documento_Maestro");
+                        rowHTML += `<td><a href="${dUrl}" class="file-link">📁 Descargar Archivo</a></td>`;
                     } else if(col.toLowerCase().includes('estatus') || col.toLowerCase().includes('estado')) {
                          let badge = val.toLowerCase().includes('vigente') || val.toLowerCase().includes('activo') ? 'badge-success' : (val.toLowerCase().includes('obsoleto') || val.toLowerCase().includes('inactivo') ? 'badge-danger' : 'badge-warning');
                          rowHTML += `<td><span class="badge ${badge}">${val}</span></td>`;
