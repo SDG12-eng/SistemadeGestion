@@ -9,7 +9,6 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
@@ -109,6 +108,27 @@
         .step label { font-size: 9px; text-transform: uppercase; color: #94a3b8; }
         .step.active label { color: var(--primary); font-weight: 800; }
         .completed .step-dot { background: var(--success); border-color: var(--success); color: white; }
+
+        /* Efecto de Datos Bloqueados / Grises */
+        .locked-data {
+            opacity: 0.55;
+            pointer-events: none;
+            background-color: #f1f5f9;
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px dashed #94a3b8;
+            filter: grayscale(80%);
+        }
+        .locked-title {
+            color: #475569;
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
         #loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 6000; display: none; align-items: center; justify-content: center; flex-direction: column; }
         .spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
@@ -262,7 +282,7 @@
                 <textarea id="sol-motivo" rows="4"></textarea>
 
                 <div style="background: #eff6ff; padding: 20px; border-radius: 12px; border: 1px dashed var(--accent); margin-bottom: 20px;">
-                    <label style="color:var(--primary)">Adjuntar Archivo (PDF, Excel, Word, Imagen)</label>
+                    <label style="color:var(--primary)">Adjuntar Archivo Inicial (Opcional si es creación, obligatorio en modificación)</label>
                     <input type="file" id="sol-file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.png" style="margin-bottom:0; background:white;">
                 </div>
 
@@ -320,14 +340,13 @@
                 </div>
                 <div class="table-responsive">
                     <table id="tabla-listado-maestro" style="white-space:nowrap;">
-                        <thead id="thead-listado-maestro">
-                            </thead>
-                        <tbody id="tbody-listado-maestro">
-                            </tbody>
+                        <thead id="thead-listado-maestro"></thead>
+                        <tbody id="tbody-listado-maestro"></tbody>
                     </table>
                 </div>
             </div>
         </section>
+        
         <section id="sec-usuarios" class="section">
             <div class="grid-2">
                 <div class="card">
@@ -403,7 +422,7 @@
             <div class="grid-2">
                 <div class="card" style="border-top: 4px solid #8b5cf6;">
                     <h3 style="display:flex; align-items:center; gap:5px;"><span class="material-icons-round" style="color:#8b5cf6;">table_chart</span> Columnas de Tabla</h3>
-                    <p style="font-size:11px; color:#64748b; margin-bottom:10px;">Agrega/elimina columnas de la base central (Importar Excel sobreescribe esto).</p>
+                    <p style="font-size:11px; color:#64748b; margin-bottom:10px;">Agrega/elimina columnas de la base central.</p>
                     <div style="display:flex; gap:0; margin-bottom:15px;">
                         <input type="text" id="col-nom" placeholder="Ej: Nueva Columna" style="margin:0; border-radius: 8px 0 0 8px; border-right:none;">
                         <button class="btn btn-success" onclick="agregarColumna()" style="border-radius: 0 8px 8px 0;"><span class="material-icons-round">add</span></button>
@@ -413,7 +432,7 @@
 
                 <div class="card" style="border-top: 4px solid var(--warning);">
                     <h3 style="display:flex; align-items:center; gap:5px;"><span class="material-icons-round" style="color:var(--warning);">label</span> Estatus de Documentos</h3>
-                    <p style="font-size:11px; color:#64748b; margin-bottom:10px;">Las opciones de ciclo de vida (Ej: Vigente, Obsoleto, En Revisión).</p>
+                    <p style="font-size:11px; color:#64748b; margin-bottom:10px;">Las opciones de ciclo de vida (Ej: Vigente, Obsoleto).</p>
                     <div style="display:flex; gap:0; margin-bottom:15px;">
                         <input type="text" id="est-nom" placeholder="Ej: Archivo Muerto" style="margin:0; border-radius: 8px 0 0 8px; border-right:none;">
                         <button class="btn btn-success" onclick="agregarEstatus()" style="border-radius: 0 8px 8px 0;"><span class="material-icons-round">add</span></button>
@@ -440,49 +459,44 @@
                 </div>
                 
                 <div class="step-container">
-                    <div class="step" id="s1"><div class="step-dot">1</div><label> Pendiente Documentado</label></div>
-                    <div class="step" id="s2"><div class="step-dot">2</div><label> Pendiente Verificado</label></div>
-                    <div class="step" id="s3"><div class="step-dot">3</div><label>Pendiente Aprobado SGC</label></div>
-                    <div class="step" id="s4"><div class="step-dot">4</div><label>Pendiente Aprobación Gerente</label></div>
+                    <div class="step" id="s1"><div class="step-dot">1</div><label>Pendiente Documentado</label></div>
+                    <div class="step" id="s2"><div class="step-dot">2</div><label>Pendiente Verificado</label></div>
+                    <div class="step" id="s3"><div class="step-dot">3</div><label>Pendiente Aprobación Gerencia</label></div>
+                    <div class="step" id="s4"><div class="step-dot">4</div><label>Pendiente Aprobación SGC</label></div>
                 </div>
 
-                <div class="grid-2" style="margin-top:20px;">
-                    <div><label>Solicitante</label><p id="m-sol"></p></div>
-                    <div><label>Gerencia</label><p id="m-ger"></p></div>
-                    <div><label>Estado</label><span id="m-est" class="badge"></span></div>
-                    <div><label>Tipo Documento</label><p id="m-tipo" style="font-weight:bold;"></p></div>
-                    <div><label>Acción</label><p id="m-accion"></p></div>
-                    <div><label>Adjunto</label><div id="m-file-link"></div></div>
-                </div>
-
-                <div id="m-extra-panel" style="display:none; background:#fffbeb; padding:15px; border-radius:10px; margin-top:15px;">
+                <div id="m-display-final" style="display:none; margin-bottom:20px; background:#f0fdf4; padding:20px; border-radius:12px; border: 1px solid #bbf7d0;">
+                    <h4 style="color:#166534; margin-bottom:15px; display:flex; align-items:center; gap:8px;"><span class="material-icons-round">verified</span> Documento Finalizado y Publicado</h4>
                     <div class="grid-3">
-                        <div><label>Cód. Ref Actual</label><p id="m-cod"></p></div>
-                        <div><label>Versión Actual</label><p id="m-ver"></p></div>
-                        <div><label>Fecha Ult. Ver.</label><p id="m-fecha-ult"></p></div>
-                    </div>
-                </div>
-
-                <div style="margin-top:20px; background:#f8fafc; padding:15px; border-radius:10px;">
-                    <label>Justificación / Motivo</label>
-                    <p id="m-jus" style="font-size:13px;"></p>
-                </div>
-
-                <div id="m-display-final" style="display:none; margin-top:20px; background:#f0fdf4; padding:20px; border-radius:12px; border: 1px solid #bbf7d0;">
-                    <h4 style="color:#166534; margin-bottom:15px;">✅ Documento Finalizado y Publicado</h4>
-                    <div class="grid-3">
-                        <div><label>Nueva Versión</label><p id="m-disp-ver" style="font-weight:bold;"></p></div>
-                        <div style="grid-column: span 2;"><label>Comentario SGC</label><p id="m-disp-com"></p></div>
+                        <div><label>Código Final Asignado</label><p id="m-disp-cod" style="font-weight:bold;"></p></div>
+                        <div><label>Versión Final</label><p id="m-disp-ver" style="font-weight:bold;"></p></div>
                         <div><label>Documento Oficial</label><div id="m-disp-file"></div></div>
+                        <div style="grid-column: span 3;"><label>Comentario SGC de Cierre</label><p id="m-disp-com"></p></div>
                     </div>
                 </div>
 
-                <div id="m-panel-final-sgc" style="display:none; margin-top:20px; background:#eff6ff; padding:20px; border-radius:12px; border: 1px dashed var(--primary);">
-                    <h4 style="color:var(--primary); margin-bottom:15px;">Cierre Técnico y Publicación (Exclusivo Admin SGC)</h4>
+                <div id="m-panel-update-sgc" style="display:none; margin-bottom:20px; background:#f8fafc; padding:20px; border-radius:12px; border: 1px dashed var(--info);">
+                    <h4 style="color:var(--info); margin-bottom:15px; display:flex; align-items:center; gap:8px;"><span class="material-icons-round">edit</span> Actualizar Datos de Solicitud (SGC)</h4>
+                    <p style="font-size:11px; color:#64748b; margin-bottom:15px;">Corrige o reemplaza el documento antes de enviarlo a Gerencia para evitar confusiones.</p>
                     <div class="grid-2">
+                        <div><label>Título del Documento</label><input type="text" id="m-upd-tit" style="background:white; margin-bottom:10px;"></div>
+                        <div><label>Código Referencia</label><input type="text" id="m-upd-cod" style="background:white; margin-bottom:10px;"></div>
+                        <div><label>Versión</label><input type="text" id="m-upd-ver" style="background:white; margin-bottom:10px;"></div>
+                        <div><label>Reemplazar Adjunto (Opcional)</label><input type="file" id="m-upd-file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png" style="background:white; margin-bottom:10px;"></div>
+                    </div>
+                    <button class="btn btn-info" onclick="actualizarDatosSGC()" style="width:100%; margin-top:10px;">GUARDAR ACTUALIZACIÓN</button>
+                </div>
+
+                <div id="m-panel-final-sgc" style="display:none; margin-bottom:20px; background:#eff6ff; padding:20px; border-radius:12px; border: 1px dashed var(--primary);">
+                    <h4 style="color:var(--primary); margin-bottom:15px; display:flex; align-items:center; gap:8px;"><span class="material-icons-round">publish</span> Cierre Técnico y Publicación (Admin SGC)</h4>
+                    <div class="grid-3">
+                        <div>
+                            <label>Código Final Asignado</label>
+                            <input type="text" id="m-final-cod" placeholder="Ej: FCI-GOP-F-032" style="background:white; margin-bottom:10px;">
+                        </div>
                         <div>
                             <label>Versión Final Asignada</label>
-                            <input type="text" id="m-final-ver" placeholder="Ej: V-02">
+                            <input type="text" id="m-final-ver" placeholder="Ej: V-02" style="background:white; margin-bottom:10px;">
                         </div>
                         <div>
                             <label>Adjuntar Documento Oficial (Aprobado)</label>
@@ -490,8 +504,33 @@
                         </div>
                     </div>
                     <label>Comentarios del Cierre</label>
-                    <input type="text" id="m-final-comentario" placeholder="Observaciones finales de la publicación...">
+                    <input type="text" id="m-final-comentario" placeholder="Observaciones finales de la publicación..." style="background:white;">
                     <button class="btn btn-primary" onclick="guardarCierreFinal()" style="width:100%; margin-top:10px;">GUARDAR Y PUBLICAR VERSIÓN FINAL</button>
+                </div>
+
+                <div id="m-original-data">
+                    <h4 id="m-orig-title" class="locked-title" style="display:none;"><span class="material-icons-round">lock</span> Datos de la Solicitud (Histórico)</h4>
+                    <div class="grid-2" style="margin-top:20px;">
+                        <div><label>Solicitante</label><p id="m-sol"></p></div>
+                        <div><label>Gerencia</label><p id="m-ger"></p></div>
+                        <div><label>Estado</label><span id="m-est" class="badge"></span></div>
+                        <div><label>Tipo Documento</label><p id="m-tipo" style="font-weight:bold;"></p></div>
+                        <div><label>Acción</label><p id="m-accion"></p></div>
+                        <div><label>Adjunto Original</label><div id="m-file-link"></div></div>
+                    </div>
+
+                    <div id="m-extra-panel" style="display:none; background:#fffbeb; padding:15px; border-radius:10px; margin-top:15px;">
+                        <div class="grid-3">
+                            <div><label>Cód. Ref Original</label><p id="m-cod"></p></div>
+                            <div><label>Versión Anterior</label><p id="m-ver"></p></div>
+                            <div><label>Fecha Ult. Ver.</label><p id="m-fecha-ult"></p></div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:20px; background:#f8fafc; padding:15px; border-radius:10px;">
+                        <label>Justificación / Motivo Inicial</label>
+                        <p id="m-jus" style="font-size:13px;"></p>
+                    </div>
                 </div>
 
                 <div id="m-actions" style="margin-top:30px; display:none; border-top:1px solid #eee; padding-top:20px;">
@@ -573,9 +612,6 @@
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, getDoc, updateDoc, setDoc, query, where, getDocs, arrayUnion, runTransaction, deleteDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-        // ==========================================
-        //  CONFIGURACIÓN FIREBASE
-        // ==========================================
         const firebaseConfig = {
           apiKey: "AIzaSyDdzCiachuhbE9jATz-TesPI2vUVIJrHjM",
           authDomain: "sistemadegestion-7400d.firebaseapp.com",
@@ -589,7 +625,7 @@
         const EMAIL_TEMPLATE_ID = "template_7hlhnt8"; 
         const EMAIL_PUBLIC_KEY = "2jVnfkJKKG0bpKN-U"; 
 
-        const EMAIL_ADMIN_SGC = "sistemadegestion@fcipty.com"; 
+        const EMAIL_ADMIN_SGC = "oficinista.archivos@fcipty.com"; 
         const EMAIL_GRUPO_SGC = "actualizacion@fcipty.com"; 
 
         const app = initializeApp(firebaseConfig);
@@ -608,17 +644,13 @@
         let tempAction = "";
         let allUsers = []; 
         
-        // Variables Listado Maestro
         let columnasMaestro = [];
         let estatusMaestro = [];
         let dataMaestro = [];
         let editandoMaestroId = null;
 
-        const PASOS_NOMBRES = ["Pendiente Documentado", "Pendiente Verificado", "Pendiente Aprobación SGC", "Pendiente Aprobación de Gerencia"];
+        const PASOS_NOMBRES = ["Pendiente Documentado", "Pendiente Verificado", "Pendiente Aprobación Gerencia", "Pendiente Aprobación SGC"];
 
-        // ==========================================
-        //  CORREOS
-        // ==========================================
         async function getDatosEnvio(solicitudData) {
             let managerEmail = "";
             if(solicitudData.gerencia) {
@@ -643,9 +675,6 @@
             emailjs.send(EMAIL_SERVICE_ID, EMAIL_TEMPLATE_ID, templateParams).catch(err => console.log('ERROR EMAIL', err));
         }
 
-        // ==========================================
-        //  INICIO DE SESIÓN PERSISTENTE
-        // ==========================================
         const initAuth = async () => {
             try {
                 await signInAnonymously(auth);
@@ -673,6 +702,13 @@
                 const data = await res.json();
                 return data.secure_url; 
             } catch(e) { return null; }
+        }
+
+        function getDownloadUrl(cloudUrl, originalName) {
+            if(!cloudUrl) return "#";
+            if(!cloudUrl.includes('/upload/')) return cloudUrl;
+            let safeName = encodeURIComponent((originalName || 'Documento').replace(/[^a-zA-Z0-9.\-_]/g, '_'));
+            return cloudUrl.replace('/upload/', `/upload/fl_attachment:${safeName}/`);
         }
 
         async function getNextFCI() {
@@ -758,7 +794,6 @@
         function cargarDatos() {
             const path = (c) => collection(db, "artifacts", appId, "public", "data", c);
 
-            // Cargar Gerencias
             onSnapshot(path("Gerencias"), s => {
                 let h = "<option value=''>-- Seleccionar --</option>", l = "";
                 s.forEach(d => {
@@ -771,7 +806,6 @@
                 if(document.getElementById('list-ger')) document.getElementById('list-ger').innerHTML = l;
             });
 
-            // Cargar Departamentos
             onSnapshot(path("Departamentos"), s => {
                 let h = "<option value=''>-- Seleccionar --</option>", l = "";
                 s.forEach(d => {
@@ -783,7 +817,6 @@
                 if(document.getElementById('list-dep')) document.getElementById('list-dep').innerHTML = l;
             });
 
-            // Cargar Usuarios
             onSnapshot(path("Usuarios"), s => {
                 const tb = document.getElementById('tbody-users');
                 if(!tb) return;
@@ -793,20 +826,18 @@
                     const u = d.data();
                     u.docId = d.id;
                     allUsers.push(u); 
-                    // Se pasa solo el ID (usuario) al botón para evitar errores de comillas
                     tb.innerHTML += `<tr>
                         <td><b>${u.nombre}</b><br><span style="font-size:10px;color:#64748b">${u.usuario}</span></td>
                         <td>${u.email || '-'}</td>
                         <td>${u.gerencia}<br><span class="badge badge-info">${u.role || 'N/A'}</span></td>
                         <td>
                             <button class="btn btn-info" style="padding:5px 10px; font-size:10px;" onclick="cargarUsuarioParaEditar('${u.usuario}')">EDITAR</button> 
-                            <button class="btn btn-danger" style="padding:5px 10px; font-size:10px;" onclick="del('Usuarios','${u.usuario}')">X</button>
+                            <button class="btn btn-danger" style="padding:5px 10px; font-size:10px;" onclick="del('Usuarios','${u.docId}')">X</button>
                         </td>
                     </tr>`;
                 });
             });
 
-            // Cargar Configuración Listado Maestro (Columnas y Estatus)
             const docConfigMaestro = doc(db, "artifacts", appId, "public", "data", "Configuracion", "MaestroSettings");
             onSnapshot(docConfigMaestro, d => {
                 if(d.exists()) {
@@ -821,7 +852,6 @@
                 renderTablaMaestro();
             });
 
-            // Cargar Solicitudes
             onSnapshot(path("Solicitudes"), s => {
                 const tbHist = document.getElementById('tbody-historial');
                 const tbGest = document.getElementById('tbody-gestionar');
@@ -849,8 +879,8 @@
                     if(ver) tbHist.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.titulo}</td><td><span class="badge ${badgeClass}">${sol.estado}</span></td><td><button class="btn btn-ghost" onclick="verDetalle('${sol.docId}')">Ver</button></td></tr>`;
                     
                     let gestionar = false;
-                    if(p.p_gest_sgc && sol.idx < 3 && sol.estado !== 'Rechazado' && sol.estado !== 'Aprobado Final' && sol.estado !== 'Anulado') gestionar = true;
-                    if(p.p_ger_apr && sol.idx === 3 && sol.gerencia === currentUser.gerencia && sol.estado !== 'Rechazado' && sol.estado !== 'Anulado') gestionar = true;
+                    if(p.p_gest_sgc && (sol.idx === 0 || sol.idx === 1 || sol.idx === 3) && sol.estado !== 'Rechazado' && sol.estado !== 'Aprobado Final' && sol.estado !== 'Anulado') gestionar = true;
+                    if(p.p_ger_apr && sol.idx === 2 && sol.gerencia === currentUser.gerencia && sol.estado !== 'Rechazado' && sol.estado !== 'Anulado') gestionar = true;
 
                     if(gestionar) tbGest.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.solicitante}</td><td>${sol.titulo}</td><td><span class="badge ${badgeClass}">${sol.estado}</span></td><td><button class="btn btn-primary" onclick="verDetalle('${sol.docId}')">Gestionar</button></td></tr>`;
                 });
@@ -860,7 +890,6 @@
                 if(document.getElementById('dash-ok')) document.getElementById('dash-ok').innerText = stats.o;
             });
 
-            // Cargar Listado Maestro Datos
             onSnapshot(path("ListadoMaestro"), s => {
                 dataMaestro = [];
                 s.forEach(d => { let data = d.data(); data.docId = d.id; dataMaestro.push(data); });
@@ -868,9 +897,6 @@
             });
         }
 
-        // ==========================================
-        //  FUNCIONES DEL LISTADO MAESTRO DINÁMICO
-        // ==========================================
         window.renderListasConfig = () => {
             let hCol = "";
             columnasMaestro.forEach((c, idx) => {
@@ -885,12 +911,10 @@
             if(document.getElementById('list-estatus')) document.getElementById('list-estatus').innerHTML = hEst;
         }
 
-        // Se usa setDoc directo con merge para asegurar guardado sin fallos
         window.agregarColumna = async () => {
             let val = document.getElementById('col-nom').value.trim();
             if(!val) return;
             if (columnasMaestro.includes(val)) return alert("Esa columna ya existe.");
-            
             columnasMaestro.push(val);
             await setDoc(doc(db, "artifacts", appId, "public", "data", "Configuracion", "MaestroSettings"), { columnas: columnasMaestro, estatus: estatusMaestro }, {merge: true});
             document.getElementById('col-nom').value = "";
@@ -906,7 +930,6 @@
             let val = document.getElementById('est-nom').value.trim();
             if(!val) return;
             if (estatusMaestro.includes(val)) return alert("Ese estatus ya existe.");
-            
             estatusMaestro.push(val);
             await setDoc(doc(db, "artifacts", appId, "public", "data", "Configuracion", "MaestroSettings"), { columnas: columnasMaestro, estatus: estatusMaestro }, {merge: true});
             document.getElementById('est-nom').value = "";
@@ -1036,7 +1059,6 @@
             }
         };
 
-        // --- IMPORTACIÓN EXCEL ---
         if(document.getElementById('import-excel-file')){
             document.getElementById('import-excel-file').addEventListener('change', async (e) => {
                 const file = e.target.files[0];
@@ -1084,9 +1106,6 @@
             XLSX.writeFile(wb, "Listado_Maestro_SGC.xlsx");
         };
 
-        // ==========================================
-        //  SOLICITUDES Y GESTIÓN
-        // ==========================================
         if(document.getElementById('sol-ger')){
             document.getElementById('sol-ger').addEventListener('change', (e) => {
                 const gSelected = e.target.value;
@@ -1101,7 +1120,6 @@
             });
         }
 
-        // CARGA SEGURA DE USUARIO
         window.cargarUsuarioParaEditar = (usuarioId) => {
             const u = allUsers.find(x => x.usuario === usuarioId);
             if(!u) return;
@@ -1131,6 +1149,43 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
+        // ACTUALIZAR DATOS EN PASO 2 (SGC)
+        window.actualizarDatosSGC = async () => {
+            const tit = document.getElementById('m-upd-tit').value;
+            const cod = document.getElementById('m-upd-cod').value;
+            const ver = document.getElementById('m-upd-ver').value;
+            const f = document.getElementById('m-upd-file');
+            
+            if(!tit) return alert("El título es obligatorio.");
+
+            document.getElementById('loading-overlay').style.display = 'flex';
+            
+            let updateData = {
+                titulo: tit,
+                cod_ref: cod,
+                ver_ref: ver
+            };
+
+            let msjChat = `SGC actualizó los datos pre-aprobación. Título: ${tit}, Cód: ${cod}, Ver: ${ver}.`;
+
+            if(f.files[0]) {
+                let fileUrl = await uploadToCloudinary(f.files[0]);
+                let fileName = f.files[0].name;
+                updateData.adjunto = fileUrl;
+                updateData.adjunto_nombre = fileName;
+                msjChat += ` (Nuevo adjunto subido: ${fileName})`;
+            }
+
+            await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), {
+                ...updateData,
+                chat: arrayUnion({u: currentUser.nombre, m: `✏️ ${msjChat}`, t: new Date().toLocaleString()})
+            });
+
+            document.getElementById('loading-overlay').style.display = 'none';
+            alert("Datos actualizados correctamente.");
+            closeModal();
+        }
+
         window.verDetalle = async (id) => {
             selectedId = id;
             const docSnap = await getDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", id));
@@ -1153,7 +1208,10 @@
             document.getElementById('m-accion').innerText = s.accion;
             document.getElementById('m-jus').innerText = s.motivo || s.justificacion || "Sin justificación";
 
-            document.getElementById('m-file-link').innerHTML = s.adjunto ? `<a href="${s.adjunto}" target="_blank" class="file-link">Descargar Archivo</a>` : "Sin archivo";
+            let adjOrigName = s.adjunto_nombre || "Descargar Archivo";
+            let dlUrl = s.adjunto ? getDownloadUrl(s.adjunto, adjOrigName) : "#";
+            document.getElementById('m-file-link').innerHTML = s.adjunto ? `<a href="${dlUrl}" class="file-link">📎 ${adjOrigName}</a>` : "Sin archivo";
+            
             if(s.accion !== 'Creación') {
                 document.getElementById('m-extra-panel').style.display = 'block';
                 document.getElementById('m-cod').innerText = s.cod_ref;
@@ -1171,8 +1229,10 @@
 
             const p = currentUser.permisos;
             const esSGC = p.p_gest_sgc;
-            const esGestorSGC = esSGC && s.idx < 3;
-            const esGer = p.p_ger_apr && s.idx === 3 && s.gerencia === currentUser.gerencia;
+            
+            const esGestorSGC = esSGC && (s.idx === 0 || s.idx === 1 || s.idx === 3);
+            const esGer = p.p_ger_apr && s.idx === 2 && s.gerencia === currentUser.gerencia;
+            
             const esDuenio = s.uid === currentUser.usuario;
             const activo = s.estado !== 'Aprobado Final' && s.estado !== 'Rechazado' && s.estado !== 'Anulado';
             
@@ -1184,16 +1244,34 @@
             document.getElementById('btn-anular').style.display = (esSGC || esDuenio) && activo ? 'inline-block' : 'none';
 
             document.getElementById('m-panel-final-sgc').style.display = 'none';
+            document.getElementById('m-panel-update-sgc').style.display = 'none';
             document.getElementById('m-display-final').style.display = 'none';
+            document.getElementById('m-original-data').classList.remove('locked-data');
+            document.getElementById('m-orig-title').style.display = 'none';
+
+            if (esSGC && s.idx === 1 && activo) {
+                document.getElementById('m-panel-update-sgc').style.display = 'block';
+                document.getElementById('m-upd-tit').value = s.titulo || '';
+                document.getElementById('m-upd-cod').value = s.cod_ref || '';
+                document.getElementById('m-upd-ver').value = s.ver_ref || '';
+            }
             
             if (s.estado === 'Aprobado Final') {
                 if (s.version_final) {
+                    document.getElementById('m-original-data').classList.add('locked-data');
+                    document.getElementById('m-orig-title').style.display = 'flex';
+                    
                     document.getElementById('m-display-final').style.display = 'block';
+                    document.getElementById('m-disp-cod').innerText = s.codigo_final || s.cod_ref || "N/A";
                     document.getElementById('m-disp-ver').innerText = s.version_final;
                     document.getElementById('m-disp-com').innerText = s.comentario_final || "Sin comentarios adicionales.";
-                    document.getElementById('m-disp-file').innerHTML = s.documento_final ? `<a href="${s.documento_final}" target="_blank" class="file-link">📄 Ver Documento Oficial</a>` : "N/A";
+                    
+                    let finName = s.documento_final_nombre || "Documento Oficial Final";
+                    let finUrl = s.documento_final ? getDownloadUrl(s.documento_final, finName) : "#";
+                    document.getElementById('m-disp-file').innerHTML = s.documento_final ? `<a href="${finUrl}" class="file-link" style="font-size:14px;">📄 ${finName}</a>` : "N/A";
                 } else if (esSGC) {
                     document.getElementById('m-panel-final-sgc').style.display = 'block';
+                    document.getElementById('m-final-cod').value = s.cod_ref || ""; 
                 }
             }
 
@@ -1266,6 +1344,7 @@
         }
 
         window.guardarCierreFinal = async () => {
+            const codFinal = document.getElementById('m-final-cod').value;
             const ver = document.getElementById('m-final-ver').value;
             const com = document.getElementById('m-final-comentario').value;
             const f = document.getElementById('m-final-file');
@@ -1274,11 +1353,14 @@
             
             document.getElementById('loading-overlay').style.display = 'flex';
             let fileUrl = await uploadToCloudinary(f.files[0]);
+            let fileName = f.files[0].name;
             
             await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), {
+                codigo_final: codFinal,
                 version_final: ver,
                 comentario_final: com,
                 documento_final: fileUrl,
+                documento_final_nombre: fileName,
                 chat: arrayUnion({u: "SISTEMA (SGC)", m: `🏁 DOCUMENTO PUBLICADO. Ver: ${ver}. Obs: ${com}`, archivo: fileUrl, t: new Date().toLocaleString()})
             });
 
@@ -1290,7 +1372,7 @@
             
             columnasMaestro.forEach(c => {
                 let low = c.toLowerCase();
-                if(low.includes('código') || low === 'codigo') dataMaestro[c] = selectedDocData.cod_ref || "POR_ASIGNAR";
+                if(low.includes('código') || low === 'codigo') dataMaestro[c] = codFinal || selectedDocData.cod_ref || "POR_ASIGNAR";
                 else if(low.includes('gerencia')) dataMaestro[c] = selectedDocData.gerencia;
                 else if(low.includes('departamento')) dataMaestro[c] = selectedDocData.departamento;
                 else if(low.includes('tipo')) dataMaestro[c] = selectedDocData.tipoDoc;
@@ -1369,6 +1451,8 @@
 
             document.getElementById('loading-overlay').style.display = 'flex';
             const f = document.getElementById('sol-file');
+            
+            let fileName = f.files[0] ? f.files[0].name : "";
             let url = f.files[0] ? await uploadToCloudinary(f.files[0]) : null;
             const fci = await getNextFCI();
 
@@ -1389,8 +1473,9 @@
                 solicitante_email: currentUser.email, 
                 uid: currentUser.usuario,
                 idx: 0,
-                estado: "Pendiente",
+                estado: "Pendiente Documentado",
                 adjunto: url,
+                adjunto_nombre: fileName, 
                 chat: [{u: "SISTEMA", m: "Solicitud creada exitosamente.", t: new Date().toLocaleString()}],
                 fecha: new Date().toISOString()
             };
