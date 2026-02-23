@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestión V1</title>
+    <title>Sistema de Gestión</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
@@ -667,15 +667,13 @@
             if (!fechaStr) return "";
             let dateVal = fechaStr;
             
-            // Manejar el formato YYYY-MM-DD para forzar la toma del día exacto
             if (typeof fechaStr === 'string' && fechaStr.length === 10 && fechaStr.includes("-")) {
                 dateVal = fechaStr + "T12:00:00"; 
             } 
-            // Manejar el formato DD/MM/YYYY si se ingresa
             else if (typeof fechaStr === 'string' && fechaStr.includes("/")) {
                 let p = fechaStr.split("/");
                 if(p.length === 3) {
-                    if (p[2].length === 4) { // Asumir DD/MM/YYYY
+                    if (p[2].length === 4) { 
                         dateVal = `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}T12:00:00`;
                     }
                 }
@@ -745,10 +743,19 @@
             } catch(e) { return null; }
         }
 
+        // ========================================================================================
+        // CORRECCIÓN BOMBILLA: NUEVO SISTEMA PARA EVITAR ERROR 400 AL DESCARGAR CON ESPACIOS/TILDES
+        // ========================================================================================
         function getDownloadUrl(cloudUrl, originalName) {
             if(!cloudUrl) return "#";
             if(!cloudUrl.includes('/upload/')) return cloudUrl;
-            let safeName = encodeURIComponent(originalName || 'Documento');
+            
+            // Limpiar nombre: quitar acentos, eñes y caracteres especiales que rompan Cloudinary
+            let safeName = (originalName || 'Documento')
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quitar acentos (ó -> o)
+                .replace(/[^a-zA-Z0-9.\-]/g, '_')                 // Reemplazar espacios y raros por guión bajo
+                .replace(/_+/g, '_');                             // Evitar múltiples guiones bajos juntos
+
             return cloudUrl.replace('/upload/', `/upload/fl_attachment:${safeName}/`);
         }
 
@@ -1015,12 +1022,13 @@
                 columnasMaestro.forEach(col => {
                     let val = item[col] || "";
                     if(val.toString().startsWith("http")) {
-                        rowHTML += `<td><a href="${val}" target="_blank" class="file-link">📁 Ver Archivo</a></td>`;
+                        // REUSAR FUNCION PARA DESCARGAS DEL MAESTRO
+                        let dUrl = getDownloadUrl(val, "Documento_Maestro");
+                        rowHTML += `<td><a href="${dUrl}" target="_blank" class="file-link">📁 Descargar Archivo</a></td>`;
                     } else if(col.toLowerCase().includes('estatus') || col.toLowerCase().includes('estado')) {
                          let badge = val.toLowerCase().includes('vigente') || val.toLowerCase().includes('activo') ? 'badge-success' : (val.toLowerCase().includes('obsoleto') || val.toLowerCase().includes('inactivo') ? 'badge-danger' : 'badge-warning');
                          rowHTML += `<td><span class="badge ${badge}">${val}</span></td>`;
                     } else if(col.toLowerCase().includes('fecha')) {
-                         // APLICANDO EL FORMATEO DE FECHA A LA TABLA MAESTRA
                          rowHTML += `<td>${window.formatearFechaAbreviada(val)}</td>`;
                     } else {
                         rowHTML += `<td>${val}</td>`;
@@ -1274,7 +1282,6 @@
                 document.getElementById('m-extra-panel').style.display = 'block';
                 document.getElementById('m-cod').innerText = s.cod_ref;
                 document.getElementById('m-ver').innerText = s.ver_ref;
-                // APLICANDO EL FORMATEO DE FECHA AL MODAL
                 document.getElementById('m-fecha-ult').innerText = window.formatearFechaAbreviada(s.fecha_ref);
             } else document.getElementById('m-extra-panel').style.display = 'none';
 
@@ -1323,7 +1330,6 @@
                     document.getElementById('m-display-final').style.display = 'block';
                     document.getElementById('m-disp-cod').innerText = s.codigo_final || s.cod_ref || "N/A";
                     document.getElementById('m-disp-ver').innerText = s.version_final;
-                    // APLICANDO EL FORMATEO DE FECHA AL PANEL DE PUBLICACIÓN
                     document.getElementById('m-disp-fecha').innerText = s.fecha_final ? window.formatearFechaAbreviada(s.fecha_final) : "N/A";
                     document.getElementById('m-disp-com').innerText = s.comentario_final || "Sin comentarios adicionales.";
                     
@@ -1557,23 +1563,6 @@
             cambiarVista('sec-hist', document.getElementById('nav-hist'));
         };
 
-        // GESTIÓN DE DEPARTAMENTOS Y GERENCIAS
-        document.getElementById('btnSaveDep').onclick = async () => { 
-            const ger = document.getElementById('d-ger-sel').value;
-            const nom = document.getElementById('d-nom').value.trim();
-            if(!ger || !nom) return alert("Por favor, seleccione una Gerencia y escriba el nombre del Departamento.");
-            await addDoc(collection(db, "artifacts", appId, "public", "data", "Departamentos"), {
-                nombre: nom, 
-                gerencia: ger
-            }); 
-            document.getElementById('d-nom').value = ""; 
-        };
-
-        document.getElementById('btnSaveGer').onclick = async () => { 
-            await addDoc(collection(db, "artifacts", appId, "public", "data", "Gerencias"), {nombre: document.getElementById('g-nom').value}); 
-            document.getElementById('g-nom').value = ""; 
-        };
-
         // GESTIÓN DE USUARIOS
         document.getElementById('btnSaveUser').onclick = async () => {
             const u = document.getElementById('u-usr').value.toLowerCase().trim();
@@ -1607,6 +1596,9 @@
             alert("Usuario Guardado/Actualizado Correctamente");
             resetUserForm();
         };
+
+        document.getElementById('btnSaveGer').onclick = async () => { await addDoc(collection(db, "artifacts", appId, "public", "data", "Gerencias"), {nombre: document.getElementById('g-nom').value}); document.getElementById('g-nom').value = ""; };
+        document.getElementById('btnSaveDep').onclick = async () => { await addDoc(collection(db, "artifacts", appId, "public", "data", "Departamentos"), {nombre: document.getElementById('d-nom').value}); document.getElementById('d-nom').value = ""; };
 
         window.cambiarVista = (id, btn) => {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
