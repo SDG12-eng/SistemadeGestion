@@ -664,14 +664,11 @@
         let dataMaestro = [];
         let editandoMaestroId = null;
         
-        // Variable Global para Reportes
         let globalSolicitudes = [];
 
+        // AQUÍ SE CORRIGE EL MENSAJE DE FASE. SE TOMA EL NOMBRE DE LA FASE QUE SE ESTÁ COMPLETANDO.
         const PASOS_NOMBRES = ["Pendiente Documentado", "Pendiente Verificado", "Pendiente Aprobación Gerencia", "Pendiente Aprobación SGC"];
 
-        // ==========================================
-        // UTILIDAD: FORMATEAR FECHA ABREVIADA
-        // ==========================================
         window.formatearFechaAbreviada = (fechaStr) => {
             if (!fechaStr) return "";
             let dateVal = fechaStr;
@@ -699,9 +696,6 @@
             return `${d} ${m} ${y}`;
         };
 
-        // ==========================================
-        // UTILIDAD: EXPORTAR SOLICITUDES A EXCEL
-        // ==========================================
         window.exportarReporteSolicitudes = () => {
             if(globalSolicitudes.length === 0) {
                 alert("No hay solicitudes para exportar."); 
@@ -775,20 +769,15 @@
         };
         initAuth();
 
-        // ========================================================================================
-        // NUEVO SISTEMA DE SUBIDA PARA EVITAR NOMBRES EXTRAÑOS
-        // ========================================================================================
         async function uploadToCloudinary(file) {
             if(!file) return null;
             const fd = new FormData(); 
             fd.append('file', file); 
             fd.append('upload_preset', UPLOAD_PRESET);
 
-            // Limpiar nombre original para forzar a Cloudinary a usarlo como public_id
             let baseName = file.name.substring(0, file.name.lastIndexOf('.'));
             let cleanName = baseName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9\-_]/g, '_').replace(/_+/g, '_');
             
-            // Añadir public_id al FormData para que Cloudinary no genere letras aleatorias
             fd.append('public_id', cleanName + '_' + Date.now().toString().slice(-4)); 
 
             try {
@@ -796,6 +785,19 @@
                 const data = await res.json();
                 return data.secure_url; 
             } catch(e) { return null; }
+        }
+
+        function getDownloadUrl(cloudUrl, originalName) {
+            if(!cloudUrl) return "#";
+            if(!cloudUrl.includes('/upload/')) return cloudUrl;
+            
+            let safeName = (originalName || 'Documento')
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") 
+                .replace(/[^a-zA-Z0-9.\-]/g, '_')                 
+                .replace(/_+/g, '_');                             
+
+            let urlLimpia = cloudUrl.replace(/\/fl_attachment:[^/]+\//, '/');
+            return urlLimpia.replace('/upload/', `/upload/fl_attachment:${safeName}/`);
         }
 
         async function getNextFCI() {
@@ -950,25 +952,25 @@
 
                 solicitudesList.sort((a, b) => { return a.customId > b.customId ? 1 : -1; });
                 
-                globalSolicitudes = solicitudesList; // Guardar para exportar a Excel
+                globalSolicitudes = solicitudesList; 
 
                 solicitudesList.forEach(sol => {
                     const p = currentUser.permisos || {};
                     stats.total++;
                     if(sol.estado === 'Pendiente Documentado') stats.p++; 
-                    else if(sol.estado.includes('Aprobado Final')) stats.o++;
+                    else if(sol.estado.includes('Aprobado Final') || sol.estado.includes('Cerrada')) stats.o++;
 
                     let ver = p.p_ver_all || (p.p_ver_ger && sol.gerencia === currentUser.gerencia) || (p.p_ver_propias && sol.uid === currentUser.usuario);
                     let badgeClass = 'badge-info';
-                    if(sol.estado.includes('Aprobado')) badgeClass = 'badge-success';
+                    if(sol.estado.includes('Aprobado') || sol.estado.includes('Cerrada')) badgeClass = 'badge-success';
                     if(sol.estado === 'Anulado' || sol.estado === 'Rechazado') badgeClass = 'badge-danger';
                     if(sol.estado.includes('Pendiente')) badgeClass = 'badge-warning';
 
                     if(ver) tbHist.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.titulo}</td><td><span class="badge ${badgeClass}">${sol.estado}</span></td><td><button class="btn btn-ghost" onclick="verDetalle('${sol.docId}')">Ver</button></td></tr>`;
                     
                     let gestionar = false;
-                    if(p.p_gest_sgc && (sol.idx === 0 || sol.idx === 1 || sol.idx === 3) && sol.estado !== 'Rechazado' && sol.estado !== 'Aprobado Final' && sol.estado !== 'Anulado') gestionar = true;
-                    if(p.p_ger_apr && sol.idx === 2 && sol.gerencia === currentUser.gerencia && sol.estado !== 'Rechazado' && sol.estado !== 'Anulado') gestionar = true;
+                    if(p.p_gest_sgc && (sol.idx === 0 || sol.idx === 1 || sol.idx === 3) && sol.estado !== 'Rechazado' && sol.estado !== 'Aprobado Final' && sol.estado !== 'Anulado' && sol.estado !== 'Solicitud Cerrada') gestionar = true;
+                    if(p.p_ger_apr && sol.idx === 2 && sol.gerencia === currentUser.gerencia && sol.estado !== 'Rechazado' && sol.estado !== 'Anulado' && sol.estado !== 'Solicitud Cerrada') gestionar = true;
 
                     if(gestionar) tbGest.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.solicitante}</td><td>${sol.titulo}</td><td><span class="badge ${badgeClass}">${sol.estado}</span></td><td><button class="btn btn-primary" onclick="verDetalle('${sol.docId}')">Gestionar</button></td></tr>`;
                 });
@@ -1054,7 +1056,8 @@
                 columnasMaestro.forEach(col => {
                     let val = item[col] || "";
                     if(val.toString().startsWith("http")) {
-                        rowHTML += `<td><a href="${val}" target="_blank" class="file-link" download>📁 Descargar Archivo</a></td>`;
+                        let dUrl = getDownloadUrl(val, item['Nombre del documento'] || "Documento_Maestro");
+                        rowHTML += `<td><a href="${dUrl}" target="_blank" class="file-link" download>📁 Descargar Archivo</a></td>`;
                     } else if(col.toLowerCase().includes('estatus') || col.toLowerCase().includes('estado')) {
                          let badge = val.toLowerCase().includes('vigente') || val.toLowerCase().includes('activo') ? 'badge-success' : (val.toLowerCase().includes('obsoleto') || val.toLowerCase().includes('inactivo') ? 'badge-danger' : 'badge-warning');
                          rowHTML += `<td><span class="badge ${badge}">${val}</span></td>`;
@@ -1293,7 +1296,7 @@
             document.getElementById('m-sol').innerText = s.solicitante;
             
             let badgeClass = 'badge-info';
-            if(s.estado.includes('Aprobado')) badgeClass = 'badge-success';
+            if(s.estado.includes('Aprobado') || s.estado.includes('Cerrada')) badgeClass = 'badge-success';
             if(s.estado === 'Anulado' || s.estado === 'Rechazado') badgeClass = 'badge-danger';
             if(s.estado.includes('Pendiente')) badgeClass = 'badge-warning';
 
@@ -1305,8 +1308,7 @@
             document.getElementById('m-jus').innerText = s.motivo || s.justificacion || "Sin justificación";
 
             let adjOrigName = s.adjunto_nombre || "Descargar Archivo";
-            // SE USA AHORA DIRECTAMENTE LA URL LIMPIA
-            let dlUrl = s.adjunto ? s.adjunto : "#";
+            let dlUrl = s.adjunto ? getDownloadUrl(s.adjunto, adjOrigName) : "#";
             document.getElementById('m-file-link').innerHTML = s.adjunto ? `<a href="${dlUrl}" target="_blank" class="file-link" download>📎 ${adjOrigName}</a>` : "Sin archivo";
             
             if(s.accion !== 'Creación') {
@@ -1321,7 +1323,7 @@
                 st.className = 'step'; 
                 if(s.estado === 'Anulado' || s.estado === 'Rechazado') continue;
                 if(i <= s.idx) st.classList.add('completed'); 
-                if(i === s.idx + 1 && s.estado !== 'Aprobado Final') st.classList.add('active');
+                if(i === s.idx + 1 && s.estado !== 'Aprobado Final' && s.estado !== 'Solicitud Cerrada') st.classList.add('active');
             }
 
             const p = currentUser.permisos;
@@ -1331,7 +1333,7 @@
             const esGer = p.p_ger_apr && s.idx === 2 && s.gerencia === currentUser.gerencia;
             
             const esDuenio = s.uid === currentUser.usuario;
-            const activo = s.estado !== 'Aprobado Final' && s.estado !== 'Rechazado' && s.estado !== 'Anulado';
+            const activo = s.estado !== 'Aprobado Final' && s.estado !== 'Solicitud Cerrada' && s.estado !== 'Rechazado' && s.estado !== 'Anulado';
             
             document.getElementById('m-actions').style.display = (esGestorSGC || esGer) && activo ? 'block' : 'none';
             document.getElementById('applicant-actions').style.display = (esDuenio && activo) ? 'block' : 'none';
@@ -1353,7 +1355,7 @@
                 document.getElementById('m-upd-ver').value = s.ver_ref || '';
             }
             
-            if (s.estado === 'Aprobado Final') {
+            if (s.estado === 'Aprobado Final' || s.estado === 'Solicitud Cerrada') {
                 if (s.version_final) {
                     document.getElementById('m-original-data').classList.add('locked-data');
                     document.getElementById('m-orig-title').style.display = 'flex';
@@ -1365,10 +1367,9 @@
                     document.getElementById('m-disp-com').innerText = s.comentario_final || "Sin comentarios adicionales.";
                     
                     let finName = s.documento_final_nombre || "Documento Oficial Final";
-                    // SE USA AHORA DIRECTAMENTE LA URL LIMPIA
-                    let finUrl = s.documento_final ? s.documento_final : "#";
+                    let finUrl = s.documento_final ? getDownloadUrl(s.documento_final, finName) : "#";
                     document.getElementById('m-disp-file').innerHTML = s.documento_final ? `<a href="${finUrl}" target="_blank" class="file-link" style="font-size:14px;" download>📄 ${finName}</a>` : "N/A";
-                } else if (esSGC) {
+                } else if (esSGC && s.estado === 'Aprobado Final') {
                     document.getElementById('m-panel-final-sgc').style.display = 'block';
                     document.getElementById('m-final-cod').value = s.cod_ref || ""; 
                 }
@@ -1380,7 +1381,7 @@
             cb.innerHTML = s.chat ? s.chat.map(c => `
                 <div class="chat-msg" style="border-left-color:${c.u===currentUser.nombre?'var(--primary)':'#cbd5e1'}">
                     <b style="font-size:10px">${c.u}</b> <span style="font-size:9px;color:#94a3b8">${c.t}</span><br>${c.m}
-                    ${c.archivo ? `<br><a href="${c.archivo}" target="_blank" style="font-size:10px;color:blue" download>Ver Adjunto</a>` : ''}
+                    ${c.archivo ? `<br><a href="${getDownloadUrl(c.archivo, 'Archivo_Adjunto')}" target="_blank" style="font-size:10px;color:blue" download>Ver Adjunto</a>` : ''}
                 </div>
             `).join('') : '';
 
@@ -1406,14 +1407,18 @@
             document.getElementById('reunion-container').style.display = 'none';
         }
 
+        // CORRECCIÓN: EVITAR QUE EL MENSAJE SE ADELANTE
         window.firmarPaso = async () => {
             const s = selectedDocData;
             const nIdx = s.idx + 1;
             const nEst = nIdx < 4 ? PASOS_NOMBRES[nIdx] : "Aprobado Final";
             
+            // Toma el nombre de la fase que se acaba de completar, no la siguiente
+            const faseAprobada = PASOS_NOMBRES[s.idx]; 
+            
             await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), {
                 idx: nIdx, estado: nEst,
-                chat: arrayUnion({u: currentUser.nombre, m: `✅ APROBADO FASE: ${nEst}`, t: new Date().toLocaleString()})
+                chat: arrayUnion({u: currentUser.nombre, m: `✅ FASE COMPLETADA: ${faseAprobada}`, t: new Date().toLocaleString()})
             });
 
             const dest = await getDatosEnvio(s);
@@ -1456,13 +1461,14 @@
             let fileName = f.files[0].name;
             
             await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), {
+                estado: "Solicitud Cerrada", // SE ACTUALIZA ESTADO PARA QUE REFLEJE EL CIERRE
                 codigo_final: codFinal,
                 version_final: ver,
                 fecha_final: fecha,
                 comentario_final: com,
                 documento_final: fileUrl,
                 documento_final_nombre: fileName,
-                chat: arrayUnion({u: "SISTEMA (SGC)", m: `🏁 DOCUMENTO PUBLICADO. Ver: ${ver}. Obs: ${com}`, archivo: fileUrl, t: new Date().toLocaleString()})
+                chat: arrayUnion({u: "SISTEMA (SGC)", m: `🏁 SOLICITUD CERRADA Y PUBLICADA. Ver: ${ver}. Obs: ${com}`, archivo: fileUrl, t: new Date().toLocaleString()})
             });
 
             let dataMaestro = {
