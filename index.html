@@ -23,7 +23,11 @@
 
         /* Login */
         #login-screen { position: fixed; inset: 0; background: var(--sidebar); display: flex; align-items: center; justify-content: center; z-index: 5000; }
-        .login-box { background: var(--white); padding: 40px; border-radius: 24px; width: 400px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); text-align: center; }
+        .login-box { background: var(--white); padding: 40px; border-radius: 24px; max-width: 400px; width: 90%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); text-align: center; }
+
+        /* Sidebar Overlay para Móviles */
+        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 8000; backdrop-filter: blur(2px); opacity: 0; transition: opacity 0.3s ease; }
+        .sidebar-overlay.active { display: block; opacity: 1; }
 
         /* Sidebar */
         .sidebar { width: 280px; background: var(--sidebar); color: white; display: none; flex-direction: column; padding: 20px; border-right: 1px solid rgba(255,255,255,0.1); }
@@ -41,6 +45,10 @@
         .section { display: none; animation: fadeIn 0.3s ease-out; }
         .section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Header Móvil */
+        .mobile-header { display: none; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .menu-btn { background: var(--white); border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; color: var(--primary); cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 
         /* UI Elements */
         .card { background: white; padding: 25px; border-radius: 20px; border: 1px solid var(--border); margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
@@ -137,8 +145,50 @@
         .file-link { color: var(--accent); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
         .file-link:hover { text-decoration: underline; }
         
-        .search-bar { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 15px; width: 100%; max-width: 350px; font-size: 13px; margin-bottom: 15px; outline: none; }
+        .search-bar { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 15px; width: 100%; max-width: 350px; font-size: 13px; outline: none; margin-bottom: 0; }
         .search-bar:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1); }
+
+        /* =======================================
+           DISEÑO RESPONSIVO (MÓVILES Y TABLETS)
+           ======================================= */
+        @media (max-width: 768px) {
+            body { flex-direction: column; overflow-y: auto; }
+            
+            .sidebar { 
+                position: fixed !important; 
+                left: -300px; 
+                top: 0; 
+                bottom: 0; 
+                z-index: 9000; 
+                transition: left 0.3s ease; 
+                box-shadow: 5px 0 15px rgba(0,0,0,0.2); 
+            }
+            .sidebar.open { left: 0; }
+            
+            .mobile-header { display: flex; }
+            
+            .main { padding: 15px; overflow-y: visible; }
+            
+            .grid-2, .grid-3 { grid-template-columns: 1fr; gap: 15px; }
+            
+            .modal-content { display: flex; flex-direction: column; height: 95vh; max-height: 95vh; overflow-y: auto; width: 95%; padding: 0; }
+            .modal-main { padding: 20px; border-right: none; border-bottom: 1px solid var(--border); flex: none; height: auto; }
+            .modal-side { border-left: none; height: auto; }
+            #chat-box { height: 350px; }
+            
+            .step label { font-size: 8px; line-height: 1.2; display: inline-block; padding: 0 2px; }
+            .step-container::before { top: 10px; }
+            .step-dot { width: 20px; height: 20px; font-size: 9px; border-width: 2px; }
+            
+            h1 { font-size: 22px; }
+            .card { padding: 15px; }
+            
+            /* Ajuste botones top en listados */
+            .btn { width: 100%; justify-content: center; }
+            .search-bar { max-width: 100%; margin-bottom: 10px; }
+            #sec-listado > div:first-child, #sec-hist > div:first-child, #sec-gest > div:first-child { flex-direction: column; align-items: stretch; }
+            #sec-listado > div:first-child > div, #sec-hist > .card > div:first-child, #sec-gest > .card > div:first-child { flex-direction: column; align-items: stretch; }
+        }
     </style>
 </head>
 <body>
@@ -147,6 +197,8 @@
         <div class="spinner" style="margin-bottom: 15px;"></div>
         <h4 style="color:var(--primary)">Procesando...</h4>
     </div>
+
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleMenu()"></div>
 
     <div id="login-screen">
         <div class="login-box">
@@ -200,7 +252,7 @@
         <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 16px;">
             <p id="curr-name" style="font-weight: 700; font-size: 13px;"></p>
             <p id="curr-ger" style="font-size: 10px; color: #94a3b8; margin-top:5px;"></p>
-            <button onclick="logout()" style="background:none; border:none; color:var(--danger); font-size:11px; font-weight:700; cursor:pointer; margin-top:10px; display:flex; align-items:center; gap:5px;">
+            <button onclick="logout()" style="background:none; border:none; color:var(--danger); font-size:11px; font-weight:700; cursor:pointer; margin-top:10px; display:flex; align-items:center; gap:5px; padding:0;">
                 <span class="material-icons-round" style="font-size:16px;">logout</span> Salir
             </button>
         </div>
@@ -208,6 +260,15 @@
 
     <main class="main" id="main">
         
+        <div class="mobile-header">
+            <h2 style="font-size: 18px; color: var(--primary); margin:0; display:flex; align-items:center; gap:5px; font-weight:800;">
+                <span class="material-icons-round">verified_user</span> SGC PRO
+            </h2>
+            <button class="menu-btn" onclick="toggleMenu()">
+                <span class="material-icons-round">menu</span> Menú
+            </button>
+        </div>
+
         <section id="sec-dash" class="section">
             <h1>Panel General</h1>
             <div class="stats-grid grid-3" style="margin-top:20px;">
@@ -298,7 +359,7 @@
             </div>
             <div class="card" style="padding:0; padding-top:15px; overflow:hidden; margin-top:20px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; padding: 0 15px; gap: 10px; flex-wrap: wrap;">
-                    <input type="text" id="search-hist" class="search-bar" placeholder="🔍 Buscar por ID, Título o Estado..." onkeyup="filtrarTabla('search-hist', 'tbody-historial')" style="margin-bottom:0; max-width:300px; flex:1;">
+                    <input type="text" id="search-hist" class="search-bar" placeholder="🔍 Buscar por ID, Título o Estado..." onkeyup="filtrarTabla('search-hist', 'tbody-historial')">
                     <button class="btn btn-success" onclick="exportarReporteSolicitudes()"><span class="material-icons-round" style="font-size:16px;">table_view</span> Exportar Reporte</button>
                 </div>
                 <div class="table-responsive">
@@ -313,7 +374,7 @@
             </div>
             <div class="card" style="padding:0; padding-top:15px; overflow:hidden; margin-top:20px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; padding: 0 15px; gap: 10px; flex-wrap: wrap;">
-                    <input type="text" id="search-gest" class="search-bar" placeholder="🔍 Buscar por ID, Título, Solicitante..." onkeyup="filtrarTabla('search-gest', 'tbody-gestionar')" style="margin-bottom:0; max-width:300px; flex:1;">
+                    <input type="text" id="search-gest" class="search-bar" placeholder="🔍 Buscar por ID, Título, Solicitante..." onkeyup="filtrarTabla('search-gest', 'tbody-gestionar')">
                     <button class="btn btn-success" onclick="exportarReporteSolicitudes()"><span class="material-icons-round" style="font-size:16px;">table_view</span> Exportar Reporte</button>
                 </div>
                 <div class="table-responsive">
@@ -334,7 +395,7 @@
                     </button>
                     <input type="file" id="import-excel-file" accept=".xlsx, .xls" style="display:none;">
                     <label for="import-excel-file" class="btn btn-warning" id="btn-import-maestro" style="display:none; cursor:pointer; margin:0;">
-                        <span class="material-icons-round" style="font-size:16px;">upload_file</span> Cargar Excel (Plantilla)
+                        <span class="material-icons-round" style="font-size:16px;">upload_file</span> Cargar Excel
                     </label>
                     <button class="btn btn-primary" id="btn-nuevo-maestro" onclick="abrirModalListadoMaestro()" style="display:none;">
                         <span class="material-icons-round" style="font-size:16px;">add</span> Nuevo Registro
@@ -459,7 +520,7 @@
                 <div style="display:flex; justify-content:space-between; margin-bottom:20px; align-items: flex-start;">
                     <div>
                         <span id="m-id" style="font-weight:800; color:var(--primary);"></span>
-                        <h2 id="m-tit" style="margin-top:5px;"></h2>
+                        <h2 id="m-tit" style="margin-top:5px; font-size:20px;"></h2>
                     </div>
                     <div style="display:flex; gap:10px;">
                         <button class="btn btn-danger" id="btn-anular" onclick="anularSolicitud()" style="display:none; padding: 8px 15px;">Anular</button>
@@ -639,7 +700,7 @@
         const EMAIL_TEMPLATE_ID = "template_7hlhnt8"; 
         const EMAIL_PUBLIC_KEY = "2jVnfkJKKG0bpKN-U"; 
 
-        const EMAIL_ADMIN_SGC = "sistemadegestion@fcipty.com"; 
+        const EMAIL_ADMIN_SGC = "oficinista.archivos@fcipty.com"; 
         const EMAIL_GRUPO_SGC = "actualizacion@fcipty.com"; 
 
         const app = initializeApp(firebaseConfig);
@@ -666,8 +727,18 @@
         
         let globalSolicitudes = [];
 
-        // AQUÍ SE CORRIGE EL MENSAJE DE FASE. SE TOMA EL NOMBRE DE LA FASE QUE SE ESTÁ COMPLETANDO.
         const PASOS_NOMBRES = ["Pendiente Documentado", "Pendiente Verificado", "Pendiente Aprobación Gerencia", "Pendiente Aprobación SGC"];
+
+        window.toggleMenu = () => {
+            const sb = document.getElementById('sidebar');
+            const ov = document.getElementById('sidebar-overlay');
+            sb.classList.toggle('open');
+            if(sb.classList.contains('open')) {
+                ov.classList.add('active');
+            } else {
+                ov.classList.remove('active');
+            }
+        };
 
         window.formatearFechaAbreviada = (fechaStr) => {
             if (!fechaStr) return "";
@@ -769,17 +840,12 @@
         };
         initAuth();
 
-        // ========================================================================================
-        // SOLUCIÓN AL ERROR 400 (NUEVO MÉTODO)
-        // ========================================================================================
         async function uploadToCloudinary(file) {
             if(!file) return null;
             const fd = new FormData(); 
             fd.append('file', file); 
             fd.append('upload_preset', UPLOAD_PRESET);
 
-            // Cloudinary rechaza archivos con caracteres especiales, así que al subir le damos un ID limpio
-            // para que no haya problema, la URL se crea perfecta.
             let baseName = file.name.substring(0, file.name.lastIndexOf('.'));
             let cleanName = baseName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9\-_]/g, '_').replace(/_+/g, '_');
             
@@ -793,11 +859,17 @@
         }
 
         function getDownloadUrl(cloudUrl, originalName) {
-            // Ya no manipulamos la URL para evitar el error 400. 
-            // La URL directa de Cloudinary que tenemos guardada descarga nativamente.
-            return cloudUrl;
+            if(!cloudUrl) return "#";
+            if(!cloudUrl.includes('/upload/')) return cloudUrl;
+            
+            let safeName = (originalName || 'Documento')
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") 
+                .replace(/[^a-zA-Z0-9.\-]/g, '_')                 
+                .replace(/_+/g, '_');                             
+
+            let urlLimpia = cloudUrl.replace(/\/fl_attachment:[^/]+\//, '/');
+            return urlLimpia.replace('/upload/', `/upload/fl_attachment:${safeName}/`);
         }
-        // ========================================================================================
 
         async function getNextFCI() {
             const ref = doc(db, "artifacts", appId, "public", "data", "Contadores", "solicitudes");
@@ -1056,7 +1128,7 @@
                     let val = item[col] || "";
                     if(val.toString().startsWith("http")) {
                         let dUrl = getDownloadUrl(val, item['Nombre del documento'] || "Documento_Maestro");
-                        rowHTML += `<td><a href="${dUrl}" target="_blank" class="file-link">📁 Descargar Archivo</a></td>`;
+                        rowHTML += `<td><a href="${dUrl}" target="_blank" class="file-link" download>📁 Descargar Archivo</a></td>`;
                     } else if(col.toLowerCase().includes('estatus') || col.toLowerCase().includes('estado')) {
                          let badge = val.toLowerCase().includes('vigente') || val.toLowerCase().includes('activo') ? 'badge-success' : (val.toLowerCase().includes('obsoleto') || val.toLowerCase().includes('inactivo') ? 'badge-danger' : 'badge-warning');
                          rowHTML += `<td><span class="badge ${badge}">${val}</span></td>`;
@@ -1308,7 +1380,7 @@
 
             let adjOrigName = s.adjunto_nombre || "Descargar Archivo";
             let dlUrl = s.adjunto ? getDownloadUrl(s.adjunto, adjOrigName) : "#";
-            document.getElementById('m-file-link').innerHTML = s.adjunto ? `<a href="${dlUrl}" target="_blank" class="file-link">📎 ${adjOrigName}</a>` : "Sin archivo";
+            document.getElementById('m-file-link').innerHTML = s.adjunto ? `<a href="${dlUrl}" target="_blank" class="file-link" download>📎 ${adjOrigName}</a>` : "Sin archivo";
             
             if(s.accion !== 'Creación') {
                 document.getElementById('m-extra-panel').style.display = 'block';
@@ -1367,7 +1439,7 @@
                     
                     let finName = s.documento_final_nombre || "Documento Oficial Final";
                     let finUrl = s.documento_final ? getDownloadUrl(s.documento_final, finName) : "#";
-                    document.getElementById('m-disp-file').innerHTML = s.documento_final ? `<a href="${finUrl}" target="_blank" class="file-link" style="font-size:14px;">📄 ${finName}</a>` : "N/A";
+                    document.getElementById('m-disp-file').innerHTML = s.documento_final ? `<a href="${finUrl}" target="_blank" class="file-link" style="font-size:14px;" download>📄 ${finName}</a>` : "N/A";
                 } else if (esSGC && s.estado === 'Aprobado Final') {
                     document.getElementById('m-panel-final-sgc').style.display = 'block';
                     document.getElementById('m-final-cod').value = s.cod_ref || ""; 
@@ -1380,7 +1452,7 @@
             cb.innerHTML = s.chat ? s.chat.map(c => `
                 <div class="chat-msg" style="border-left-color:${c.u===currentUser.nombre?'var(--primary)':'#cbd5e1'}">
                     <b style="font-size:10px">${c.u}</b> <span style="font-size:9px;color:#94a3b8">${c.t}</span><br>${c.m}
-                    ${c.archivo ? `<br><a href="${getDownloadUrl(c.archivo, 'Archivo_Adjunto')}" target="_blank" style="font-size:10px;color:blue">Ver Adjunto</a>` : ''}
+                    ${c.archivo ? `<br><a href="${getDownloadUrl(c.archivo, 'Archivo_Adjunto')}" target="_blank" style="font-size:10px;color:blue" download>Ver Adjunto</a>` : ''}
                 </div>
             `).join('') : '';
 
@@ -1633,13 +1705,28 @@
         };
 
         document.getElementById('btnSaveGer').onclick = async () => { await addDoc(collection(db, "artifacts", appId, "public", "data", "Gerencias"), {nombre: document.getElementById('g-nom').value}); document.getElementById('g-nom').value = ""; };
-        document.getElementById('btnSaveDep').onclick = async () => { await addDoc(collection(db, "artifacts", appId, "public", "data", "Departamentos"), {nombre: document.getElementById('d-nom').value}); document.getElementById('d-nom').value = ""; };
+        document.getElementById('btnSaveDep').onclick = async () => { 
+            const ger = document.getElementById('d-ger-sel').value;
+            const nom = document.getElementById('d-nom').value.trim();
+            if(!ger || !nom) return alert("Por favor, seleccione una Gerencia y escriba el nombre del Departamento.");
+            await addDoc(collection(db, "artifacts", appId, "public", "data", "Departamentos"), {
+                nombre: nom, 
+                gerencia: ger
+            }); 
+            document.getElementById('d-nom').value = ""; 
+        };
 
         window.cambiarVista = (id, btn) => {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
             document.getElementById(id).classList.add('active');
             if(btn) btn.classList.add('active');
+            
+            // Cerrar menú en móvil
+            if(window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('open');
+                document.getElementById('sidebar-overlay').classList.remove('active');
+            }
         };
         window.toggleModPanel = v => document.getElementById('panel-mod').style.display = v === 'Creación' ? 'none' : 'grid';
         window.closeModal = () => document.getElementById('modal').style.display = 'none';
