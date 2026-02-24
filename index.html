@@ -639,7 +639,7 @@
         const EMAIL_TEMPLATE_ID = "template_7hlhnt8"; 
         const EMAIL_PUBLIC_KEY = "2jVnfkJKKG0bpKN-U"; 
 
-        const EMAIL_ADMIN_SGC = "Sistemadegestion@fcipty.com"; 
+        const EMAIL_ADMIN_SGC = "oficinista.archivos@fcipty.com"; 
         const EMAIL_GRUPO_SGC = "actualizacion@fcipty.com"; 
 
         const app = initializeApp(firebaseConfig);
@@ -775,30 +775,27 @@
         };
         initAuth();
 
+        // ========================================================================================
+        // NUEVO SISTEMA DE SUBIDA PARA EVITAR NOMBRES EXTRAÑOS
+        // ========================================================================================
         async function uploadToCloudinary(file) {
             if(!file) return null;
-            const fd = new FormData(); fd.append('file', file); fd.append('upload_preset', UPLOAD_PRESET);
+            const fd = new FormData(); 
+            fd.append('file', file); 
+            fd.append('upload_preset', UPLOAD_PRESET);
+
+            // Limpiar nombre original para forzar a Cloudinary a usarlo como public_id
+            let baseName = file.name.substring(0, file.name.lastIndexOf('.'));
+            let cleanName = baseName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9\-_]/g, '_').replace(/_+/g, '_');
+            
+            // Añadir public_id al FormData para que Cloudinary no genere letras aleatorias
+            fd.append('public_id', cleanName + '_' + Date.now().toString().slice(-4)); 
+
             try {
                 const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, { method: 'POST', body: fd });
                 const data = await res.json();
                 return data.secure_url; 
             } catch(e) { return null; }
-        }
-
-        // ========================================================================================
-        // CORRECCIÓN: LIMPIEZA EXTREMA PARA CLOUDINARY SIN ROMPER DESCARGAS
-        // ========================================================================================
-        function getDownloadUrl(cloudUrl, originalName) {
-            if(!cloudUrl) return "#";
-            if(!cloudUrl.includes('/upload/')) return cloudUrl;
-            
-            let safeName = (originalName || 'Documento')
-                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quitar tildes
-                .replace(/[^a-zA-Z0-9.\-]/g, '_')                 // Quitar espacios y caracteres raros
-                .replace(/_+/g, '_');                             // Evitar guiones bajos dobles
-
-            let urlLimpia = cloudUrl.replace(/\/fl_attachment:[^/]+\//, '/');
-            return urlLimpia.replace('/upload/', `/upload/fl_attachment:${safeName}/`);
         }
 
         async function getNextFCI() {
@@ -1057,8 +1054,7 @@
                 columnasMaestro.forEach(col => {
                     let val = item[col] || "";
                     if(val.toString().startsWith("http")) {
-                        let dUrl = getDownloadUrl(val, item['Nombre del documento'] || "Documento_Maestro");
-                        rowHTML += `<td><a href="${dUrl}" class="file-link">📁 Descargar Archivo</a></td>`;
+                        rowHTML += `<td><a href="${val}" target="_blank" class="file-link" download>📁 Descargar Archivo</a></td>`;
                     } else if(col.toLowerCase().includes('estatus') || col.toLowerCase().includes('estado')) {
                          let badge = val.toLowerCase().includes('vigente') || val.toLowerCase().includes('activo') ? 'badge-success' : (val.toLowerCase().includes('obsoleto') || val.toLowerCase().includes('inactivo') ? 'badge-danger' : 'badge-warning');
                          rowHTML += `<td><span class="badge ${badge}">${val}</span></td>`;
@@ -1309,8 +1305,9 @@
             document.getElementById('m-jus').innerText = s.motivo || s.justificacion || "Sin justificación";
 
             let adjOrigName = s.adjunto_nombre || "Descargar Archivo";
-            let dlUrl = s.adjunto ? getDownloadUrl(s.adjunto, adjOrigName) : "#";
-            document.getElementById('m-file-link').innerHTML = s.adjunto ? `<a href="${dlUrl}" class="file-link">📎 ${adjOrigName}</a>` : "Sin archivo";
+            // SE USA AHORA DIRECTAMENTE LA URL LIMPIA
+            let dlUrl = s.adjunto ? s.adjunto : "#";
+            document.getElementById('m-file-link').innerHTML = s.adjunto ? `<a href="${dlUrl}" target="_blank" class="file-link" download>📎 ${adjOrigName}</a>` : "Sin archivo";
             
             if(s.accion !== 'Creación') {
                 document.getElementById('m-extra-panel').style.display = 'block';
@@ -1368,8 +1365,9 @@
                     document.getElementById('m-disp-com').innerText = s.comentario_final || "Sin comentarios adicionales.";
                     
                     let finName = s.documento_final_nombre || "Documento Oficial Final";
-                    let finUrl = s.documento_final ? getDownloadUrl(s.documento_final, finName) : "#";
-                    document.getElementById('m-disp-file').innerHTML = s.documento_final ? `<a href="${finUrl}" class="file-link" style="font-size:14px;">📄 ${finName}</a>` : "N/A";
+                    // SE USA AHORA DIRECTAMENTE LA URL LIMPIA
+                    let finUrl = s.documento_final ? s.documento_final : "#";
+                    document.getElementById('m-disp-file').innerHTML = s.documento_final ? `<a href="${finUrl}" target="_blank" class="file-link" style="font-size:14px;" download>📄 ${finName}</a>` : "N/A";
                 } else if (esSGC) {
                     document.getElementById('m-panel-final-sgc').style.display = 'block';
                     document.getElementById('m-final-cod').value = s.cod_ref || ""; 
@@ -1382,7 +1380,7 @@
             cb.innerHTML = s.chat ? s.chat.map(c => `
                 <div class="chat-msg" style="border-left-color:${c.u===currentUser.nombre?'var(--primary)':'#cbd5e1'}">
                     <b style="font-size:10px">${c.u}</b> <span style="font-size:9px;color:#94a3b8">${c.t}</span><br>${c.m}
-                    ${c.archivo ? `<br><a href="${c.archivo}" target="_blank" style="font-size:10px;color:blue">Ver Adjunto</a>` : ''}
+                    ${c.archivo ? `<br><a href="${c.archivo}" target="_blank" style="font-size:10px;color:blue" download>Ver Adjunto</a>` : ''}
                 </div>
             `).join('') : '';
 
