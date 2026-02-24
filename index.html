@@ -137,7 +137,7 @@
         .file-link { color: var(--accent); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
         .file-link:hover { text-decoration: underline; }
         
-        .search-bar { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 15px; width: 100%; max-width: 350px; font-size: 13px; outline: none; }
+        .search-bar { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 15px; width: 100%; max-width: 350px; font-size: 13px; margin-bottom: 15px; outline: none; }
         .search-bar:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1); }
     </style>
 </head>
@@ -769,12 +769,17 @@
         };
         initAuth();
 
+        // ========================================================================================
+        // SOLUCIÓN AL ERROR 400 (NUEVO MÉTODO)
+        // ========================================================================================
         async function uploadToCloudinary(file) {
             if(!file) return null;
             const fd = new FormData(); 
             fd.append('file', file); 
             fd.append('upload_preset', UPLOAD_PRESET);
 
+            // Cloudinary rechaza archivos con caracteres especiales, así que al subir le damos un ID limpio
+            // para que no haya problema, la URL se crea perfecta.
             let baseName = file.name.substring(0, file.name.lastIndexOf('.'));
             let cleanName = baseName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9\-_]/g, '_').replace(/_+/g, '_');
             
@@ -788,17 +793,11 @@
         }
 
         function getDownloadUrl(cloudUrl, originalName) {
-            if(!cloudUrl) return "#";
-            if(!cloudUrl.includes('/upload/')) return cloudUrl;
-            
-            let safeName = (originalName || 'Documento')
-                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") 
-                .replace(/[^a-zA-Z0-9.\-]/g, '_')                 
-                .replace(/_+/g, '_');                             
-
-            let urlLimpia = cloudUrl.replace(/\/fl_attachment:[^/]+\//, '/');
-            return urlLimpia.replace('/upload/', `/upload/fl_attachment:${safeName}/`);
+            // Ya no manipulamos la URL para evitar el error 400. 
+            // La URL directa de Cloudinary que tenemos guardada descarga nativamente.
+            return cloudUrl;
         }
+        // ========================================================================================
 
         async function getNextFCI() {
             const ref = doc(db, "artifacts", appId, "public", "data", "Contadores", "solicitudes");
@@ -1057,7 +1056,7 @@
                     let val = item[col] || "";
                     if(val.toString().startsWith("http")) {
                         let dUrl = getDownloadUrl(val, item['Nombre del documento'] || "Documento_Maestro");
-                        rowHTML += `<td><a href="${dUrl}" target="_blank" class="file-link" download>📁 Descargar Archivo</a></td>`;
+                        rowHTML += `<td><a href="${dUrl}" target="_blank" class="file-link">📁 Descargar Archivo</a></td>`;
                     } else if(col.toLowerCase().includes('estatus') || col.toLowerCase().includes('estado')) {
                          let badge = val.toLowerCase().includes('vigente') || val.toLowerCase().includes('activo') ? 'badge-success' : (val.toLowerCase().includes('obsoleto') || val.toLowerCase().includes('inactivo') ? 'badge-danger' : 'badge-warning');
                          rowHTML += `<td><span class="badge ${badge}">${val}</span></td>`;
@@ -1309,7 +1308,7 @@
 
             let adjOrigName = s.adjunto_nombre || "Descargar Archivo";
             let dlUrl = s.adjunto ? getDownloadUrl(s.adjunto, adjOrigName) : "#";
-            document.getElementById('m-file-link').innerHTML = s.adjunto ? `<a href="${dlUrl}" target="_blank" class="file-link" download>📎 ${adjOrigName}</a>` : "Sin archivo";
+            document.getElementById('m-file-link').innerHTML = s.adjunto ? `<a href="${dlUrl}" target="_blank" class="file-link">📎 ${adjOrigName}</a>` : "Sin archivo";
             
             if(s.accion !== 'Creación') {
                 document.getElementById('m-extra-panel').style.display = 'block';
@@ -1368,7 +1367,7 @@
                     
                     let finName = s.documento_final_nombre || "Documento Oficial Final";
                     let finUrl = s.documento_final ? getDownloadUrl(s.documento_final, finName) : "#";
-                    document.getElementById('m-disp-file').innerHTML = s.documento_final ? `<a href="${finUrl}" target="_blank" class="file-link" style="font-size:14px;" download>📄 ${finName}</a>` : "N/A";
+                    document.getElementById('m-disp-file').innerHTML = s.documento_final ? `<a href="${finUrl}" target="_blank" class="file-link" style="font-size:14px;">📄 ${finName}</a>` : "N/A";
                 } else if (esSGC && s.estado === 'Aprobado Final') {
                     document.getElementById('m-panel-final-sgc').style.display = 'block';
                     document.getElementById('m-final-cod').value = s.cod_ref || ""; 
@@ -1381,7 +1380,7 @@
             cb.innerHTML = s.chat ? s.chat.map(c => `
                 <div class="chat-msg" style="border-left-color:${c.u===currentUser.nombre?'var(--primary)':'#cbd5e1'}">
                     <b style="font-size:10px">${c.u}</b> <span style="font-size:9px;color:#94a3b8">${c.t}</span><br>${c.m}
-                    ${c.archivo ? `<br><a href="${getDownloadUrl(c.archivo, 'Archivo_Adjunto')}" target="_blank" style="font-size:10px;color:blue" download>Ver Adjunto</a>` : ''}
+                    ${c.archivo ? `<br><a href="${getDownloadUrl(c.archivo, 'Archivo_Adjunto')}" target="_blank" style="font-size:10px;color:blue">Ver Adjunto</a>` : ''}
                 </div>
             `).join('') : '';
 
@@ -1407,13 +1406,11 @@
             document.getElementById('reunion-container').style.display = 'none';
         }
 
-        // CORRECCIÓN: EVITAR QUE EL MENSAJE SE ADELANTE
         window.firmarPaso = async () => {
             const s = selectedDocData;
             const nIdx = s.idx + 1;
             const nEst = nIdx < 4 ? PASOS_NOMBRES[nIdx] : "Aprobado Final";
             
-            // Toma el nombre de la fase que se acaba de completar, no la siguiente
             const faseAprobada = PASOS_NOMBRES[s.idx]; 
             
             await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), {
@@ -1461,7 +1458,7 @@
             let fileName = f.files[0].name;
             
             await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), {
-                estado: "Solicitud Cerrada", // SE ACTUALIZA ESTADO PARA QUE REFLEJE EL CIERRE
+                estado: "Solicitud Cerrada", 
                 codigo_final: codFinal,
                 version_final: ver,
                 fecha_final: fecha,
