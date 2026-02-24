@@ -360,7 +360,7 @@
             <div class="card" style="padding:0; padding-top:15px; overflow:hidden; margin-top:20px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; padding: 0 15px; gap: 10px; flex-wrap: wrap;">
                     <input type="text" id="search-hist" class="search-bar" placeholder="🔍 Buscar por ID, Título o Estado..." onkeyup="filtrarTabla('search-hist', 'tbody-historial')">
-                    <button class="btn btn-success" onclick="exportarReporteSolicitudes()"><span class="material-icons-round" style="font-size:16px;">table_view</span> Exportar Reporte</button>
+                    <button id="btn-export-hist" class="btn btn-success" onclick="exportarReporteSolicitudes()" style="display:none;"><span class="material-icons-round" style="font-size:16px;">table_view</span> Exportar Reporte</button>
                 </div>
                 <div class="table-responsive">
                     <table id="tabla-mis-solicitudes"><thead><tr><th>ID</th><th>Documento</th><th>Estado</th><th class="no-export">Acción</th></tr></thead><tbody id="tbody-historial"></tbody></table>
@@ -375,7 +375,7 @@
             <div class="card" style="padding:0; padding-top:15px; overflow:hidden; margin-top:20px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; padding: 0 15px; gap: 10px; flex-wrap: wrap;">
                     <input type="text" id="search-gest" class="search-bar" placeholder="🔍 Buscar por ID, Título, Solicitante..." onkeyup="filtrarTabla('search-gest', 'tbody-gestionar')">
-                    <button class="btn btn-success" onclick="exportarReporteSolicitudes()"><span class="material-icons-round" style="font-size:16px;">table_view</span> Exportar Reporte</button>
+                    <button id="btn-export-gest" class="btn btn-success" onclick="exportarReporteSolicitudes()" style="display:none;"><span class="material-icons-round" style="font-size:16px;">table_view</span> Exportar Reporte</button>
                 </div>
                 <div class="table-responsive">
                     <table id="tabla-gestion-solicitudes"><thead><tr><th>ID</th><th>Solicitante</th><th>Documento</th><th>Estado</th><th class="no-export">Acción</th></tr></thead><tbody id="tbody-gestionar"></tbody></table>
@@ -390,7 +390,7 @@
                     <p style="color:#64748b; font-size:12px;">Control centralizado de documentos aprobados</p>
                 </div>
                 <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <button class="btn btn-success" onclick="exportarExcelListado()">
+                    <button id="btn-export-list" class="btn btn-success" onclick="exportarExcelListado()" style="display:none;">
                         <span class="material-icons-round" style="font-size:16px;">table_view</span> Exportar a Excel
                     </button>
                     <input type="file" id="import-excel-file" accept=".xlsx, .xls" style="display:none;">
@@ -540,7 +540,20 @@
                     <div class="grid-3">
                         <div><label>Código Final Asignado</label><p id="m-disp-cod" style="font-weight:bold;"></p></div>
                         <div><label>Versión Final</label><p id="m-disp-ver" style="font-weight:bold;"></p></div>
-                        <div><label>Fecha Última Versión</label><p id="m-disp-fecha" style="font-weight:bold;"></p></div>
+                        <div>
+                            <label>Fecha Última Versión</label>
+                            <div style="display:flex; align-items:center; gap:5px;">
+                                <p id="m-disp-fecha" style="font-weight:bold; margin:0;"></p>
+                                <button id="btn-edit-fecha-final" style="display:none; background:none; border:none; cursor:pointer; color:var(--accent);"><span class="material-icons-round" style="font-size:16px;">edit</span></button>
+                            </div>
+                            <div id="edit-fecha-final-container" style="display:none; margin-top:5px; background:white; padding:10px; border-radius:8px; border:1px solid #ccc;">
+                                <input type="date" id="in-edit-fecha-final" style="width:100%; margin-bottom:5px;">
+                                <div style="display:flex; gap:5px;">
+                                    <button class="btn btn-success" id="btn-save-fecha-final" style="padding:5px; font-size:11px; flex:1;">Guardar</button>
+                                    <button class="btn btn-dark" id="btn-cancel-fecha-final" style="padding:5px; font-size:11px; flex:1;">Cancelar</button>
+                                </div>
+                            </div>
+                        </div>
                         <div style="grid-column: span 3;"><label>Documento Oficial</label><div id="m-disp-file"></div></div>
                         <div style="grid-column: span 3;"><label>Comentario SGC de Cierre</label><p id="m-disp-com"></p></div>
                     </div>
@@ -846,10 +859,10 @@
             fd.append('file', file); 
             fd.append('upload_preset', UPLOAD_PRESET);
 
-            let baseName = file.name.substring(0, file.name.lastIndexOf('.'));
-            let cleanName = baseName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9\-_]/g, '_').replace(/_+/g, '_');
+            let cleanName = file.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9\-_.]/g, '_').replace(/_+/g, '_');
             
-            fd.append('public_id', cleanName + '_' + Date.now().toString().slice(-4)); 
+            fd.append('public_id', cleanName); 
+            fd.append('use_filename', 'true'); // Parámetro clave para que Cloudinary respete el nombre original
 
             try {
                 const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, { method: 'POST', body: fd });
@@ -937,6 +950,12 @@
                 document.getElementById('btn-nuevo-maestro').style.display = 'inline-block'; 
                 document.getElementById('btn-import-maestro').style.display = 'inline-flex'; 
             }
+
+            // --- Mostrar exportación SOLO a Admin Total ---
+            const esAdminTotal = p.admin === true;
+            if(document.getElementById('btn-export-hist')) document.getElementById('btn-export-hist').style.display = esAdminTotal ? 'inline-flex' : 'none';
+            if(document.getElementById('btn-export-gest')) document.getElementById('btn-export-gest').style.display = esAdminTotal ? 'inline-flex' : 'none';
+            if(document.getElementById('btn-export-list')) document.getElementById('btn-export-list').style.display = esAdminTotal ? 'inline-flex' : 'none';
 
             cargarDatos();
             document.getElementById('nav-dash').click();
@@ -1361,6 +1380,7 @@
             const docSnap = await getDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", id));
             selectedDocData = docSnap.data();
             const s = selectedDocData;
+            const p = currentUser.permisos;
             
             document.getElementById('m-id').innerText = s.customId;
             document.getElementById('m-tit').innerText = s.titulo;
@@ -1379,8 +1399,9 @@
             document.getElementById('m-jus').innerText = s.motivo || s.justificacion || "Sin justificación";
 
             let adjOrigName = s.adjunto_nombre || "Descargar Archivo";
+            if(adjOrigName.startsWith('http')) adjOrigName = adjOrigName.split('/').pop().split('?')[0];
             let dlUrl = s.adjunto ? getDownloadUrl(s.adjunto, adjOrigName) : "#";
-            document.getElementById('m-file-link').innerHTML = s.adjunto ? `<a href="${dlUrl}" target="_blank" class="file-link" download>📎 ${adjOrigName}</a>` : "Sin archivo";
+            document.getElementById('m-file-link').innerHTML = s.adjunto ? `<a href="${dlUrl}" target="_blank" class="file-link" download="${adjOrigName}">📎 ${adjOrigName}</a>` : "Sin archivo";
             
             if(s.accion !== 'Creación') {
                 document.getElementById('m-extra-panel').style.display = 'block';
@@ -1397,7 +1418,6 @@
                 if(i === s.idx + 1 && s.estado !== 'Aprobado Final' && s.estado !== 'Solicitud Cerrada') st.classList.add('active');
             }
 
-            const p = currentUser.permisos;
             const esSGC = p.p_gest_sgc;
             
             const esGestorSGC = esSGC && (s.idx === 0 || s.idx === 1 || s.idx === 3);
@@ -1438,8 +1458,57 @@
                     document.getElementById('m-disp-com').innerText = s.comentario_final || "Sin comentarios adicionales.";
                     
                     let finName = s.documento_final_nombre || "Documento Oficial Final";
+                    if(finName.startsWith('http')) finName = finName.split('/').pop().split('?')[0]; 
                     let finUrl = s.documento_final ? getDownloadUrl(s.documento_final, finName) : "#";
-                    document.getElementById('m-disp-file').innerHTML = s.documento_final ? `<a href="${finUrl}" target="_blank" class="file-link" style="font-size:14px;" download>📄 ${finName}</a>` : "N/A";
+                    document.getElementById('m-disp-file').innerHTML = s.documento_final ? `<a href="${finUrl}" target="_blank" class="file-link" style="font-size:14px;" download="${finName}">📄 ${finName}</a>` : "N/A";
+
+                    if(p.admin) {
+                        document.getElementById('btn-edit-fecha-final').style.display = 'inline-block';
+                        document.getElementById('btn-edit-fecha-final').onclick = () => {
+                            document.getElementById('m-disp-fecha').style.display = 'none';
+                            document.getElementById('btn-edit-fecha-final').style.display = 'none';
+                            document.getElementById('edit-fecha-final-container').style.display = 'block';
+                            if(s.fecha_final) {
+                                let df = s.fecha_final;
+                                if(df.includes('T')) df = df.split('T')[0];
+                                document.getElementById('in-edit-fecha-final').value = df;
+                            }
+                        };
+                        document.getElementById('btn-cancel-fecha-final').onclick = () => {
+                            document.getElementById('m-disp-fecha').style.display = 'block';
+                            document.getElementById('btn-edit-fecha-final').style.display = 'inline-block';
+                            document.getElementById('edit-fecha-final-container').style.display = 'none';
+                        };
+                        document.getElementById('btn-save-fecha-final').onclick = async () => {
+                            const nv = document.getElementById('in-edit-fecha-final').value;
+                            if(!nv) return;
+                            document.getElementById('loading-overlay').style.display = 'flex';
+                            
+                            await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), { fecha_final: nv });
+                            
+                            const codBusqueda = s.codigo_final || s.cod_ref;
+                            if(codBusqueda) {
+                                const qMaestro = query(collection(db, "artifacts", appId, "public", "data", "ListadoMaestro"), where("Código", "==", codBusqueda));
+                                const snapM = await getDocs(qMaestro);
+                                if(!snapM.empty) {
+                                    let idM = snapM.docs[0].id;
+                                    let colFech = columnasMaestro.find(c => c.toLowerCase().includes('fecha última') || c.toLowerCase().includes('fecha ultima') || c.toLowerCase() === 'fecha');
+                                    if(colFech) {
+                                        await updateDoc(doc(db, "artifacts", appId, "public", "data", "ListadoMaestro", idM), { [colFech]: nv });
+                                    }
+                                }
+                            }
+                            
+                            document.getElementById('loading-overlay').style.display = 'none';
+                            document.getElementById('edit-fecha-final-container').style.display = 'none';
+                            alert("Fecha actualizada correctamente.");
+                            verDetalle(selectedId);
+                        };
+                    } else {
+                        document.getElementById('btn-edit-fecha-final').style.display = 'none';
+                        document.getElementById('edit-fecha-final-container').style.display = 'none';
+                    }
+
                 } else if (esSGC && s.estado === 'Aprobado Final') {
                     document.getElementById('m-panel-final-sgc').style.display = 'block';
                     document.getElementById('m-final-cod').value = s.cod_ref || ""; 
