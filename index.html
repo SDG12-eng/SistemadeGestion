@@ -795,7 +795,7 @@
                 "Tipo de Documento": s.tipoDoc || '',
                 "Acción Requerida": s.accion || '',
                 "Motivo / Justificación": s.motivo || '',
-                "Estado Actual": s.estado || '',
+                "Estado Actual": s.estado === 'Solicitud Cerrada' ? 'SOLICITUD CERRADA' : (s.estado !== 'Aprobado Final' && s.estado !== 'Anulado' && s.estado !== 'Rechazado' && s.estado !== 'Solicitud Cerrada' ? `${s.estado} (Etapa: ${PASOS_NOMBRES[s.idx] || ''})` : s.estado),
                 "Fecha de Creación": s.fecha ? new Date(s.fecha).toLocaleString() : '',
                 "Código Ref. Original": s.cod_ref || '',
                 "Versión Original": s.ver_ref || '',
@@ -862,7 +862,7 @@
             let cleanName = file.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9\-_.]/g, '_').replace(/_+/g, '_');
             
             fd.append('public_id', cleanName); 
-            fd.append('use_filename', 'true'); // Parámetro clave para que Cloudinary respete el nombre original
+            fd.append('use_filename', 'true'); 
 
             try {
                 const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, { method: 'POST', body: fd });
@@ -951,7 +951,6 @@
                 document.getElementById('btn-import-maestro').style.display = 'inline-flex'; 
             }
 
-            // --- Mostrar exportación SOLO a Admin Total ---
             const esAdminTotal = p.admin === true;
             if(document.getElementById('btn-export-hist')) document.getElementById('btn-export-hist').style.display = esAdminTotal ? 'inline-flex' : 'none';
             if(document.getElementById('btn-export-gest')) document.getElementById('btn-export-gest').style.display = esAdminTotal ? 'inline-flex' : 'none';
@@ -1056,13 +1055,23 @@
                     if(sol.estado === 'Anulado' || sol.estado === 'Rechazado') badgeClass = 'badge-danger';
                     if(sol.estado.includes('Pendiente')) badgeClass = 'badge-warning';
 
-                    if(ver) tbHist.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.titulo}</td><td><span class="badge ${badgeClass}">${sol.estado}</span></td><td><button class="btn btn-ghost" onclick="verDetalle('${sol.docId}')">Ver</button></td></tr>`;
+                    let faseActual = PASOS_NOMBRES[sol.idx] || "";
+                    let estadoMostrar = sol.estado;
+                    let infoFase = "";
+                    
+                    if (sol.estado === 'Solicitud Cerrada') {
+                        estadoMostrar = "SOLICITUD CERRADA";
+                    } else if (sol.estado !== 'Aprobado Final' && sol.estado !== 'Anulado' && sol.estado !== 'Rechazado' && sol.estado !== 'Solicitud Cerrada' && faseActual) {
+                        infoFase = `<br><span style="font-size:10px; color:#64748b; font-weight:700; display:inline-block; margin-top:5px;">📍 Etapa: ${faseActual}</span>`;
+                    }
+
+                    if(ver) tbHist.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.titulo}</td><td><span class="badge ${badgeClass}">${estadoMostrar}</span>${infoFase}</td><td><button class="btn btn-ghost" onclick="verDetalle('${sol.docId}')">Ver</button></td></tr>`;
                     
                     let gestionar = false;
                     if(p.p_gest_sgc && (sol.idx === 0 || sol.idx === 1 || sol.idx === 3) && sol.estado !== 'Rechazado' && sol.estado !== 'Aprobado Final' && sol.estado !== 'Anulado' && sol.estado !== 'Solicitud Cerrada') gestionar = true;
                     if(p.p_ger_apr && sol.idx === 2 && sol.gerencia === currentUser.gerencia && sol.estado !== 'Rechazado' && sol.estado !== 'Anulado' && sol.estado !== 'Solicitud Cerrada') gestionar = true;
 
-                    if(gestionar) tbGest.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.solicitante}</td><td>${sol.titulo}</td><td><span class="badge ${badgeClass}">${sol.estado}</span></td><td><button class="btn btn-primary" onclick="verDetalle('${sol.docId}')">Gestionar</button></td></tr>`;
+                    if(gestionar) tbGest.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.solicitante}</td><td>${sol.titulo}</td><td><span class="badge ${badgeClass}">${estadoMostrar}</span>${infoFase}</td><td><button class="btn btn-primary" onclick="verDetalle('${sol.docId}')">Gestionar</button></td></tr>`;
                 });
                 
                 if(document.getElementById('dash-total')) document.getElementById('dash-total').innerText = stats.total;
@@ -1391,8 +1400,15 @@
             if(s.estado === 'Anulado' || s.estado === 'Rechazado') badgeClass = 'badge-danger';
             if(s.estado.includes('Pendiente')) badgeClass = 'badge-warning';
 
-            document.getElementById('m-est').innerText = s.estado;
+            let estadoMostrarModal = s.estado === 'Solicitud Cerrada' ? 'SOLICITUD CERRADA' : s.estado;
+            document.getElementById('m-est').innerText = estadoMostrarModal;
             document.getElementById('m-est').className = `badge ${badgeClass}`;
+
+            let fActual = PASOS_NOMBRES[s.idx];
+            if (s.estado !== 'Solicitud Cerrada' && s.estado !== 'Aprobado Final' && s.estado !== 'Anulado' && s.estado !== 'Rechazado' && fActual) {
+                document.getElementById('m-est').innerHTML += ` <span style="font-size:10px; color:#64748b; font-weight:700; margin-left:8px; background:transparent; border:none; display:inline-block; vertical-align:middle;">(📍 Etapa: ${fActual})</span>`;
+            }
+
             document.getElementById('m-ger').innerText = s.gerencia;
             document.getElementById('m-tipo').innerText = s.tipoDoc || "N/A"; 
             document.getElementById('m-accion').innerText = s.accion;
