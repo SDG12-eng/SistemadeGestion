@@ -877,29 +877,41 @@
             fd.append('file', file); 
             fd.append('upload_preset', UPLOAD_PRESET);
 
-            let cleanName = file.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9\-_.]/g, '_').replace(/_+/g, '_');
+            // Extraemos un nombre base limpio para el ID, y evitamos nombres vacíos
+            let fileName = file.name || "documento";
+            let baseName = fileName.includes('.') ? fileName.substring(0, fileName.lastIndexOf('.')) : fileName;
+            let cleanName = baseName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9\-_]/g, '_').replace(/_+/g, '_');
+            if(!cleanName) cleanName = 'doc';
             
-            fd.append('public_id', cleanName); 
-            fd.append('use_filename', 'true'); 
+            // Adjuntamos un identificador numérico para no reemplazar archivos con el mismo nombre y causar errores de caché
+            fd.append('public_id', cleanName + '_' + Date.now().toString().slice(-4)); 
 
             try {
-                const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, { method: 'POST', body: fd });
+                // REGRESAMOS AL ENDPOINT ESTÁNDAR QUE EVITA EL ERROR 400
+                const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, { method: 'POST', body: fd });
                 const data = await res.json();
-                return data.secure_url; 
-            } catch(e) { return null; }
+                
+                // Si la respuesta no fue exitosa (ej. 400 Bad Request), mostramos error en consola y retornamos null
+                if (!res.ok) {
+                    console.error("Cloudinary Error al subir:", data);
+                    return null;
+                }
+                
+                return data.secure_url || null; // Siempre retornará texto o null, NUNCA undefined.
+            } catch(e) { 
+                console.error("Network Error subiendo a Cloudinary:", e);
+                return null; 
+            }
         }
 
-        // =========================================================
-        // SOLUCIÓN AL ERROR 400 (BAD REQUEST) AL DESCARGAR ARCHIVOS
-        // =========================================================
         function getDownloadUrl(cloudUrl) {
             if(!cloudUrl) return "#";
             if(!cloudUrl.includes('/upload/')) return cloudUrl;
             
-            // Limpiamos la URL de cualquier intento previo de forzar el nombre en Cloudinary que cause el error 400
+            // Limpiamos la URL de intentos de forzar nombres que Cloudinary pueda rechazar
             let urlLimpia = cloudUrl.replace(/\/fl_attachment:[^/]+\//, '/').replace(/\/fl_attachment\//, '/');
             
-            // Usamos solo /fl_attachment/ (sin especificar nombre). El nombre real lo define el atributo "download" del enlace HTML.
+            // Aplicamos "fl_attachment" genérico, el nombre real de descarga lo forzaremos con HTML5 "download"
             return urlLimpia.replace('/upload/', `/upload/fl_attachment/`);
         }
 
@@ -1174,8 +1186,9 @@
                 columnasMaestro.forEach(col => {
                     let val = item[col] || "";
                     if(val.toString().startsWith("http")) {
+                        let fName = item['Nombre del documento'] || "Documento_Maestro";
                         let dUrl = getDownloadUrl(val);
-                        rowHTML += `<td><a href="${dUrl}" target="_blank" class="file-link" download>📁 Descargar Archivo</a></td>`;
+                        rowHTML += `<td><a href="${dUrl}" target="_blank" class="file-link" download="${fName}">📁 Descargar Archivo</a></td>`;
                     } else if(col.toLowerCase().includes('estatus') || col.toLowerCase().includes('estado')) {
                          let badge = val.toLowerCase().includes('vigente') || val.toLowerCase().includes('activo') ? 'badge-success' : (val.toLowerCase().includes('obsoleto') || val.toLowerCase().includes('inactivo') ? 'badge-danger' : 'badge-warning');
                          rowHTML += `<td><span class="badge ${badge}">${val}</span></td>`;
@@ -1256,18 +1269,23 @@
             if(!f) return alert("Selecciona un archivo primero.");
             document.getElementById('loading-overlay').style.display = 'flex';
             let url = await uploadToCloudinary(f);
-            document.getElementById('loading-overlay').style.display = 'none';
-            if(url) {
-                const inputs = Array.from(document.querySelectorAll("#dinamic-form-maestro input"));
-                const targetInput = inputs.find(el => el.id.toLowerCase().includes('ubicaci') || el.id.toLowerCase().includes('archivo'));
-                if(targetInput) {
-                    targetInput.value = url;
-                    alert("Archivo subido y enlace colocado en el campo correspondiente automáticamente.");
-                } else {
-                    alert("Archivo subido. Copia este enlace y pégalo en el campo deseado:\n" + url);
-                }
-                document.getElementById('lm-generic-file').value = "";
+            
+            // VERIFICACIÓN ANTI-ERRORES CLOUDINARY
+            if(!url) {
+                document.getElementById('loading-overlay').style.display = 'none';
+                return alert("Hubo un error de conexión al subir el archivo a la nube.");
             }
+
+            document.getElementById('loading-overlay').style.display = 'none';
+            const inputs = Array.from(document.querySelectorAll("#dinamic-form-maestro input"));
+            const targetInput = inputs.find(el => el.id.toLowerCase().includes('ubicaci') || el.id.toLowerCase().includes('archivo'));
+            if(targetInput) {
+                targetInput.value = url;
+                alert("Archivo subido y enlace colocado en el campo correspondiente automáticamente.");
+            } else {
+                alert("Archivo subido. Copia este enlace y pégalo en el campo deseado:\n" + url);
+            }
+            document.getElementById('lm-generic-file').value = "";
         };
 
         if(document.getElementById('import-excel-file')){
@@ -1387,6 +1405,13 @@
 
             if(f.files[0]) {
                 let fileUrl = await uploadToCloudinary(f.files[0]);
+                
+                // VERIFICACIÓN ANTI-ERRORES CLOUDINARY
+                if(!fileUrl) {
+                    document.getElementById('loading-overlay').style.display = 'none';
+                    return alert("Hubo un error al tratar de subir el archivo adjunto. Intenta de nuevo.");
+                }
+
                 let fileName = f.files[0].name;
                 updateData.adjunto = fileUrl;
                 updateData.adjunto_nombre = fileName;
@@ -1433,7 +1458,6 @@
             document.getElementById('m-accion').innerText = s.accion;
             document.getElementById('m-jus').innerText = s.motivo || s.justificacion || "Sin justificación";
 
-            // Limpieza visual para mostrar en pantalla sin caracteres raros
             let adjOrigName = s.adjunto_nombre || "Descargar Archivo";
             if(adjOrigName.startsWith('http')) {
                 try { adjOrigName = decodeURIComponent(adjOrigName.split('/').pop().split('?')[0]); } catch(e){}
@@ -1561,7 +1585,7 @@
             cb.innerHTML = s.chat ? s.chat.map(c => `
                 <div class="chat-msg" style="border-left-color:${c.u===currentUser.nombre?'var(--primary)':'#cbd5e1'}">
                     <b style="font-size:10px">${c.u}</b> <span style="font-size:9px;color:#94a3b8">${c.t}</span><br>${c.m}
-                    ${c.archivo ? `<br><a href="${getDownloadUrl(c.archivo)}" target="_blank" style="font-size:10px;color:blue" download>Ver Adjunto</a>` : ''}
+                    ${c.archivo ? `<br><a href="${getDownloadUrl(c.archivo)}" target="_blank" style="font-size:10px;color:blue" download="Documento_Adjunto">Ver Adjunto</a>` : ''}
                 </div>
             `).join('') : '';
 
@@ -1610,10 +1634,22 @@
             if(!txt && !f.files[0]) return alert("Escribe un mensaje o adjunta un archivo.");
             
             document.getElementById('loading-overlay').style.display = 'flex';
-            let b64 = f.files[0] ? await uploadToCloudinary(f.files[0]) : null;
             
+            let fileUrl = null;
+            if (f.files[0]) {
+                fileUrl = await uploadToCloudinary(f.files[0]);
+                // VERIFICACIÓN ANTI-ERRORES
+                if (!fileUrl) {
+                    document.getElementById('loading-overlay').style.display = 'none';
+                    return alert("Error de red al intentar subir el archivo a Cloudinary. Intenta de nuevo.");
+                }
+            }
+            
+            let chatPayload = {u: currentUser.nombre, m: `💬 Comentario: ${txt}`, t: new Date().toLocaleString()};
+            if (fileUrl) chatPayload.archivo = fileUrl; // Asegura que nunca envíe "undefined"
+
             await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), {
-                chat: arrayUnion({u: currentUser.nombre, m: `💬 Comentario: ${txt}`, archivo: b64, t: new Date().toLocaleString()})
+                chat: arrayUnion(chatPayload)
             });
 
             const dest = await getDatosEnvio(selectedDocData);
@@ -1635,9 +1671,19 @@
             if(!ver || !fecha || !f.files[0]) return alert("La Versión Final, la Fecha y el Documento son obligatorios.");
             
             document.getElementById('loading-overlay').style.display = 'flex';
+            
             let fileUrl = await uploadToCloudinary(f.files[0]);
+            
+            // VERIFICACIÓN ANTI-ERRORES
+            if (!fileUrl) {
+                document.getElementById('loading-overlay').style.display = 'none';
+                return alert("Error al subir el documento final. Por favor, intenta de nuevo.");
+            }
+            
             let fileName = f.files[0].name;
             
+            let chatPayload = {u: "SISTEMA (SGC)", m: `🏁 SOLICITUD CERRADA Y PUBLICADA. Ver: ${ver}. Obs: ${com}`, t: new Date().toLocaleString(), archivo: fileUrl};
+
             await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), {
                 estado: "Solicitud Cerrada", 
                 codigo_final: codFinal,
@@ -1646,7 +1692,7 @@
                 comentario_final: com,
                 documento_final: fileUrl,
                 documento_final_nombre: fileName,
-                chat: arrayUnion({u: "SISTEMA (SGC)", m: `🏁 SOLICITUD CERRADA Y PUBLICADA. Ver: ${ver}. Obs: ${com}`, archivo: fileUrl, t: new Date().toLocaleString()})
+                chat: arrayUnion(chatPayload)
             });
 
             let dataMaestro = {
@@ -1713,17 +1759,31 @@
                 nEst = tempAction === 'Rechazado' ? 'Rechazado' : `En ${tempAction}`;
             }
 
-            let b64 = f.files[0] ? await uploadToCloudinary(f.files[0]) : null;
+            document.getElementById('loading-overlay').style.display = 'flex';
+
+            let fileUrl = null;
+            if(f.files[0]) {
+                fileUrl = await uploadToCloudinary(f.files[0]);
+                // VERIFICACIÓN ANTI-ERRORES
+                if (!fileUrl) {
+                    document.getElementById('loading-overlay').style.display = 'none';
+                    return alert("Error al adjuntar archivo. Verifica tu conexión a internet e intenta de nuevo.");
+                }
+            }
             
+            let chatPayload = {u: currentUser.nombre, m: mensajeFinal, t: new Date().toLocaleString()};
+            if (fileUrl) chatPayload.archivo = fileUrl; // Asegura evitar valores undefined
+
             await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), {
                 estado: nEst,
-                chat: arrayUnion({u: currentUser.nombre, m: mensajeFinal, archivo: b64, t: new Date().toLocaleString()})
+                chat: arrayUnion(chatPayload)
             });
 
             const dest = await getDatosEnvio(selectedDocData);
             sendNotification(dest, `Actualización: ${selectedDocData.customId}`, mensajeFinal);
 
             document.getElementById('m-input-area').style.display = 'none';
+            document.getElementById('loading-overlay').style.display = 'none';
             closeModal();
         };
 
@@ -1738,7 +1798,17 @@
             const f = document.getElementById('sol-file');
             
             let fileName = f.files[0] ? f.files[0].name : "";
-            let url = f.files[0] ? await uploadToCloudinary(f.files[0]) : null;
+            let url = null;
+            
+            if (f.files[0]) {
+                url = await uploadToCloudinary(f.files[0]);
+                // VERIFICACIÓN ANTI-ERRORES
+                if (!url) {
+                    document.getElementById('loading-overlay').style.display = 'none';
+                    return alert("Hubo un problema al subir el archivo a Cloudinary. Por favor, intenta de nuevo.");
+                }
+            }
+
             const fci = await getNextFCI();
 
             const gerenteEmailVisible = document.getElementById('sol-email-gerente').value;
