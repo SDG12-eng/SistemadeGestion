@@ -359,11 +359,11 @@
             </div>
             <div class="card" style="padding:0; padding-top:15px; overflow:hidden; margin-top:20px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; padding: 0 15px; gap: 10px; flex-wrap: wrap;">
-                    <input type="text" id="search-hist" class="search-bar" placeholder="🔍 Buscar por ID, Título o Estado..." onkeyup="filtrarTabla('search-hist', 'tbody-historial')">
+                    <input type="text" id="search-hist" class="search-bar" placeholder="🔍 Buscar por ID, Título, Solicitante o Estado..." onkeyup="filtrarTabla('search-hist', 'tbody-historial')">
                     <button id="btn-export-hist" class="btn btn-success" onclick="exportarReporteSolicitudes()" style="display:none;"><span class="material-icons-round" style="font-size:16px;">table_view</span> Exportar Reporte</button>
                 </div>
                 <div class="table-responsive">
-                    <table id="tabla-mis-solicitudes"><thead><tr><th>ID</th><th>Documento</th><th>Estado</th><th class="no-export">Acción</th></tr></thead><tbody id="tbody-historial"></tbody></table>
+                    <table id="tabla-mis-solicitudes"><thead><tr><th>ID</th><th>Solicitante</th><th>Documento</th><th>Estado</th><th class="no-export">Acción</th></tr></thead><tbody id="tbody-historial"></tbody></table>
                 </div>
             </div>
         </section>
@@ -742,6 +742,24 @@
 
         const PASOS_NOMBRES = ["Pendiente Documentado", "Pendiente Verificado", "Pendiente Aprobación Gerencia", "Pendiente Aprobación SGC"];
 
+        window.filtrarTabla = (inputId, tbodyId) => {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            const filter = input.value.toLowerCase();
+            const tbody = document.getElementById(tbodyId);
+            if (!tbody) return;
+            const trs = tbody.getElementsByTagName('tr');
+
+            for (let i = 0; i < trs.length; i++) {
+                let rowText = trs[i].textContent || trs[i].innerText;
+                if (rowText.toLowerCase().indexOf(filter) > -1) {
+                    trs[i].style.display = "";
+                } else {
+                    trs[i].style.display = "none";
+                }
+            }
+        };
+
         window.toggleMenu = () => {
             const sb = document.getElementById('sidebar');
             const ov = document.getElementById('sidebar-overlay');
@@ -865,23 +883,24 @@
             fd.append('use_filename', 'true'); 
 
             try {
-                const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, { method: 'POST', body: fd });
+                const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, { method: 'POST', body: fd });
                 const data = await res.json();
                 return data.secure_url; 
             } catch(e) { return null; }
         }
 
-        function getDownloadUrl(cloudUrl, originalName) {
+        // =========================================================
+        // SOLUCIÓN AL ERROR 400 (BAD REQUEST) AL DESCARGAR ARCHIVOS
+        // =========================================================
+        function getDownloadUrl(cloudUrl) {
             if(!cloudUrl) return "#";
             if(!cloudUrl.includes('/upload/')) return cloudUrl;
             
-            let safeName = (originalName || 'Documento')
-                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") 
-                .replace(/[^a-zA-Z0-9.\-]/g, '_')                 
-                .replace(/_+/g, '_');                             
-
-            let urlLimpia = cloudUrl.replace(/\/fl_attachment:[^/]+\//, '/');
-            return urlLimpia.replace('/upload/', `/upload/fl_attachment:${safeName}/`);
+            // Limpiamos la URL de cualquier intento previo de forzar el nombre en Cloudinary que cause el error 400
+            let urlLimpia = cloudUrl.replace(/\/fl_attachment:[^/]+\//, '/').replace(/\/fl_attachment\//, '/');
+            
+            // Usamos solo /fl_attachment/ (sin especificar nombre). El nombre real lo define el atributo "download" del enlace HTML.
+            return urlLimpia.replace('/upload/', `/upload/fl_attachment/`);
         }
 
         async function getNextFCI() {
@@ -1065,7 +1084,7 @@
                         infoFase = `<br><span style="font-size:10px; color:#64748b; font-weight:700; display:inline-block; margin-top:5px;">📍 Etapa: ${faseActual}</span>`;
                     }
 
-                    if(ver) tbHist.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.titulo}</td><td><span class="badge ${badgeClass}">${estadoMostrar}</span>${infoFase}</td><td><button class="btn btn-ghost" onclick="verDetalle('${sol.docId}')">Ver</button></td></tr>`;
+                    if(ver) tbHist.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.solicitante}</td><td>${sol.titulo}</td><td><span class="badge ${badgeClass}">${estadoMostrar}</span>${infoFase}</td><td><button class="btn btn-ghost" onclick="verDetalle('${sol.docId}')">Ver</button></td></tr>`;
                     
                     let gestionar = false;
                     if(p.p_gest_sgc && (sol.idx === 0 || sol.idx === 1 || sol.idx === 3) && sol.estado !== 'Rechazado' && sol.estado !== 'Aprobado Final' && sol.estado !== 'Anulado' && sol.estado !== 'Solicitud Cerrada') gestionar = true;
@@ -1155,7 +1174,7 @@
                 columnasMaestro.forEach(col => {
                     let val = item[col] || "";
                     if(val.toString().startsWith("http")) {
-                        let dUrl = getDownloadUrl(val, item['Nombre del documento'] || "Documento_Maestro");
+                        let dUrl = getDownloadUrl(val);
                         rowHTML += `<td><a href="${dUrl}" target="_blank" class="file-link" download>📁 Descargar Archivo</a></td>`;
                     } else if(col.toLowerCase().includes('estatus') || col.toLowerCase().includes('estado')) {
                          let badge = val.toLowerCase().includes('vigente') || val.toLowerCase().includes('activo') ? 'badge-success' : (val.toLowerCase().includes('obsoleto') || val.toLowerCase().includes('inactivo') ? 'badge-danger' : 'badge-warning');
@@ -1414,9 +1433,12 @@
             document.getElementById('m-accion').innerText = s.accion;
             document.getElementById('m-jus').innerText = s.motivo || s.justificacion || "Sin justificación";
 
+            // Limpieza visual para mostrar en pantalla sin caracteres raros
             let adjOrigName = s.adjunto_nombre || "Descargar Archivo";
-            if(adjOrigName.startsWith('http')) adjOrigName = adjOrigName.split('/').pop().split('?')[0];
-            let dlUrl = s.adjunto ? getDownloadUrl(s.adjunto, adjOrigName) : "#";
+            if(adjOrigName.startsWith('http')) {
+                try { adjOrigName = decodeURIComponent(adjOrigName.split('/').pop().split('?')[0]); } catch(e){}
+            }
+            let dlUrl = s.adjunto ? getDownloadUrl(s.adjunto) : "#";
             document.getElementById('m-file-link').innerHTML = s.adjunto ? `<a href="${dlUrl}" target="_blank" class="file-link" download="${adjOrigName}">📎 ${adjOrigName}</a>` : "Sin archivo";
             
             if(s.accion !== 'Creación') {
@@ -1474,8 +1496,10 @@
                     document.getElementById('m-disp-com').innerText = s.comentario_final || "Sin comentarios adicionales.";
                     
                     let finName = s.documento_final_nombre || "Documento Oficial Final";
-                    if(finName.startsWith('http')) finName = finName.split('/').pop().split('?')[0]; 
-                    let finUrl = s.documento_final ? getDownloadUrl(s.documento_final, finName) : "#";
+                    if(finName.startsWith('http')) {
+                        try { finName = decodeURIComponent(finName.split('/').pop().split('?')[0]); } catch(e){} 
+                    }
+                    let finUrl = s.documento_final ? getDownloadUrl(s.documento_final) : "#";
                     document.getElementById('m-disp-file').innerHTML = s.documento_final ? `<a href="${finUrl}" target="_blank" class="file-link" style="font-size:14px;" download="${finName}">📄 ${finName}</a>` : "N/A";
 
                     if(p.admin) {
@@ -1537,7 +1561,7 @@
             cb.innerHTML = s.chat ? s.chat.map(c => `
                 <div class="chat-msg" style="border-left-color:${c.u===currentUser.nombre?'var(--primary)':'#cbd5e1'}">
                     <b style="font-size:10px">${c.u}</b> <span style="font-size:9px;color:#94a3b8">${c.t}</span><br>${c.m}
-                    ${c.archivo ? `<br><a href="${getDownloadUrl(c.archivo, 'Archivo_Adjunto')}" target="_blank" style="font-size:10px;color:blue" download>Ver Adjunto</a>` : ''}
+                    ${c.archivo ? `<br><a href="${getDownloadUrl(c.archivo)}" target="_blank" style="font-size:10px;color:blue" download>Ver Adjunto</a>` : ''}
                 </div>
             `).join('') : '';
 
