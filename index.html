@@ -1090,9 +1090,9 @@
                     let estadoMostrar = sol.estado;
                     let infoFase = "";
                     
-                    if (sol.estado === 'Solicitud Cerrada') {
-                        estadoMostrar = "SOLICITUD CERRADA";
-                    } else if (sol.estado !== 'Aprobado Final' && sol.estado !== 'Anulado' && sol.estado !== 'Rechazado' && sol.estado !== 'Solicitud Cerrada' && faseActual) {
+                    if (sol.estado === 'Aprobado final') {
+                        estadoMostrar = "APROBADO FINAL";
+                    } else if (sol.estado !== 'Aprobado Final' && sol.estado !== 'Anulado' && sol.estado !== 'Rechazado' && sol.estado !== 'Aprobado final' && faseActual) {
                         infoFase = `<br><span style="font-size:10px; color:#64748b; font-weight:700; display:inline-block; margin-top:5px;">📍 Etapa: ${faseActual}</span>`;
                     }
 
