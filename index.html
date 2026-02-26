@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestión v1</title>
+    <title>Sistema de Gestión</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
@@ -340,6 +340,15 @@
                         <input type="text" id="sol-email-gerente" disabled style="background:transparent; border:none; font-weight:bold; color:#15803d; padding:0;">
                     </div>
                 </div>
+
+                <div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 15px;">
+                    <label style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0;">
+                        Añadir Personas Involucradas / Co-solicitantes
+                        <button type="button" class="btn btn-info" style="padding: 4px 10px; font-size:11px;" onclick="addInvolucrado()"><span class="material-icons-round" style="font-size:14px; margin-right:4px;">person_add</span> Añadir Persona</button>
+                    </label>
+                    <p style="font-size:10px; color:#64748b; margin-top:5px; margin-bottom:0;">Añade correos electrónicos de quienes necesiten ser notificados de los avances y resoluciones de este documento.</p>
+                    <div id="lista-involucrados" style="display:flex; flex-direction:column; gap:10px; margin-top:10px;"></div>
+                </div>
                 
                 <label>Justificación / Motivo</label>
                 <textarea id="sol-motivo" rows="4"></textarea>
@@ -359,7 +368,7 @@
             </div>
             <div class="card" style="padding:0; padding-top:15px; overflow:hidden; margin-top:20px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; padding: 0 15px; gap: 10px; flex-wrap: wrap;">
-                    <input type="text" id="search-hist" class="search-bar" placeholder="🔍 Buscar por ID, Título, Solicitante o Estado..." onkeyup="filtrarTabla('search-hist', 'tbody-historial')">
+                    <input type="text" id="search-hist" class="search-bar" placeholder="🔍 Buscar por ID, Título o Estado..." onkeyup="filtrarTabla('search-hist', 'tbody-historial')">
                     <button id="btn-export-hist" class="btn btn-success" onclick="exportarReporteSolicitudes()" style="display:none;"><span class="material-icons-round" style="font-size:16px;">table_view</span> Exportar Reporte</button>
                 </div>
                 <div class="table-responsive">
@@ -619,6 +628,11 @@
                         <label>Justificación / Motivo Inicial</label>
                         <p id="m-jus" style="font-size:13px;"></p>
                     </div>
+
+                    <div id="m-involucrados-container" style="display:none; background:#e0f2fe; padding:15px; border-radius:10px; margin-top:15px; border:1px solid #bae6fd;">
+                        <label style="color:var(--primary);">Otras Personas Involucradas (Notificadas)</label>
+                        <p id="m-involucrados" style="font-size:13px; font-weight:600; color:#0369a1; word-break:break-all;"></p>
+                    </div>
                 </div>
 
                 <div id="m-actions" style="margin-top:30px; display:none; border-top:1px solid #eee; padding-top:20px;">
@@ -742,6 +756,19 @@
 
         const PASOS_NOMBRES = ["Pendiente Documentado", "Pendiente Verificado", "Pendiente Aprobación Gerencia", "Pendiente Aprobación SGC"];
 
+        // FUNCION PARA AGREGAR CAMPOS DE INVOLUCRADOS DINÁMICAMENTE
+        window.addInvolucrado = () => {
+            const container = document.getElementById('lista-involucrados');
+            const div = document.createElement('div');
+            div.style.display = 'flex';
+            div.style.gap = '10px';
+            div.innerHTML = `
+                <input type="email" placeholder="Correo de la persona (ej: juan@fcipty.com)" class="extra-email" style="margin-bottom:0; flex:1;">
+                <button type="button" class="btn btn-danger" onclick="this.parentElement.remove()" style="padding:8px 12px;"><span class="material-icons-round" style="font-size:16px; margin:0;">delete</span></button>
+            `;
+            container.appendChild(div);
+        };
+
         window.filtrarTabla = (inputId, tbodyId) => {
             const input = document.getElementById(inputId);
             if (!input) return;
@@ -813,7 +840,7 @@
                 "Tipo de Documento": s.tipoDoc || '',
                 "Acción Requerida": s.accion || '',
                 "Motivo / Justificación": s.motivo || '',
-                "Estado Actual": s.estado === 'Solicitud Cerrada' ? 'SOLICITUD CERRADA' : (s.estado !== 'Aprobado Final' && s.estado !== 'Anulado' && s.estado !== 'Rechazado' && s.estado !== 'Solicitud Cerrada' ? `${s.estado} (Etapa: ${PASOS_NOMBRES[s.idx] || ''})` : s.estado),
+                "Estado Actual": s.estado === 'Aprobado Final' ? 'APROBADO FINAL' : (s.estado !== 'Aprobado Final' && s.estado !== 'Anulado' && s.estado !== 'Rechazado' ? `${s.estado} (Etapa: ${PASOS_NOMBRES[s.idx] || ''})` : s.estado),
                 "Fecha de Creación": s.fecha ? new Date(s.fecha).toLocaleString() : '',
                 "Código Ref. Original": s.cod_ref || '',
                 "Versión Original": s.ver_ref || '',
@@ -837,7 +864,14 @@
                     if(!snap.empty) managerEmail = snap.docs[0].data().email || "";
                 } catch(e) { console.error("Error buscando gerente", e); }
             }
+            
             const toEmails = new Set([EMAIL_ADMIN_SGC, EMAIL_GRUPO_SGC, solicitudData.solicitante_email]);
+            
+            // AGREGAMOS LOS CORREOS DE LAS PERSONAS INVOLUCRADAS (SI EXISTEN)
+            if(solicitudData.involucrados && Array.isArray(solicitudData.involucrados)) {
+                solicitudData.involucrados.forEach(e => { if(e) toEmails.add(e); });
+            }
+
             const toList = Array.from(toEmails).filter(e => e && e.includes('@')).join(',');
             return { to: toList, cc: managerEmail };
         }
@@ -877,27 +911,21 @@
             fd.append('file', file); 
             fd.append('upload_preset', UPLOAD_PRESET);
 
-            // Extraemos un nombre base limpio para el ID, y evitamos nombres vacíos
             let fileName = file.name || "documento";
             let baseName = fileName.includes('.') ? fileName.substring(0, fileName.lastIndexOf('.')) : fileName;
             let cleanName = baseName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9\-_]/g, '_').replace(/_+/g, '_');
             if(!cleanName) cleanName = 'doc';
             
-            // Adjuntamos un identificador numérico para no reemplazar archivos con el mismo nombre y causar errores de caché
             fd.append('public_id', cleanName + '_' + Date.now().toString().slice(-4)); 
 
             try {
-                // REGRESAMOS AL ENDPOINT ESTÁNDAR QUE EVITA EL ERROR 400
                 const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, { method: 'POST', body: fd });
                 const data = await res.json();
-                
-                // Si la respuesta no fue exitosa (ej. 400 Bad Request), mostramos error en consola y retornamos null
                 if (!res.ok) {
                     console.error("Cloudinary Error al subir:", data);
                     return null;
                 }
-                
-                return data.secure_url || null; // Siempre retornará texto o null, NUNCA undefined.
+                return data.secure_url || null; 
             } catch(e) { 
                 console.error("Network Error subiendo a Cloudinary:", e);
                 return null; 
@@ -908,10 +936,7 @@
             if(!cloudUrl) return "#";
             if(!cloudUrl.includes('/upload/')) return cloudUrl;
             
-            // Limpiamos la URL de intentos de forzar nombres que Cloudinary pueda rechazar
             let urlLimpia = cloudUrl.replace(/\/fl_attachment:[^/]+\//, '/').replace(/\/fl_attachment\//, '/');
-            
-            // Aplicamos "fl_attachment" genérico, el nombre real de descarga lo forzaremos con HTML5 "download"
             return urlLimpia.replace('/upload/', `/upload/fl_attachment/`);
         }
 
@@ -1078,11 +1103,11 @@
                     const p = currentUser.permisos || {};
                     stats.total++;
                     if(sol.estado === 'Pendiente Documentado') stats.p++; 
-                    else if(sol.estado.includes('Aprobado Final') || sol.estado.includes('Cerrada')) stats.o++;
+                    else if(sol.estado.includes('Aprobado Final')) stats.o++;
 
                     let ver = p.p_ver_all || (p.p_ver_ger && sol.gerencia === currentUser.gerencia) || (p.p_ver_propias && sol.uid === currentUser.usuario);
                     let badgeClass = 'badge-info';
-                    if(sol.estado.includes('Aprobado') || sol.estado.includes('Cerrada')) badgeClass = 'badge-success';
+                    if(sol.estado.includes('Aprobado')) badgeClass = 'badge-success';
                     if(sol.estado === 'Anulado' || sol.estado === 'Rechazado') badgeClass = 'badge-danger';
                     if(sol.estado.includes('Pendiente')) badgeClass = 'badge-warning';
 
@@ -1090,17 +1115,17 @@
                     let estadoMostrar = sol.estado;
                     let infoFase = "";
                     
-                    if (sol.estado === 'Aprobado final') {
+                    if (sol.estado === 'Aprobado Final') {
                         estadoMostrar = "APROBADO FINAL";
-                    } else if (sol.estado !== 'Aprobado Final' && sol.estado !== 'Anulado' && sol.estado !== 'Rechazado' && sol.estado !== 'Aprobado final' && faseActual) {
+                    } else if (sol.estado !== 'Aprobado Final' && sol.estado !== 'Anulado' && sol.estado !== 'Rechazado' && faseActual) {
                         infoFase = `<br><span style="font-size:10px; color:#64748b; font-weight:700; display:inline-block; margin-top:5px;">📍 Etapa: ${faseActual}</span>`;
                     }
 
                     if(ver) tbHist.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.solicitante}</td><td>${sol.titulo}</td><td><span class="badge ${badgeClass}">${estadoMostrar}</span>${infoFase}</td><td><button class="btn btn-ghost" onclick="verDetalle('${sol.docId}')">Ver</button></td></tr>`;
                     
                     let gestionar = false;
-                    if(p.p_gest_sgc && (sol.idx === 0 || sol.idx === 1 || sol.idx === 3) && sol.estado !== 'Rechazado' && sol.estado !== 'Aprobado Final' && sol.estado !== 'Anulado' && sol.estado !== 'Solicitud Cerrada') gestionar = true;
-                    if(p.p_ger_apr && sol.idx === 2 && sol.gerencia === currentUser.gerencia && sol.estado !== 'Rechazado' && sol.estado !== 'Anulado' && sol.estado !== 'Solicitud Cerrada') gestionar = true;
+                    if(p.p_gest_sgc && (sol.idx === 0 || sol.idx === 1 || sol.idx === 3) && sol.estado !== 'Rechazado' && sol.estado !== 'Aprobado Final' && sol.estado !== 'Anulado') gestionar = true;
+                    if(p.p_ger_apr && sol.idx === 2 && sol.gerencia === currentUser.gerencia && sol.estado !== 'Rechazado' && sol.estado !== 'Anulado' && sol.estado !== 'Aprobado Final') gestionar = true;
 
                     if(gestionar) tbGest.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.solicitante}</td><td>${sol.titulo}</td><td><span class="badge ${badgeClass}">${estadoMostrar}</span>${infoFase}</td><td><button class="btn btn-primary" onclick="verDetalle('${sol.docId}')">Gestionar</button></td></tr>`;
                 });
@@ -1270,7 +1295,6 @@
             document.getElementById('loading-overlay').style.display = 'flex';
             let url = await uploadToCloudinary(f);
             
-            // VERIFICACIÓN ANTI-ERRORES CLOUDINARY
             if(!url) {
                 document.getElementById('loading-overlay').style.display = 'none';
                 return alert("Hubo un error de conexión al subir el archivo a la nube.");
@@ -1406,7 +1430,6 @@
             if(f.files[0]) {
                 let fileUrl = await uploadToCloudinary(f.files[0]);
                 
-                // VERIFICACIÓN ANTI-ERRORES CLOUDINARY
                 if(!fileUrl) {
                     document.getElementById('loading-overlay').style.display = 'none';
                     return alert("Hubo un error al tratar de subir el archivo adjunto. Intenta de nuevo.");
@@ -1440,16 +1463,16 @@
             document.getElementById('m-sol').innerText = s.solicitante;
             
             let badgeClass = 'badge-info';
-            if(s.estado.includes('Aprobado') || s.estado.includes('Cerrada')) badgeClass = 'badge-success';
+            if(s.estado.includes('Aprobado')) badgeClass = 'badge-success';
             if(s.estado === 'Anulado' || s.estado === 'Rechazado') badgeClass = 'badge-danger';
             if(s.estado.includes('Pendiente')) badgeClass = 'badge-warning';
 
-            let estadoMostrarModal = s.estado === 'Solicitud Cerrada' ? 'SOLICITUD CERRADA' : s.estado;
+            let estadoMostrarModal = s.estado === 'Aprobado Final' ? 'APROBADO FINAL' : s.estado;
             document.getElementById('m-est').innerText = estadoMostrarModal;
             document.getElementById('m-est').className = `badge ${badgeClass}`;
 
             let fActual = PASOS_NOMBRES[s.idx];
-            if (s.estado !== 'Solicitud Cerrada' && s.estado !== 'Aprobado Final' && s.estado !== 'Anulado' && s.estado !== 'Rechazado' && fActual) {
+            if (s.estado !== 'Aprobado Final' && s.estado !== 'Anulado' && s.estado !== 'Rechazado' && fActual) {
                 document.getElementById('m-est').innerHTML += ` <span style="font-size:10px; color:#64748b; font-weight:700; margin-left:8px; background:transparent; border:none; display:inline-block; vertical-align:middle;">(📍 Etapa: ${fActual})</span>`;
             }
 
@@ -1472,12 +1495,20 @@
                 document.getElementById('m-fecha-ult').innerText = window.formatearFechaAbreviada(s.fecha_ref);
             } else document.getElementById('m-extra-panel').style.display = 'none';
 
+            // MOSTRAR PERSONAS INVOLUCRADAS SI EXISTEN
+            if(s.involucrados && s.involucrados.length > 0) {
+                document.getElementById('m-involucrados-container').style.display = 'block';
+                document.getElementById('m-involucrados').innerText = s.involucrados.join(', ');
+            } else {
+                document.getElementById('m-involucrados-container').style.display = 'none';
+            }
+
             for(let i=1; i<=4; i++) {
                 const st = document.getElementById('s'+i);
                 st.className = 'step'; 
                 if(s.estado === 'Anulado' || s.estado === 'Rechazado') continue;
                 if(i <= s.idx) st.classList.add('completed'); 
-                if(i === s.idx + 1 && s.estado !== 'Aprobado Final' && s.estado !== 'Solicitud Cerrada') st.classList.add('active');
+                if(i === s.idx + 1 && s.estado !== 'Aprobado Final') st.classList.add('active');
             }
 
             const esSGC = p.p_gest_sgc;
@@ -1486,7 +1517,7 @@
             const esGer = p.p_ger_apr && s.idx === 2 && s.gerencia === currentUser.gerencia;
             
             const esDuenio = s.uid === currentUser.usuario;
-            const activo = s.estado !== 'Aprobado Final' && s.estado !== 'Solicitud Cerrada' && s.estado !== 'Rechazado' && s.estado !== 'Anulado';
+            const activo = s.estado !== 'Aprobado Final' && s.estado !== 'Rechazado' && s.estado !== 'Anulado';
             
             document.getElementById('m-actions').style.display = (esGestorSGC || esGer) && activo ? 'block' : 'none';
             document.getElementById('applicant-actions').style.display = (esDuenio && activo) ? 'block' : 'none';
@@ -1508,7 +1539,7 @@
                 document.getElementById('m-upd-ver').value = s.ver_ref || '';
             }
             
-            if (s.estado === 'Aprobado Final' || s.estado === 'Solicitud Cerrada') {
+            if (s.estado === 'Aprobado Final') {
                 if (s.version_final) {
                     document.getElementById('m-original-data').classList.add('locked-data');
                     document.getElementById('m-orig-title').style.display = 'flex';
@@ -1638,7 +1669,6 @@
             let fileUrl = null;
             if (f.files[0]) {
                 fileUrl = await uploadToCloudinary(f.files[0]);
-                // VERIFICACIÓN ANTI-ERRORES
                 if (!fileUrl) {
                     document.getElementById('loading-overlay').style.display = 'none';
                     return alert("Error de red al intentar subir el archivo a Cloudinary. Intenta de nuevo.");
@@ -1646,7 +1676,7 @@
             }
             
             let chatPayload = {u: currentUser.nombre, m: `💬 Comentario: ${txt}`, t: new Date().toLocaleString()};
-            if (fileUrl) chatPayload.archivo = fileUrl; // Asegura que nunca envíe "undefined"
+            if (fileUrl) chatPayload.archivo = fileUrl; 
 
             await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), {
                 chat: arrayUnion(chatPayload)
@@ -1674,7 +1704,6 @@
             
             let fileUrl = await uploadToCloudinary(f.files[0]);
             
-            // VERIFICACIÓN ANTI-ERRORES
             if (!fileUrl) {
                 document.getElementById('loading-overlay').style.display = 'none';
                 return alert("Error al subir el documento final. Por favor, intenta de nuevo.");
@@ -1682,10 +1711,10 @@
             
             let fileName = f.files[0].name;
             
-            let chatPayload = {u: "SISTEMA (SGC)", m: `🏁 SOLICITUD CERRADA Y PUBLICADA. Ver: ${ver}. Obs: ${com}`, t: new Date().toLocaleString(), archivo: fileUrl};
+            let chatPayload = {u: "SISTEMA (SGC)", m: `🏁 SOLICITUD APROBADA FINALMENTE Y PUBLICADA. Ver: ${ver}. Obs: ${com}`, t: new Date().toLocaleString(), archivo: fileUrl};
 
             await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), {
-                estado: "Solicitud Cerrada", 
+                estado: "Aprobado Final", 
                 codigo_final: codFinal,
                 version_final: ver,
                 fecha_final: fecha,
@@ -1764,7 +1793,6 @@
             let fileUrl = null;
             if(f.files[0]) {
                 fileUrl = await uploadToCloudinary(f.files[0]);
-                // VERIFICACIÓN ANTI-ERRORES
                 if (!fileUrl) {
                     document.getElementById('loading-overlay').style.display = 'none';
                     return alert("Error al adjuntar archivo. Verifica tu conexión a internet e intenta de nuevo.");
@@ -1772,7 +1800,7 @@
             }
             
             let chatPayload = {u: currentUser.nombre, m: mensajeFinal, t: new Date().toLocaleString()};
-            if (fileUrl) chatPayload.archivo = fileUrl; // Asegura evitar valores undefined
+            if (fileUrl) chatPayload.archivo = fileUrl;
 
             await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), {
                 estado: nEst,
@@ -1802,12 +1830,15 @@
             
             if (f.files[0]) {
                 url = await uploadToCloudinary(f.files[0]);
-                // VERIFICACIÓN ANTI-ERRORES
                 if (!url) {
                     document.getElementById('loading-overlay').style.display = 'none';
                     return alert("Hubo un problema al subir el archivo a Cloudinary. Por favor, intenta de nuevo.");
                 }
             }
+
+            // OBTENER CORREOS DE INVOLUCRADOS
+            const extraEmailsNodes = document.querySelectorAll('.extra-email');
+            const extraEmails = Array.from(extraEmailsNodes).map(el => el.value.trim().toLowerCase()).filter(e => e !== "" && e.includes('@'));
 
             const fci = await getNextFCI();
 
@@ -1827,6 +1858,7 @@
                 solicitante: currentUser.nombre,
                 solicitante_email: currentUser.email, 
                 uid: currentUser.usuario,
+                involucrados: extraEmails, // GUARDANDO LOS CO-SOLICITANTES
                 idx: 0,
                 estado: "Pendiente Documentado",
                 adjunto: url,
@@ -1837,8 +1869,12 @@
 
             await addDoc(collection(db, "artifacts", appId, "public", "data", "Solicitudes"), data);
             
+            // LIMPIAR LA LISTA DE INVOLUCRADOS DESPUÉS DE ENVIAR
+            document.getElementById('lista-involucrados').innerHTML = "";
+
+            const toEmails = new Set([EMAIL_ADMIN_SGC, EMAIL_GRUPO_SGC, currentUser.email, ...extraEmails]);
             const destinatarios = {
-                to: [EMAIL_ADMIN_SGC, EMAIL_GRUPO_SGC, currentUser.email].join(','),
+                to: Array.from(toEmails).join(','),
                 cc: gerenteEmailVisible
             };
 
