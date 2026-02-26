@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestión</title>
+    <title>Sistema de Gestión 1</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
@@ -629,9 +629,16 @@
                         <p id="m-jus" style="font-size:13px;"></p>
                     </div>
 
-                    <div id="m-involucrados-container" style="display:none; background:#e0f2fe; padding:15px; border-radius:10px; margin-top:15px; border:1px solid #bae6fd;">
-                        <label style="color:var(--primary);">Otras Personas Involucradas (Notificadas)</label>
-                        <p id="m-involucrados" style="font-size:13px; font-weight:600; color:#0369a1; word-break:break-all;"></p>
+                    <div id="m-involucrados-container" style="background:#f8fafc; padding:15px; border-radius:10px; margin-top:15px; border:1px solid var(--border);">
+                        <label style="color:var(--primary); display:flex; justify-content:space-between; align-items:center;">
+                            Personas Involucradas (Notificadas)
+                        </label>
+                        <p id="m-involucrados-list" style="font-size:13px; font-weight:600; color:#0369a1; word-break:break-all; margin-bottom: 10px;"></p>
+                        
+                        <div id="m-add-involucrado-section" style="display:flex; gap:10px; border-top: 1px dashed #cbd5e1; padding-top: 10px;">
+                            <input type="email" id="m-new-involucrado" placeholder="Añadir nuevo correo (ej: juan@fcipty.com)" style="margin:0; padding:8px; font-size:12px; flex:1; background:white;">
+                            <button class="btn btn-info" onclick="guardarNuevoInvolucrado()" style="padding:8px 12px; font-size:11px;">Añadir</button>
+                        </div>
                     </div>
                 </div>
 
@@ -756,7 +763,7 @@
 
         const PASOS_NOMBRES = ["Pendiente Documentado", "Pendiente Verificado", "Pendiente Aprobación Gerencia", "Pendiente Aprobación SGC"];
 
-        // FUNCION PARA AGREGAR CAMPOS DE INVOLUCRADOS DINÁMICAMENTE
+        // FUNCION PARA AGREGAR CAMPOS DE INVOLUCRADOS DINÁMICAMENTE (AL CREAR)
         window.addInvolucrado = () => {
             const container = document.getElementById('lista-involucrados');
             const div = document.createElement('div');
@@ -767,6 +774,31 @@
                 <button type="button" class="btn btn-danger" onclick="this.parentElement.remove()" style="padding:8px 12px;"><span class="material-icons-round" style="font-size:16px; margin:0;">delete</span></button>
             `;
             container.appendChild(div);
+        };
+
+        // FUNCION PARA AÑADIR INVOLUCRADOS A UNA SOLICITUD YA CREADA DESDE EL MODAL
+        window.guardarNuevoInvolucrado = async () => {
+            const newEmail = document.getElementById('m-new-involucrado').value.trim().toLowerCase();
+            if(!newEmail || !newEmail.includes('@')) return alert('Ingresa un correo válido.');
+            
+            document.getElementById('loading-overlay').style.display = 'flex';
+            
+            let currentInv = selectedDocData.involucrados || [];
+            if(currentInv.includes(newEmail)) {
+                document.getElementById('loading-overlay').style.display = 'none';
+                return alert('Este correo ya está en la lista de involucrados.');
+            }
+            
+            currentInv.push(newEmail);
+            
+            await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), {
+                involucrados: currentInv,
+                chat: arrayUnion({u: currentUser.nombre, m: `👥 Añadió a ${newEmail} como persona involucrada a esta solicitud.`, t: new Date().toLocaleString()})
+            });
+            
+            document.getElementById('m-new-involucrado').value = '';
+            document.getElementById('loading-overlay').style.display = 'none';
+            verDetalle(selectedId); // Recarga el modal para mostrar el cambio
         };
 
         window.filtrarTabla = (inputId, tbodyId) => {
@@ -831,23 +863,28 @@
                 return;
             }
             
-            let dataExport = globalSolicitudes.map(s => ({
-                "ID Solicitud": s.customId || '',
-                "Título del Documento": s.titulo || '',
-                "Solicitante": s.solicitante || '',
-                "Gerencia": s.gerencia || '',
-                "Departamento": s.departamento || '',
-                "Tipo de Documento": s.tipoDoc || '',
-                "Acción Requerida": s.accion || '',
-                "Motivo / Justificación": s.motivo || '',
-                "Estado Actual": s.estado === 'Aprobado Final' ? 'APROBADO FINAL' : (s.estado !== 'Aprobado Final' && s.estado !== 'Anulado' && s.estado !== 'Rechazado' ? `${s.estado} (Etapa: ${PASOS_NOMBRES[s.idx] || ''})` : s.estado),
-                "Fecha de Creación": s.fecha ? new Date(s.fecha).toLocaleString() : '',
-                "Código Ref. Original": s.cod_ref || '',
-                "Versión Original": s.ver_ref || '',
-                "Código Final Asignado": s.codigo_final || '',
-                "Versión Final Asignada": s.version_final || '',
-                "Fecha Final": s.fecha_final || ''
-            }));
+            let dataExport = globalSolicitudes.map(s => {
+                let est = (s.estado || '').toUpperCase();
+                let estadoFormat = est.includes('APROBADO FINAL') ? 'APROBADO FINAL' : (est !== 'ANULADO' && est !== 'RECHAZADO' ? `${s.estado} (Etapa: ${PASOS_NOMBRES[s.idx] || ''})` : s.estado);
+                
+                return {
+                    "ID Solicitud": s.customId || '',
+                    "Título del Documento": s.titulo || '',
+                    "Solicitante": s.solicitante || '',
+                    "Gerencia": s.gerencia || '',
+                    "Departamento": s.departamento || '',
+                    "Tipo de Documento": s.tipoDoc || '',
+                    "Acción Requerida": s.accion || '',
+                    "Motivo / Justificación": s.motivo || '',
+                    "Estado Actual": estadoFormat,
+                    "Fecha de Creación": s.fecha ? new Date(s.fecha).toLocaleString() : '',
+                    "Código Ref. Original": s.cod_ref || '',
+                    "Versión Original": s.ver_ref || '',
+                    "Código Final Asignado": s.codigo_final || '',
+                    "Versión Final Asignada": s.version_final || '',
+                    "Fecha Final": s.fecha_final || ''
+                }
+            });
 
             let wb = XLSX.utils.book_new();
             let ws = XLSX.utils.json_to_sheet(dataExport);
@@ -867,7 +904,7 @@
             
             const toEmails = new Set([EMAIL_ADMIN_SGC, EMAIL_GRUPO_SGC, solicitudData.solicitante_email]);
             
-            // AGREGAMOS LOS CORREOS DE LAS PERSONAS INVOLUCRADAS (SI EXISTEN)
+            // AGREGAMOS LOS CORREOS DE LAS PERSONAS INVOLUCRADAS (SI EXISTEN) PARA EL ENVÍO DE CORREOS
             if(solicitudData.involucrados && Array.isArray(solicitudData.involucrados)) {
                 solicitudData.involucrados.forEach(e => { if(e) toEmails.add(e); });
             }
@@ -1101,31 +1138,35 @@
 
                 solicitudesList.forEach(sol => {
                     const p = currentUser.permisos || {};
+                    let estadoStr = (sol.estado || "").toUpperCase();
+                    let isAprobadoFinal = estadoStr.includes('APROBADO FINAL');
+
                     stats.total++;
                     if(sol.estado === 'Pendiente Documentado') stats.p++; 
-                    else if(sol.estado.includes('Aprobado Final')) stats.o++;
+                    else if(isAprobadoFinal) stats.o++;
 
                     let ver = p.p_ver_all || (p.p_ver_ger && sol.gerencia === currentUser.gerencia) || (p.p_ver_propias && sol.uid === currentUser.usuario);
+                    
                     let badgeClass = 'badge-info';
-                    if(sol.estado.includes('Aprobado')) badgeClass = 'badge-success';
-                    if(sol.estado === 'Anulado' || sol.estado === 'Rechazado') badgeClass = 'badge-danger';
-                    if(sol.estado.includes('Pendiente')) badgeClass = 'badge-warning';
+                    if(estadoStr.includes('APROBADO')) badgeClass = 'badge-success';
+                    if(estadoStr === 'ANULADO' || estadoStr === 'RECHAZADO') badgeClass = 'badge-danger';
+                    if(estadoStr.includes('PENDIENTE')) badgeClass = 'badge-warning';
 
                     let faseActual = PASOS_NOMBRES[sol.idx] || "";
                     let estadoMostrar = sol.estado;
                     let infoFase = "";
                     
-                    if (sol.estado === 'Aprobado Final') {
+                    if (isAprobadoFinal) {
                         estadoMostrar = "APROBADO FINAL";
-                    } else if (sol.estado !== 'Aprobado Final' && sol.estado !== 'Anulado' && sol.estado !== 'Rechazado' && faseActual) {
+                    } else if (estadoStr !== 'ANULADO' && estadoStr !== 'RECHAZADO' && faseActual) {
                         infoFase = `<br><span style="font-size:10px; color:#64748b; font-weight:700; display:inline-block; margin-top:5px;">📍 Etapa: ${faseActual}</span>`;
                     }
 
                     if(ver) tbHist.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.solicitante}</td><td>${sol.titulo}</td><td><span class="badge ${badgeClass}">${estadoMostrar}</span>${infoFase}</td><td><button class="btn btn-ghost" onclick="verDetalle('${sol.docId}')">Ver</button></td></tr>`;
                     
                     let gestionar = false;
-                    if(p.p_gest_sgc && (sol.idx === 0 || sol.idx === 1 || sol.idx === 3) && sol.estado !== 'Rechazado' && sol.estado !== 'Aprobado Final' && sol.estado !== 'Anulado') gestionar = true;
-                    if(p.p_ger_apr && sol.idx === 2 && sol.gerencia === currentUser.gerencia && sol.estado !== 'Rechazado' && sol.estado !== 'Anulado' && sol.estado !== 'Aprobado Final') gestionar = true;
+                    if(p.p_gest_sgc && (sol.idx === 0 || sol.idx === 1 || sol.idx === 3) && estadoStr !== 'RECHAZADO' && !isAprobadoFinal && estadoStr !== 'ANULADO') gestionar = true;
+                    if(p.p_ger_apr && sol.idx === 2 && sol.gerencia === currentUser.gerencia && estadoStr !== 'RECHAZADO' && estadoStr !== 'ANULADO' && !isAprobadoFinal) gestionar = true;
 
                     if(gestionar) tbGest.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.solicitante}</td><td>${sol.titulo}</td><td><span class="badge ${badgeClass}">${estadoMostrar}</span>${infoFase}</td><td><button class="btn btn-primary" onclick="verDetalle('${sol.docId}')">Gestionar</button></td></tr>`;
                 });
@@ -1462,17 +1503,20 @@
             document.getElementById('m-tit').innerText = s.titulo;
             document.getElementById('m-sol').innerText = s.solicitante;
             
-            let badgeClass = 'badge-info';
-            if(s.estado.includes('Aprobado')) badgeClass = 'badge-success';
-            if(s.estado === 'Anulado' || s.estado === 'Rechazado') badgeClass = 'badge-danger';
-            if(s.estado.includes('Pendiente')) badgeClass = 'badge-warning';
+            let estadoStr = (s.estado || "").toUpperCase();
+            let isAprobadoFinalModal = estadoStr.includes('APROBADO FINAL');
 
-            let estadoMostrarModal = s.estado === 'Aprobado Final' ? 'APROBADO FINAL' : s.estado;
+            let badgeClass = 'badge-info';
+            if(estadoStr.includes('APROBADO')) badgeClass = 'badge-success';
+            if(estadoStr === 'ANULADO' || estadoStr === 'RECHAZADO') badgeClass = 'badge-danger';
+            if(estadoStr.includes('PENDIENTE')) badgeClass = 'badge-warning';
+
+            let estadoMostrarModal = isAprobadoFinalModal ? 'APROBADO FINAL' : s.estado;
             document.getElementById('m-est').innerText = estadoMostrarModal;
             document.getElementById('m-est').className = `badge ${badgeClass}`;
 
             let fActual = PASOS_NOMBRES[s.idx];
-            if (s.estado !== 'Aprobado Final' && s.estado !== 'Anulado' && s.estado !== 'Rechazado' && fActual) {
+            if (!isAprobadoFinalModal && estadoStr !== 'ANULADO' && estadoStr !== 'RECHAZADO' && fActual) {
                 document.getElementById('m-est').innerHTML += ` <span style="font-size:10px; color:#64748b; font-weight:700; margin-left:8px; background:transparent; border:none; display:inline-block; vertical-align:middle;">(📍 Etapa: ${fActual})</span>`;
             }
 
@@ -1495,20 +1539,16 @@
                 document.getElementById('m-fecha-ult').innerText = window.formatearFechaAbreviada(s.fecha_ref);
             } else document.getElementById('m-extra-panel').style.display = 'none';
 
-            // MOSTRAR PERSONAS INVOLUCRADAS SI EXISTEN
-            if(s.involucrados && s.involucrados.length > 0) {
-                document.getElementById('m-involucrados-container').style.display = 'block';
-                document.getElementById('m-involucrados').innerText = s.involucrados.join(', ');
-            } else {
-                document.getElementById('m-involucrados-container').style.display = 'none';
-            }
+            // MOSTRAR Y GESTIONAR PERSONAS INVOLUCRADAS
+            let invList = s.involucrados && s.involucrados.length > 0 ? s.involucrados.join(', ') : "No hay personas extras añadidas.";
+            document.getElementById('m-involucrados-list').innerText = invList;
 
             for(let i=1; i<=4; i++) {
                 const st = document.getElementById('s'+i);
                 st.className = 'step'; 
-                if(s.estado === 'Anulado' || s.estado === 'Rechazado') continue;
+                if(estadoStr === 'ANULADO' || estadoStr === 'RECHAZADO') continue;
                 if(i <= s.idx) st.classList.add('completed'); 
-                if(i === s.idx + 1 && s.estado !== 'Aprobado Final') st.classList.add('active');
+                if(i === s.idx + 1 && !isAprobadoFinalModal) st.classList.add('active');
             }
 
             const esSGC = p.p_gest_sgc;
@@ -1517,12 +1557,15 @@
             const esGer = p.p_ger_apr && s.idx === 2 && s.gerencia === currentUser.gerencia;
             
             const esDuenio = s.uid === currentUser.usuario;
-            const activo = s.estado !== 'Aprobado Final' && s.estado !== 'Rechazado' && s.estado !== 'Anulado';
+            const activo = !isAprobadoFinalModal && estadoStr !== 'RECHAZADO' && estadoStr !== 'ANULADO';
+
+            // Ocultar/Mostrar el boton de añadir involucrados según si la solicitud sigue activa
+            document.getElementById('m-add-involucrado-section').style.display = activo ? 'flex' : 'none';
             
             document.getElementById('m-actions').style.display = (esGestorSGC || esGer) && activo ? 'block' : 'none';
             document.getElementById('applicant-actions').style.display = (esDuenio && activo) ? 'block' : 'none';
             document.getElementById('m-input-area').style.display = 'none';
-            document.getElementById('general-comment-area').style.display = s.estado !== 'Anulado' ? 'block' : 'none';
+            document.getElementById('general-comment-area').style.display = estadoStr !== 'ANULADO' ? 'block' : 'none';
             
             document.getElementById('btn-anular').style.display = (esSGC || esDuenio) && activo ? 'inline-block' : 'none';
 
@@ -1539,7 +1582,8 @@
                 document.getElementById('m-upd-ver').value = s.ver_ref || '';
             }
             
-            if (s.estado === 'Aprobado Final') {
+            // LÓGICA INFALIBLE PARA MOSTRAR PANEL VERDE DE APROBADO O EL DE SUBIDA DEL SGC
+            if (isAprobadoFinalModal) {
                 if (s.version_final) {
                     document.getElementById('m-original-data').classList.add('locked-data');
                     document.getElementById('m-orig-title').style.display = 'flex';
@@ -1604,7 +1648,8 @@
                         document.getElementById('edit-fecha-final-container').style.display = 'none';
                     }
 
-                } else if (esSGC && s.estado === 'Aprobado Final') {
+                } else if (esSGC) {
+                    // Si el estado es "APROBADO FINAL" (porque se editó manual en BD) pero faltan los datos del archivo, se muestra este panel
                     document.getElementById('m-panel-final-sgc').style.display = 'block';
                     document.getElementById('m-final-cod').value = s.cod_ref || ""; 
                 }
@@ -1858,7 +1903,7 @@
                 solicitante: currentUser.nombre,
                 solicitante_email: currentUser.email, 
                 uid: currentUser.usuario,
-                involucrados: extraEmails, // GUARDANDO LOS CO-SOLICITANTES
+                involucrados: extraEmails, 
                 idx: 0,
                 estado: "Pendiente Documentado",
                 adjunto: url,
