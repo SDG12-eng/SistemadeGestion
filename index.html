@@ -10,7 +10,8 @@
     
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <style>
+    
+    <style>
         :root {
             --primary: #1e40af; --accent: #3b82f6; --bg: #f8fafc;
             --success: #059669; --warning: #d97706; --danger: #dc2626;
@@ -316,31 +317,6 @@
                     </div>
                 </div>
             </div>
-
-            <div class="grid-2" style="margin-top: 25px;">
-                <div class="card">
-                    <h3 style="margin-bottom: 15px; color: var(--primary); display: flex; align-items: center; gap: 8px;">
-                        <span class="material-icons-round">pie_chart</span> Distribución de Estados
-                    </h3>
-                    <div style="position: relative; height: 300px; width: 100%; display: flex; justify-content: center;">
-                        <canvas id="estadosChart"></canvas>
-                    </div>
-                </div>
-                <div class="card" style="background: #f8fafc; border: 1px dashed #cbd5e1;">
-                    <h3 style="margin-bottom: 15px; color: var(--primary); display: flex; align-items: center; gap: 8px;">
-                        <span class="material-icons-round">info</span> Actividad del Sistema
-                    </h3>
-                    <p style="font-size: 13px; color: #475569; line-height: 1.6;">
-                        El panel central consolida el estado de los documentos de tu sistema de gestión. 
-                        Asegúrate de vigilar los <b>estados pendientes</b> para evitar estancamientos en las validaciones, así como responder las solicitudes <b>en consulta</b>.
-                    </p>
-                    <div style="margin-top:20px; padding:15px; background:white; border-radius:8px; box-shadow:0 1px 2px rgba(0,0,0,0.05);">
-                        <label style="color:var(--info);">Atajos Rápidos</label>
-                        <button class="btn btn-ghost" onclick="document.getElementById('nav-crear').click()" style="width:100%; margin-top:10px; text-align:left; justify-content:flex-start;">+ Registrar Nueva Solicitud</button>
-                        <button class="btn btn-ghost" onclick="document.getElementById('nav-gest').click()" style="width:100%; margin-top:5px; text-align:left; justify-content:flex-start;">→ Ir a Bandeja de Gestión</button>
-                    </div>
-                </div>
-            </div>
         </section>
 
         <section id="sec-crear" class="section">
@@ -452,10 +428,9 @@
                                onkeyup="filtrarTabla('search-gest', 'tbody-gestionar')">
                     </div>
                     <div style="display:flex; gap:8px;">
-                        <span class="badge badge-dark" style="cursor:pointer;" onclick="setFilterGest('')">Todos</span>
-                        <span class="badge badge-warning" style="cursor:pointer;" onclick="setFilterGest('Pendiente')">Pendientes</span>
-                        <span class="badge badge-info" style="cursor:pointer;" onclick="setFilterGest('Consulta')">En Consulta</span>
-                        <span class="badge badge-danger" style="cursor:pointer;" onclick="setFilterGest('Rechazado')">Rechazados</span>
+                        <span class="badge badge-dark" style="cursor:pointer; padding:6px 12px;" onclick="setFilterGest('')">Todos</span>
+                        <span class="badge badge-warning" style="cursor:pointer; padding:6px 12px;" onclick="setFilterGest('Pendiente')">Pendientes</span>
+                        <span class="badge badge-info" style="cursor:pointer; padding:6px 12px;" onclick="setFilterGest('Consulta')">En Consulta</span>
                     </div>
                 </div>
 
@@ -467,7 +442,7 @@
                                 <th>Origen / Solicitante</th>
                                 <th>Documento y Tipo</th>
                                 <th>Etapa Actual</th>
-                                <th style="text-align: center;" class="no-export">Gestión</th>
+                                <th class="no-export">Gestión</th>
                             </tr>
                         </thead>
                         <tbody id="tbody-gestionar">
@@ -845,11 +820,10 @@
         let editandoMaestroId = null;
         
         let globalSolicitudes = [];
-        let chartEstados = null; // Variable para manejar la gráfica
 
         const PASOS_NOMBRES = ["Pendiente Documentado", "Pendiente Verificado", "Pendiente Aprobación Gerencia", "Pendiente Aprobación SGC"];
 
-        // FUNCION PARA AGREGAR CAMPOS DE INVOLUCRADOS DINÁMICAMENTE
+        // FUNCION PARA AGREGAR CAMPOS DE INVOLUCRADOS DINÁMICAMENTE (AL CREAR)
         window.addInvolucrado = () => {
             const container = document.getElementById('lista-involucrados');
             const div = document.createElement('div');
@@ -884,7 +858,7 @@
             
             document.getElementById('m-new-involucrado').value = '';
             document.getElementById('loading-overlay').style.display = 'none';
-            verDetalle(selectedId); 
+            verDetalle(selectedId); // Recarga el modal para mostrar el cambio
         };
 
         window.filtrarTabla = (inputId, tbodyId) => {
@@ -905,17 +879,19 @@
             }
         };
 
-        // FILTRO RÁPIDO PARA BANDEJA DE GESTIÓN
-        window.setFilterGest = (estado) => {
+        // NUEVO: Función para filtrar con las etiquetas rápidas en Bandeja de Gestión
+        window.setFilterGest = (filterText) => {
             const tbody = document.getElementById('tbody-gestionar');
             if (!tbody) return;
             const trs = tbody.getElementsByTagName('tr');
+            const filter = filterText.toLowerCase();
+
             for (let i = 0; i < trs.length; i++) {
-                let text = trs[i].innerText || trs[i].textContent;
-                if (estado === '') {
-                    trs[i].style.display = "";
-                } else {
-                    if (text.toLowerCase().includes(estado.toLowerCase())) {
+                // El estado está en la columna 3 (índice base 0)
+                let statusCell = trs[i].getElementsByTagName('td')[3];
+                if (statusCell) {
+                    let text = statusCell.textContent || statusCell.innerText;
+                    if (filter === "" || text.toLowerCase().includes(filter)) {
                         trs[i].style.display = "";
                     } else {
                         trs[i].style.display = "none";
@@ -1009,6 +985,7 @@
             
             const toEmails = new Set([EMAIL_ADMIN_SGC, EMAIL_GRUPO_SGC, solicitudData.solicitante_email]);
             
+            // AGREGAMOS LOS CORREOS DE LAS PERSONAS INVOLUCRADAS (SI EXISTEN) PARA EL ENVÍO DE CORREOS
             if(solicitudData.involucrados && Array.isArray(solicitudData.involucrados)) {
                 solicitudData.involucrados.forEach(e => { if(e) toEmails.add(e); });
             }
@@ -1062,9 +1039,13 @@
             try {
                 const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, { method: 'POST', body: fd });
                 const data = await res.json();
-                if (!res.ok) return null;
+                if (!res.ok) {
+                    console.error("Cloudinary Error al subir:", data);
+                    return null;
+                }
                 return data.secure_url || null; 
             } catch(e) { 
+                console.error("Network Error subiendo a Cloudinary:", e);
                 return null; 
             }
         }
@@ -1150,7 +1131,8 @@
             if(document.getElementById('btn-export-list')) document.getElementById('btn-export-list').style.display = esAdminTotal ? 'inline-flex' : 'none';
 
             cargarDatos();
-            document.getElementById('nav-dash').click();
+            // AQUI CAMBIAMOS PARA QUE LA VISTA POR DEFECTO SEA MIS SOLICITUDES EN VEZ DEL DASHBOARD
+            document.getElementById('nav-hist').click();
         }
 
         function cargarDatos() {
@@ -1232,77 +1214,39 @@
                 s.forEach(d => { let data = d.data(); data.docId = d.id; solicitudesList.push(data); });
 
                 solicitudesList.sort((a, b) => { return a.customId > b.customId ? 1 : -1; });
+                
                 globalSolicitudes = solicitudesList; 
 
-                // Lógica de KPIs (Dashboard)
-                let totalStats = solicitudesList.length;
-                let aprobadosStats = solicitudesList.filter(x => (x.estado || '').toUpperCase().includes('APROBADO FINAL')).length;
-                let pendientesStats = solicitudesList.filter(x => (x.estado || '').toUpperCase().includes('PENDIENTE')).length;
+                // Lógica y cálculo para Dashboard
+                let totalSols = solicitudesList.length;
+                let aprobados = solicitudesList.filter(sol => (sol.estado || '').toUpperCase().includes('APROBADO FINAL')).length;
+                let anulados = solicitudesList.filter(sol => (sol.estado || '').toUpperCase() === 'ANULADO' || (sol.estado || '').toUpperCase() === 'RECHAZADO').length;
+                let pendientes = totalSols - aprobados - anulados;
 
-                if(document.getElementById('dash-total')) document.getElementById('dash-total').innerText = totalStats;
-                if(document.getElementById('dash-pend')) document.getElementById('dash-pend').innerText = pendientesStats;
-                if(document.getElementById('dash-ok')) document.getElementById('dash-ok').innerText = aprobadosStats;
+                if(document.getElementById('dash-total')) document.getElementById('dash-total').innerText = totalSols;
+                if(document.getElementById('dash-pend')) document.getElementById('dash-pend').innerText = pendientes;
+                if(document.getElementById('dash-ok')) document.getElementById('dash-ok').innerText = aprobados;
 
-                if(totalStats > 0) {
-                    if(document.getElementById('bar-pend')) document.getElementById('bar-pend').style.width = (pendientesStats / totalStats * 100) + "%";
-                    if(document.getElementById('bar-ok')) document.getElementById('bar-ok').style.width = (aprobadosStats / totalStats * 100) + "%";
+                if(totalSols > 0) {
+                    if(document.getElementById('bar-pend')) document.getElementById('bar-pend').style.width = (pendientes / totalSols * 100) + "%";
+                    if(document.getElementById('bar-ok')) document.getElementById('bar-ok').style.width = (aprobados / totalSols * 100) + "%";
                 }
-                if(document.getElementById('dash-date')) document.getElementById('dash-date').innerText = new Date().toLocaleDateString('es-PA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-                // Gráfico de Estados
-                let conteoEstados = {};
-                solicitudesList.forEach(s => {
-                    let e = s.estado || 'Desconocido';
-                    if(e.toUpperCase().includes('APROBADO FINAL')) e = 'Aprobado Final';
-                    conteoEstados[e] = (conteoEstados[e] || 0) + 1;
-                });
-
-                const labelsChart = Object.keys(conteoEstados);
-                const dataChart = Object.values(conteoEstados);
-                const bgColors = labelsChart.map(l => {
-                    let lUp = l.toUpperCase();
-                    if(lUp.includes('APROBADO')) return '#10b981'; // success
-                    if(lUp.includes('PENDIENTE')) return '#f59e0b'; // warning
-                    if(lUp.includes('ANULADO') || lUp.includes('RECHAZADO')) return '#ef4444'; // danger
-                    return '#3b82f6'; // info
-                });
-
-                if(chartEstados) {
-                    chartEstados.data.labels = labelsChart;
-                    chartEstados.data.datasets[0].data = dataChart;
-                    chartEstados.data.datasets[0].backgroundColor = bgColors;
-                    chartEstados.update();
-                } else {
-                    const ctx = document.getElementById('estadosChart');
-                    if(ctx) {
-                        chartEstados = new Chart(ctx, {
-                            type: 'doughnut',
-                            data: {
-                                labels: labelsChart,
-                                datasets: [{
-                                    data: dataChart,
-                                    backgroundColor: bgColors,
-                                    borderWidth: 1
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                plugins: {
-                                    legend: { position: 'right', labels: { boxWidth: 12, font: {size: 11} } }
-                                }
-                            }
-                        });
-                    }
+                if(document.getElementById('dash-date')) {
+                    document.getElementById('dash-date').innerText = new Date().toLocaleDateString('es-PA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                 }
 
-                // Generación de Tablas
                 solicitudesList.forEach(sol => {
                     const p = currentUser.permisos || {};
                     let estadoStr = (sol.estado || "").toUpperCase();
                     let isAprobadoFinal = estadoStr.includes('APROBADO FINAL');
 
-                    let ver = p.p_ver_all || (p.p_ver_ger && sol.gerencia === currentUser.gerencia) || (p.p_ver_propias && sol.uid === currentUser.usuario);
+                    // Verificamos si el usuario actual está en la lista de involucrados
+                    let esInvolucrado = sol.involucrados && currentUser.email && sol.involucrados.includes(currentUser.email.toLowerCase());
+
+                    // Damos acceso si es admin, de la gerencia, el creador original, o un involucrado
+                    let ver = p.p_ver_all || 
+                              (p.p_ver_ger && sol.gerencia === currentUser.gerencia) || 
+                              (p.p_ver_propias && (sol.uid === currentUser.usuario || esInvolucrado));
                     
                     let badgeClass = 'badge-info';
                     if(estadoStr.includes('APROBADO')) badgeClass = 'badge-success';
@@ -1325,7 +1269,7 @@
                     if(p.p_gest_sgc && (sol.idx === 0 || sol.idx === 1 || sol.idx === 3) && estadoStr !== 'RECHAZADO' && !isAprobadoFinal && estadoStr !== 'ANULADO') gestionar = true;
                     if(p.p_ger_apr && sol.idx === 2 && sol.gerencia === currentUser.gerencia && estadoStr !== 'RECHAZADO' && estadoStr !== 'ANULADO' && !isAprobadoFinal) gestionar = true;
 
-                    if(gestionar) tbGest.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.solicitante}</td><td>${sol.titulo}</td><td><span class="badge ${badgeClass}">${estadoMostrar}</span>${infoFase}</td><td style="text-align:center;"><button class="btn btn-primary" onclick="verDetalle('${sol.docId}')">Gestionar</button></td></tr>`;
+                    if(gestionar) tbGest.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.solicitante}</td><td>${sol.titulo}</td><td><span class="badge ${badgeClass}">${estadoMostrar}</span>${infoFase}</td><td><button class="btn btn-primary" onclick="verDetalle('${sol.docId}')">Gestionar</button></td></tr>`;
                 });
             });
 
@@ -1532,6 +1476,7 @@
                             alert(`Se importaron ${json.length} registros exitosamente.`);
                         }
                     } catch(error) {
+                        console.error(error);
                         alert("Hubo un error leyendo el Excel.");
                     }
                     document.getElementById('loading-overlay').style.display = 'none';
@@ -1691,6 +1636,7 @@
                 document.getElementById('m-fecha-ult').innerText = window.formatearFechaAbreviada(s.fecha_ref);
             } else document.getElementById('m-extra-panel').style.display = 'none';
 
+            // MOSTRAR Y GESTIONAR PERSONAS INVOLUCRADAS
             let invList = s.involucrados && s.involucrados.length > 0 ? s.involucrados.join(', ') : "No hay personas extras añadidas.";
             document.getElementById('m-involucrados-list').innerText = invList;
 
@@ -1703,16 +1649,23 @@
             }
 
             const esSGC = p.p_gest_sgc;
+            
             const esGestorSGC = esSGC && (s.idx === 0 || s.idx === 1 || s.idx === 3);
             const esGer = p.p_ger_apr && s.idx === 2 && s.gerencia === currentUser.gerencia;
-            const esDuenio = s.uid === currentUser.usuario;
+            
+            // Expandimos la validación para que los involucrados sean tratados como dueños
+            const esInvolucradoActivo = s.involucrados && currentUser.email && s.involucrados.includes(currentUser.email.toLowerCase());
+            const esDuenio = s.uid === currentUser.usuario || esInvolucradoActivo;
             const activo = !isAprobadoFinalModal && estadoStr !== 'RECHAZADO' && estadoStr !== 'ANULADO';
 
+            // Ocultar/Mostrar el boton de añadir involucrados según si la solicitud sigue activa
             document.getElementById('m-add-involucrado-section').style.display = activo ? 'flex' : 'none';
+            
             document.getElementById('m-actions').style.display = (esGestorSGC || esGer) && activo ? 'block' : 'none';
             document.getElementById('applicant-actions').style.display = (esDuenio && activo) ? 'block' : 'none';
             document.getElementById('m-input-area').style.display = 'none';
             document.getElementById('general-comment-area').style.display = estadoStr !== 'ANULADO' ? 'block' : 'none';
+            
             document.getElementById('btn-anular').style.display = (esSGC || esDuenio) && activo ? 'inline-block' : 'none';
 
             document.getElementById('m-panel-final-sgc').style.display = 'none';
@@ -1728,6 +1681,7 @@
                 document.getElementById('m-upd-ver').value = s.ver_ref || '';
             }
             
+            // LÓGICA INFALIBLE PARA MOSTRAR PANEL VERDE DE APROBADO O EL DE SUBIDA DEL SGC
             if (isAprobadoFinalModal) {
                 if (s.version_final) {
                     document.getElementById('m-original-data').classList.add('locked-data');
@@ -1794,6 +1748,7 @@
                     }
 
                 } else if (esSGC) {
+                    // Si el estado es "APROBADO FINAL" (porque se editó manual en BD) pero faltan los datos del archivo, se muestra este panel
                     document.getElementById('m-panel-final-sgc').style.display = 'block';
                     document.getElementById('m-final-cod').value = s.cod_ref || ""; 
                 }
@@ -1835,6 +1790,7 @@
             const s = selectedDocData;
             const nIdx = s.idx + 1;
             const nEst = nIdx < 4 ? PASOS_NOMBRES[nIdx] : "Aprobado Final";
+            
             const faseAprobada = PASOS_NOMBRES[s.idx]; 
             
             await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), {
@@ -1898,6 +1854,7 @@
             }
             
             let fileName = f.files[0].name;
+            
             let chatPayload = {u: "SISTEMA (SGC)", m: `🏁 SOLICITUD APROBADA FINALMENTE Y PUBLICADA. Ver: ${ver}. Obs: ${com}`, t: new Date().toLocaleString(), archivo: fileUrl};
 
             await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), {
@@ -2023,9 +1980,12 @@
                 }
             }
 
+            // OBTENER CORREOS DE INVOLUCRADOS
             const extraEmailsNodes = document.querySelectorAll('.extra-email');
             const extraEmails = Array.from(extraEmailsNodes).map(el => el.value.trim().toLowerCase()).filter(e => e !== "" && e.includes('@'));
+
             const fci = await getNextFCI();
+
             const gerenteEmailVisible = document.getElementById('sol-email-gerente').value;
 
             const data = {
@@ -2053,6 +2013,7 @@
 
             await addDoc(collection(db, "artifacts", appId, "public", "data", "Solicitudes"), data);
             
+            // LIMPIAR LA LISTA DE INVOLUCRADOS DESPUÉS DE ENVIAR
             document.getElementById('lista-involucrados').innerHTML = "";
 
             const toEmails = new Set([EMAIL_ADMIN_SGC, EMAIL_GRUPO_SGC, currentUser.email, ...extraEmails]);
@@ -2120,6 +2081,7 @@
             document.getElementById(id).classList.add('active');
             if(btn) btn.classList.add('active');
             
+            // Cerrar menú en móvil
             if(window.innerWidth <= 768) {
                 document.getElementById('sidebar').classList.remove('open');
                 document.getElementById('sidebar-overlay').classList.remove('active');
