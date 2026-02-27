@@ -10,8 +10,7 @@
     
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    
-    <style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <style>
         :root {
             --primary: #1e40af; --accent: #3b82f6; --bg: #f8fafc;
             --success: #059669; --warning: #d97706; --danger: #dc2626;
@@ -270,19 +269,76 @@
         </div>
 
         <section id="sec-dash" class="section">
-            <h1>Panel General</h1>
-            <div class="stats-grid grid-3" style="margin-top:20px;">
-                <div class="card" style="border-left: 5px solid var(--primary); display:flex; flex-direction:column;">
-                    <label>Total Solicitudes</label>
-                    <h2 id="dash-total" style="font-size:32px; margin:0;">0</h2>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
+                <div>
+                    <h1 style="font-size: 28px; font-weight: 800; color: var(--sidebar);">Resumen Operativo</h1>
+                    <p style="color: #64748b;">Control de Calidad y Certificación OEA</p>
                 </div>
-                <div class="card" style="border-left: 5px solid var(--warning); display:flex; flex-direction:column;">
-                    <label>Pendientes / En Gestión</label>
-                    <h2 id="dash-pend" style="font-size:32px; margin:0;">0</h2>
+                <div style="text-align:right;">
+                    <p id="dash-date" style="font-size: 12px; font-weight: 600; color: var(--primary); background: #e0e7ff; padding: 5px 12px; border-radius: 20px;"></p>
                 </div>
-                <div class="card" style="border-left: 5px solid var(--success); display:flex; flex-direction:column;">
-                    <label>Aprobados Final</label>
-                    <h2 id="dash-ok" style="font-size:32px; margin:0;">0</h2>
+            </div>
+
+            <div class="stats-grid grid-3" style="gap: 25px;">
+                <div class="card" style="position:relative; overflow:hidden; border:none; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); color:white;">
+                    <label style="color: rgba(255,255,255,0.8);">Total Solicitudes</label>
+                    <h2 id="dash-total" style="font-size:42px; margin:10px 0;">0</h2>
+                    <span class="material-icons-round" style="position:absolute; right:-10px; bottom:-10px; font-size:90px; opacity:0.2;">folder</span>
+                </div>
+
+                <div class="card" style="border-left: 6px solid var(--warning);">
+                    <div style="display:flex; justify-content:space-between;">
+                        <div>
+                            <label>En Proceso</label>
+                            <h2 id="dash-pend" style="font-size:38px; color: #92400e;">0</h2>
+                        </div>
+                        <div style="text-align:right;">
+                            <span class="badge badge-warning">Atención Req.</span>
+                        </div>
+                    </div>
+                    <div style="width:100%; background:#f1f5f9; height:8px; border-radius:4px; margin-top:15px;">
+                        <div id="bar-pend" style="width:0%; background:var(--warning); height:100%; border-radius:4px; transition:1s;"></div>
+                    </div>
+                </div>
+
+                <div class="card" style="border-left: 6px solid var(--success);">
+                    <div style="display:flex; justify-content:space-between;">
+                        <div>
+                            <label>Aprobados SGC</label>
+                            <h2 id="dash-ok" style="font-size:38px; color: #065f46;">0</h2>
+                        </div>
+                        <div style="text-align:right;">
+                            <span class="badge badge-success">Meta OEA</span>
+                        </div>
+                    </div>
+                    <div style="width:100%; background:#f1f5f9; height:8px; border-radius:4px; margin-top:15px;">
+                        <div id="bar-ok" style="width:0%; background:var(--success); height:100%; border-radius:4px; transition:1s;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-2" style="margin-top: 25px;">
+                <div class="card">
+                    <h3 style="margin-bottom: 15px; color: var(--primary); display: flex; align-items: center; gap: 8px;">
+                        <span class="material-icons-round">pie_chart</span> Distribución de Estados
+                    </h3>
+                    <div style="position: relative; height: 300px; width: 100%; display: flex; justify-content: center;">
+                        <canvas id="estadosChart"></canvas>
+                    </div>
+                </div>
+                <div class="card" style="background: #f8fafc; border: 1px dashed #cbd5e1;">
+                    <h3 style="margin-bottom: 15px; color: var(--primary); display: flex; align-items: center; gap: 8px;">
+                        <span class="material-icons-round">info</span> Actividad del Sistema
+                    </h3>
+                    <p style="font-size: 13px; color: #475569; line-height: 1.6;">
+                        El panel central consolida el estado de los documentos de tu sistema de gestión. 
+                        Asegúrate de vigilar los <b>estados pendientes</b> para evitar estancamientos en las validaciones, así como responder las solicitudes <b>en consulta</b>.
+                    </p>
+                    <div style="margin-top:20px; padding:15px; background:white; border-radius:8px; box-shadow:0 1px 2px rgba(0,0,0,0.05);">
+                        <label style="color:var(--info);">Atajos Rápidos</label>
+                        <button class="btn btn-ghost" onclick="document.getElementById('nav-crear').click()" style="width:100%; margin-top:10px; text-align:left; justify-content:flex-start;">+ Registrar Nueva Solicitud</button>
+                        <button class="btn btn-ghost" onclick="document.getElementById('nav-gest').click()" style="width:100%; margin-top:5px; text-align:left; justify-content:flex-start;">→ Ir a Bandeja de Gestión</button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -378,16 +434,45 @@
         </section>
 
         <section id="sec-gest" class="section">
-            <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px;">
-                <h1>Bandeja de Gestión</h1>
-            </div>
-            <div class="card" style="padding:0; padding-top:15px; overflow:hidden; margin-top:20px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; padding: 0 15px; gap: 10px; flex-wrap: wrap;">
-                    <input type="text" id="search-gest" class="search-bar" placeholder="🔍 Buscar por ID, Título, Solicitante..." onkeyup="filtrarTabla('search-gest', 'tbody-gestionar')">
-                    <button id="btn-export-gest" class="btn btn-success" onclick="exportarReporteSolicitudes()" style="display:none;"><span class="material-icons-round" style="font-size:16px;">table_view</span> Exportar Reporte</button>
+            <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:25px;">
+                <div>
+                    <h1 style="font-size: 26px; font-weight: 800;">Bandeja de Gestión Administrativa</h1>
+                    <p style="color:#64748b; font-size:13px;">Documentos esperando revisión, firma o publicación final.</p>
                 </div>
+                <button id="btn-export-gest" class="btn btn-success" onclick="exportarReporteSolicitudes()" style="display:none;">
+                    <span class="material-icons-round">download</span> Reporte Excel
+                </button>
+            </div>
+
+            <div class="card" style="padding:0; border-radius: 16px; overflow:hidden;">
+                <div style="background: #f8fafc; padding: 20px; border-bottom: 1px solid var(--border); display:flex; gap:15px; align-items:center; flex-wrap:wrap;">
+                    <div style="flex:1; min-width:250px;">
+                        <input type="text" id="search-gest" class="search-bar" style="max-width:100%; margin-bottom:0;" 
+                               placeholder="🔍 Buscar por ID, Solicitante o Documento..." 
+                               onkeyup="filtrarTabla('search-gest', 'tbody-gestionar')">
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <span class="badge badge-dark" style="cursor:pointer;" onclick="setFilterGest('')">Todos</span>
+                        <span class="badge badge-warning" style="cursor:pointer;" onclick="setFilterGest('Pendiente')">Pendientes</span>
+                        <span class="badge badge-info" style="cursor:pointer;" onclick="setFilterGest('Consulta')">En Consulta</span>
+                        <span class="badge badge-danger" style="cursor:pointer;" onclick="setFilterGest('Rechazado')">Rechazados</span>
+                    </div>
+                </div>
+
                 <div class="table-responsive">
-                    <table id="tabla-gestion-solicitudes"><thead><tr><th>ID</th><th>Solicitante</th><th>Documento</th><th>Estado</th><th class="no-export">Acción</th></tr></thead><tbody id="tbody-gestionar"></tbody></table>
+                    <table id="tabla-gestion-solicitudes">
+                        <thead>
+                            <tr>
+                                <th style="width: 120px;">ID Sistema</th>
+                                <th>Origen / Solicitante</th>
+                                <th>Documento y Tipo</th>
+                                <th>Etapa Actual</th>
+                                <th style="text-align: center;" class="no-export">Gestión</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-gestionar">
+                            </tbody>
+                    </table>
                 </div>
             </div>
         </section>
@@ -760,10 +845,11 @@
         let editandoMaestroId = null;
         
         let globalSolicitudes = [];
+        let chartEstados = null; // Variable para manejar la gráfica
 
         const PASOS_NOMBRES = ["Pendiente Documentado", "Pendiente Verificado", "Pendiente Aprobación Gerencia", "Pendiente Aprobación SGC"];
 
-        // FUNCION PARA AGREGAR CAMPOS DE INVOLUCRADOS DINÁMICAMENTE (AL CREAR)
+        // FUNCION PARA AGREGAR CAMPOS DE INVOLUCRADOS DINÁMICAMENTE
         window.addInvolucrado = () => {
             const container = document.getElementById('lista-involucrados');
             const div = document.createElement('div');
@@ -798,7 +884,7 @@
             
             document.getElementById('m-new-involucrado').value = '';
             document.getElementById('loading-overlay').style.display = 'none';
-            verDetalle(selectedId); // Recarga el modal para mostrar el cambio
+            verDetalle(selectedId); 
         };
 
         window.filtrarTabla = (inputId, tbodyId) => {
@@ -815,6 +901,25 @@
                     trs[i].style.display = "";
                 } else {
                     trs[i].style.display = "none";
+                }
+            }
+        };
+
+        // FILTRO RÁPIDO PARA BANDEJA DE GESTIÓN
+        window.setFilterGest = (estado) => {
+            const tbody = document.getElementById('tbody-gestionar');
+            if (!tbody) return;
+            const trs = tbody.getElementsByTagName('tr');
+            for (let i = 0; i < trs.length; i++) {
+                let text = trs[i].innerText || trs[i].textContent;
+                if (estado === '') {
+                    trs[i].style.display = "";
+                } else {
+                    if (text.toLowerCase().includes(estado.toLowerCase())) {
+                        trs[i].style.display = "";
+                    } else {
+                        trs[i].style.display = "none";
+                    }
                 }
             }
         };
@@ -904,7 +1009,6 @@
             
             const toEmails = new Set([EMAIL_ADMIN_SGC, EMAIL_GRUPO_SGC, solicitudData.solicitante_email]);
             
-            // AGREGAMOS LOS CORREOS DE LAS PERSONAS INVOLUCRADAS (SI EXISTEN) PARA EL ENVÍO DE CORREOS
             if(solicitudData.involucrados && Array.isArray(solicitudData.involucrados)) {
                 solicitudData.involucrados.forEach(e => { if(e) toEmails.add(e); });
             }
@@ -958,13 +1062,9 @@
             try {
                 const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, { method: 'POST', body: fd });
                 const data = await res.json();
-                if (!res.ok) {
-                    console.error("Cloudinary Error al subir:", data);
-                    return null;
-                }
+                if (!res.ok) return null;
                 return data.secure_url || null; 
             } catch(e) { 
-                console.error("Network Error subiendo a Cloudinary:", e);
                 return null; 
             }
         }
@@ -1128,22 +1228,79 @@
                 if(!tbHist || !tbGest) return;
                 
                 tbHist.innerHTML = ""; tbGest.innerHTML = "";
-                let stats = { total:0, p:0, o:0 };
                 let solicitudesList = [];
                 s.forEach(d => { let data = d.data(); data.docId = d.id; solicitudesList.push(data); });
 
                 solicitudesList.sort((a, b) => { return a.customId > b.customId ? 1 : -1; });
-                
                 globalSolicitudes = solicitudesList; 
 
+                // Lógica de KPIs (Dashboard)
+                let totalStats = solicitudesList.length;
+                let aprobadosStats = solicitudesList.filter(x => (x.estado || '').toUpperCase().includes('APROBADO FINAL')).length;
+                let pendientesStats = solicitudesList.filter(x => (x.estado || '').toUpperCase().includes('PENDIENTE')).length;
+
+                if(document.getElementById('dash-total')) document.getElementById('dash-total').innerText = totalStats;
+                if(document.getElementById('dash-pend')) document.getElementById('dash-pend').innerText = pendientesStats;
+                if(document.getElementById('dash-ok')) document.getElementById('dash-ok').innerText = aprobadosStats;
+
+                if(totalStats > 0) {
+                    if(document.getElementById('bar-pend')) document.getElementById('bar-pend').style.width = (pendientesStats / totalStats * 100) + "%";
+                    if(document.getElementById('bar-ok')) document.getElementById('bar-ok').style.width = (aprobadosStats / totalStats * 100) + "%";
+                }
+                if(document.getElementById('dash-date')) document.getElementById('dash-date').innerText = new Date().toLocaleDateString('es-PA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+                // Gráfico de Estados
+                let conteoEstados = {};
+                solicitudesList.forEach(s => {
+                    let e = s.estado || 'Desconocido';
+                    if(e.toUpperCase().includes('APROBADO FINAL')) e = 'Aprobado Final';
+                    conteoEstados[e] = (conteoEstados[e] || 0) + 1;
+                });
+
+                const labelsChart = Object.keys(conteoEstados);
+                const dataChart = Object.values(conteoEstados);
+                const bgColors = labelsChart.map(l => {
+                    let lUp = l.toUpperCase();
+                    if(lUp.includes('APROBADO')) return '#10b981'; // success
+                    if(lUp.includes('PENDIENTE')) return '#f59e0b'; // warning
+                    if(lUp.includes('ANULADO') || lUp.includes('RECHAZADO')) return '#ef4444'; // danger
+                    return '#3b82f6'; // info
+                });
+
+                if(chartEstados) {
+                    chartEstados.data.labels = labelsChart;
+                    chartEstados.data.datasets[0].data = dataChart;
+                    chartEstados.data.datasets[0].backgroundColor = bgColors;
+                    chartEstados.update();
+                } else {
+                    const ctx = document.getElementById('estadosChart');
+                    if(ctx) {
+                        chartEstados = new Chart(ctx, {
+                            type: 'doughnut',
+                            data: {
+                                labels: labelsChart,
+                                datasets: [{
+                                    data: dataChart,
+                                    backgroundColor: bgColors,
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { position: 'right', labels: { boxWidth: 12, font: {size: 11} } }
+                                }
+                            }
+                        });
+                    }
+                }
+
+                // Generación de Tablas
                 solicitudesList.forEach(sol => {
                     const p = currentUser.permisos || {};
                     let estadoStr = (sol.estado || "").toUpperCase();
                     let isAprobadoFinal = estadoStr.includes('APROBADO FINAL');
-
-                    stats.total++;
-                    if(sol.estado === 'Pendiente Documentado') stats.p++; 
-                    else if(isAprobadoFinal) stats.o++;
 
                     let ver = p.p_ver_all || (p.p_ver_ger && sol.gerencia === currentUser.gerencia) || (p.p_ver_propias && sol.uid === currentUser.usuario);
                     
@@ -1168,12 +1325,8 @@
                     if(p.p_gest_sgc && (sol.idx === 0 || sol.idx === 1 || sol.idx === 3) && estadoStr !== 'RECHAZADO' && !isAprobadoFinal && estadoStr !== 'ANULADO') gestionar = true;
                     if(p.p_ger_apr && sol.idx === 2 && sol.gerencia === currentUser.gerencia && estadoStr !== 'RECHAZADO' && estadoStr !== 'ANULADO' && !isAprobadoFinal) gestionar = true;
 
-                    if(gestionar) tbGest.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.solicitante}</td><td>${sol.titulo}</td><td><span class="badge ${badgeClass}">${estadoMostrar}</span>${infoFase}</td><td><button class="btn btn-primary" onclick="verDetalle('${sol.docId}')">Gestionar</button></td></tr>`;
+                    if(gestionar) tbGest.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.solicitante}</td><td>${sol.titulo}</td><td><span class="badge ${badgeClass}">${estadoMostrar}</span>${infoFase}</td><td style="text-align:center;"><button class="btn btn-primary" onclick="verDetalle('${sol.docId}')">Gestionar</button></td></tr>`;
                 });
-                
-                if(document.getElementById('dash-total')) document.getElementById('dash-total').innerText = stats.total;
-                if(document.getElementById('dash-pend')) document.getElementById('dash-pend').innerText = stats.p;
-                if(document.getElementById('dash-ok')) document.getElementById('dash-ok').innerText = stats.o;
             });
 
             onSnapshot(path("ListadoMaestro"), s => {
@@ -1379,7 +1532,6 @@
                             alert(`Se importaron ${json.length} registros exitosamente.`);
                         }
                     } catch(error) {
-                        console.error(error);
                         alert("Hubo un error leyendo el Excel.");
                     }
                     document.getElementById('loading-overlay').style.display = 'none';
@@ -1539,7 +1691,6 @@
                 document.getElementById('m-fecha-ult').innerText = window.formatearFechaAbreviada(s.fecha_ref);
             } else document.getElementById('m-extra-panel').style.display = 'none';
 
-            // MOSTRAR Y GESTIONAR PERSONAS INVOLUCRADAS
             let invList = s.involucrados && s.involucrados.length > 0 ? s.involucrados.join(', ') : "No hay personas extras añadidas.";
             document.getElementById('m-involucrados-list').innerText = invList;
 
@@ -1552,21 +1703,16 @@
             }
 
             const esSGC = p.p_gest_sgc;
-            
             const esGestorSGC = esSGC && (s.idx === 0 || s.idx === 1 || s.idx === 3);
             const esGer = p.p_ger_apr && s.idx === 2 && s.gerencia === currentUser.gerencia;
-            
             const esDuenio = s.uid === currentUser.usuario;
             const activo = !isAprobadoFinalModal && estadoStr !== 'RECHAZADO' && estadoStr !== 'ANULADO';
 
-            // Ocultar/Mostrar el boton de añadir involucrados según si la solicitud sigue activa
             document.getElementById('m-add-involucrado-section').style.display = activo ? 'flex' : 'none';
-            
             document.getElementById('m-actions').style.display = (esGestorSGC || esGer) && activo ? 'block' : 'none';
             document.getElementById('applicant-actions').style.display = (esDuenio && activo) ? 'block' : 'none';
             document.getElementById('m-input-area').style.display = 'none';
             document.getElementById('general-comment-area').style.display = estadoStr !== 'ANULADO' ? 'block' : 'none';
-            
             document.getElementById('btn-anular').style.display = (esSGC || esDuenio) && activo ? 'inline-block' : 'none';
 
             document.getElementById('m-panel-final-sgc').style.display = 'none';
@@ -1582,7 +1728,6 @@
                 document.getElementById('m-upd-ver').value = s.ver_ref || '';
             }
             
-            // LÓGICA INFALIBLE PARA MOSTRAR PANEL VERDE DE APROBADO O EL DE SUBIDA DEL SGC
             if (isAprobadoFinalModal) {
                 if (s.version_final) {
                     document.getElementById('m-original-data').classList.add('locked-data');
@@ -1649,7 +1794,6 @@
                     }
 
                 } else if (esSGC) {
-                    // Si el estado es "APROBADO FINAL" (porque se editó manual en BD) pero faltan los datos del archivo, se muestra este panel
                     document.getElementById('m-panel-final-sgc').style.display = 'block';
                     document.getElementById('m-final-cod').value = s.cod_ref || ""; 
                 }
@@ -1691,7 +1835,6 @@
             const s = selectedDocData;
             const nIdx = s.idx + 1;
             const nEst = nIdx < 4 ? PASOS_NOMBRES[nIdx] : "Aprobado Final";
-            
             const faseAprobada = PASOS_NOMBRES[s.idx]; 
             
             await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), {
@@ -1755,7 +1898,6 @@
             }
             
             let fileName = f.files[0].name;
-            
             let chatPayload = {u: "SISTEMA (SGC)", m: `🏁 SOLICITUD APROBADA FINALMENTE Y PUBLICADA. Ver: ${ver}. Obs: ${com}`, t: new Date().toLocaleString(), archivo: fileUrl};
 
             await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), {
@@ -1881,12 +2023,9 @@
                 }
             }
 
-            // OBTENER CORREOS DE INVOLUCRADOS
             const extraEmailsNodes = document.querySelectorAll('.extra-email');
             const extraEmails = Array.from(extraEmailsNodes).map(el => el.value.trim().toLowerCase()).filter(e => e !== "" && e.includes('@'));
-
             const fci = await getNextFCI();
-
             const gerenteEmailVisible = document.getElementById('sol-email-gerente').value;
 
             const data = {
@@ -1914,7 +2053,6 @@
 
             await addDoc(collection(db, "artifacts", appId, "public", "data", "Solicitudes"), data);
             
-            // LIMPIAR LA LISTA DE INVOLUCRADOS DESPUÉS DE ENVIAR
             document.getElementById('lista-involucrados').innerHTML = "";
 
             const toEmails = new Set([EMAIL_ADMIN_SGC, EMAIL_GRUPO_SGC, currentUser.email, ...extraEmails]);
@@ -1982,7 +2120,6 @@
             document.getElementById(id).classList.add('active');
             if(btn) btn.classList.add('active');
             
-            // Cerrar menú en móvil
             if(window.innerWidth <= 768) {
                 document.getElementById('sidebar').classList.remove('open');
                 document.getElementById('sidebar-overlay').classList.remove('active');
