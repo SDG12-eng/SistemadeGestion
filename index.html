@@ -67,6 +67,7 @@
         .btn-danger { background: var(--danger); color: white; }
         .btn-info { background: var(--info); color: white; }
         .btn-ghost { background: #f1f5f9; color: #475569; }
+        .btn-dark { background: #475569; color: white; }
         .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
 
         table { width: 100%; border-collapse: collapse; }
@@ -138,6 +139,11 @@
             gap: 8px;
         }
 
+        /* EDITOR DE TEXTO ENRIQUECIDO */
+        .rt-btn { background: white; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px 10px; cursor: pointer; font-size: 12px; color: #334155; transition: 0.2s; display:flex; align-items:center; justify-content:center; }
+        .rt-btn:hover { background: #e2e8f0; }
+        [contenteditable=true]:empty:before { content: attr(data-placeholder); color: #94a3b8; pointer-events: none; display: block; }
+
         #loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 6000; display: none; align-items: center; justify-content: center; flex-direction: column; }
         .spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -183,7 +189,6 @@
             h1 { font-size: 22px; }
             .card { padding: 15px; }
             
-            /* Ajuste botones top en listados */
             .btn { width: 100%; justify-content: center; }
             .search-bar { max-width: 100%; margin-bottom: 10px; }
             #sec-listado > div:first-child, #sec-hist > div:first-child, #sec-gest > div:first-child { flex-direction: column; align-items: stretch; }
@@ -592,8 +597,9 @@
                         <h2 id="m-tit" style="margin-top:5px; font-size:20px;"></h2>
                     </div>
                     <div style="display:flex; gap:10px;">
+                        <button class="btn btn-warning" id="btn-reabrir" onclick="reabrirSolicitud()" style="display:none; padding: 8px 15px; align-items:center;"><span class="material-icons-round" style="font-size:16px; margin-right:5px;">restore</span> Reabrir</button>
                         <button class="btn btn-danger" id="btn-anular" onclick="anularSolicitud()" style="display:none; padding: 8px 15px;">Anular</button>
-                        <button class="btn btn-dark" onclick="closeModal()" style="background:#475569; color:white; padding: 8px 15px;">Cerrar</button>
+                        <button class="btn btn-dark" onclick="closeModal()" style="padding: 8px 15px;">Cerrar</button>
                     </div>
                 </div>
                 
@@ -720,9 +726,18 @@
                 <div id="m-input-area" style="display:none; margin-top:15px;">
                     <div id="reunion-container" style="display:none; margin-bottom:10px;">
                         <label style="color:var(--warning)">Fecha y Hora de Reunión</label>
-                        <input type="datetime-local" id="m-date-meeting">
+                        <input type="datetime-local" id="m-date-meeting" style="margin-bottom:10px;">
                     </div>
-                    <input type="text" id="m-extra-input" placeholder="Motivo / Consulta / Comentario" style="margin-bottom:5px;">
+                    
+                    <div style="border:1px solid #cbd5e1; border-radius:8px; margin-bottom:10px; overflow:hidden; background:white;">
+                        <div style="background:#f8fafc; padding:5px; border-bottom:1px solid #cbd5e1; display:flex; gap:5px;">
+                            <button type="button" class="rt-btn" onclick="document.execCommand('bold',false,null)"><b>B</b></button>
+                            <button type="button" class="rt-btn" onclick="document.execCommand('italic',false,null)"><i>I</i></button>
+                            <button type="button" class="rt-btn" onclick="document.execCommand('underline',false,null)"><u>U</u></button>
+                            <button type="button" class="rt-btn" onclick="document.execCommand('insertUnorderedList',false,null)">• Lista</button>
+                        </div>
+                        <div id="m-extra-input" contenteditable="true" data-placeholder="Motivo / Consulta / Comentario..." style="min-height:50px; padding:10px; outline:none; font-size:13px;"></div>
+                    </div>
                     
                     <div style="background:#f0fdf4; padding:10px; border-radius:8px; border:1px solid #bbf7d0;">
                             <label style="color:#15803d; margin-bottom:5px;">Adjuntar Archivo / Corrección (Opcional)</label>
@@ -734,7 +749,17 @@
 
                 <div id="general-comment-area" style="margin-top:30px; border-top:2px solid #e2e8f0; padding-top:20px;">
                     <p style="font-weight:800; font-size:11px; color:#64748b; margin-bottom:10px;">DEJAR UN COMENTARIO EN LA BITÁCORA:</p>
-                    <textarea id="m-comentario-libre" rows="2" placeholder="Escribe un comentario o consulta directa..." style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px; margin-bottom:10px; resize:vertical;"></textarea>
+                    
+                    <div style="border:1px solid #cbd5e1; border-radius:8px; margin-bottom:10px; overflow:hidden; background:white;">
+                        <div style="background:#f8fafc; padding:5px; border-bottom:1px solid #cbd5e1; display:flex; gap:5px;">
+                            <button type="button" class="rt-btn" onclick="document.execCommand('bold',false,null)"><b>B</b></button>
+                            <button type="button" class="rt-btn" onclick="document.execCommand('italic',false,null)"><i>I</i></button>
+                            <button type="button" class="rt-btn" onclick="document.execCommand('underline',false,null)"><u>U</u></button>
+                            <button type="button" class="rt-btn" onclick="document.execCommand('insertUnorderedList',false,null)">• Lista</button>
+                        </div>
+                        <div id="m-comentario-libre" contenteditable="true" data-placeholder="Escribe un comentario o consulta directa..." style="min-height:60px; padding:10px; outline:none; font-size:13px;"></div>
+                    </div>
+
                     <div style="display:flex; gap:10px; align-items:center;">
                         <div style="flex:1;">
                             <label style="font-size:10px;">Adjuntar Referencia (Opcional)</label>
@@ -879,7 +904,6 @@
             }
         };
 
-        // NUEVO: Función para filtrar con las etiquetas rápidas en Bandeja de Gestión
         window.setFilterGest = (filterText) => {
             const tbody = document.getElementById('tbody-gestionar');
             if (!tbody) return;
@@ -887,7 +911,6 @@
             const filter = filterText.toLowerCase();
 
             for (let i = 0; i < trs.length; i++) {
-                // El estado está en la columna 3 (índice base 0)
                 let statusCell = trs[i].getElementsByTagName('td')[3];
                 if (statusCell) {
                     let text = statusCell.textContent || statusCell.innerText;
@@ -985,7 +1008,6 @@
             
             const toEmails = new Set([EMAIL_ADMIN_SGC, EMAIL_GRUPO_SGC, solicitudData.solicitante_email]);
             
-            // AGREGAMOS LOS CORREOS DE LAS PERSONAS INVOLUCRADAS (SI EXISTEN) PARA EL ENVÍO DE CORREOS
             if(solicitudData.involucrados && Array.isArray(solicitudData.involucrados)) {
                 solicitudData.involucrados.forEach(e => { if(e) toEmails.add(e); });
             }
@@ -1111,6 +1133,10 @@
             document.getElementById('curr-ger').innerText = currentUser.gerencia;
 
             const p = currentUser.permisos || {};
+            
+            // ACTIVAMOS EL TAB DE DASHBOARD PARA QUE SEA VISIBLE
+            document.getElementById('nav-dash').classList.add('visible'); 
+
             if(p.can_solicit) document.getElementById('nav-crear').classList.add('visible');
             if(p.p_ver_propias || p.p_ver_ger || p.p_ver_all) document.getElementById('nav-hist').classList.add('visible');
             if(p.p_gest_sgc || p.p_ger_apr) document.getElementById('nav-gest').classList.add('visible');
@@ -1131,7 +1157,7 @@
             if(document.getElementById('btn-export-list')) document.getElementById('btn-export-list').style.display = esAdminTotal ? 'inline-flex' : 'none';
 
             cargarDatos();
-            // AQUI CAMBIAMOS PARA QUE LA VISTA POR DEFECTO SEA MIS SOLICITUDES EN VEZ DEL DASHBOARD
+            // LA VISTA POR DEFECTO ES MIS SOLICITUDES
             document.getElementById('nav-hist').click();
         }
 
@@ -1210,6 +1236,7 @@
                 if(!tbHist || !tbGest) return;
                 
                 tbHist.innerHTML = ""; tbGest.innerHTML = "";
+                let stats = { total:0, p:0, o:0 };
                 let solicitudesList = [];
                 s.forEach(d => { let data = d.data(); data.docId = d.id; solicitudesList.push(data); });
 
@@ -1217,40 +1244,24 @@
                 
                 globalSolicitudes = solicitudesList; 
 
-                // Lógica y cálculo para Dashboard
-                let totalSols = solicitudesList.length;
-                let aprobados = solicitudesList.filter(sol => (sol.estado || '').toUpperCase().includes('APROBADO FINAL')).length;
-                let anulados = solicitudesList.filter(sol => (sol.estado || '').toUpperCase() === 'ANULADO' || (sol.estado || '').toUpperCase() === 'RECHAZADO').length;
-                let pendientes = totalSols - aprobados - anulados;
-
-                if(document.getElementById('dash-total')) document.getElementById('dash-total').innerText = totalSols;
-                if(document.getElementById('dash-pend')) document.getElementById('dash-pend').innerText = pendientes;
-                if(document.getElementById('dash-ok')) document.getElementById('dash-ok').innerText = aprobados;
-
-                if(totalSols > 0) {
-                    if(document.getElementById('bar-pend')) document.getElementById('bar-pend').style.width = (pendientes / totalSols * 100) + "%";
-                    if(document.getElementById('bar-ok')) document.getElementById('bar-ok').style.width = (aprobados / totalSols * 100) + "%";
-                }
-                if(document.getElementById('dash-date')) {
-                    document.getElementById('dash-date').innerText = new Date().toLocaleDateString('es-PA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                }
-
                 solicitudesList.forEach(sol => {
                     const p = currentUser.permisos || {};
                     let estadoStr = (sol.estado || "").toUpperCase();
                     let isAprobadoFinal = estadoStr.includes('APROBADO FINAL');
+                    let isCancelado = estadoStr === 'ANULADO' || estadoStr === 'RECHAZADO';
 
-                    // Verificamos si el usuario actual está en la lista de involucrados
+                    stats.total++;
+                    if(!isAprobadoFinal && !isCancelado) stats.p++; 
+                    else if(isAprobadoFinal) stats.o++;
+
                     let esInvolucrado = sol.involucrados && currentUser.email && sol.involucrados.includes(currentUser.email.toLowerCase());
-
-                    // Damos acceso si es admin, de la gerencia, el creador original, o un involucrado
                     let ver = p.p_ver_all || 
                               (p.p_ver_ger && sol.gerencia === currentUser.gerencia) || 
                               (p.p_ver_propias && (sol.uid === currentUser.usuario || esInvolucrado));
                     
                     let badgeClass = 'badge-info';
                     if(estadoStr.includes('APROBADO')) badgeClass = 'badge-success';
-                    if(estadoStr === 'ANULADO' || estadoStr === 'RECHAZADO') badgeClass = 'badge-danger';
+                    if(isCancelado) badgeClass = 'badge-danger';
                     if(estadoStr.includes('PENDIENTE')) badgeClass = 'badge-warning';
 
                     let faseActual = PASOS_NOMBRES[sol.idx] || "";
@@ -1259,18 +1270,31 @@
                     
                     if (isAprobadoFinal) {
                         estadoMostrar = "APROBADO FINAL";
-                    } else if (estadoStr !== 'ANULADO' && estadoStr !== 'RECHAZADO' && faseActual) {
+                    } else if (!isCancelado && faseActual) {
                         infoFase = `<br><span style="font-size:10px; color:#64748b; font-weight:700; display:inline-block; margin-top:5px;">📍 Etapa: ${faseActual}</span>`;
                     }
 
                     if(ver) tbHist.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.solicitante}</td><td>${sol.titulo}</td><td><span class="badge ${badgeClass}">${estadoMostrar}</span>${infoFase}</td><td><button class="btn btn-ghost" onclick="verDetalle('${sol.docId}')">Ver</button></td></tr>`;
                     
                     let gestionar = false;
-                    if(p.p_gest_sgc && (sol.idx === 0 || sol.idx === 1 || sol.idx === 3) && estadoStr !== 'RECHAZADO' && !isAprobadoFinal && estadoStr !== 'ANULADO') gestionar = true;
-                    if(p.p_ger_apr && sol.idx === 2 && sol.gerencia === currentUser.gerencia && estadoStr !== 'RECHAZADO' && estadoStr !== 'ANULADO' && !isAprobadoFinal) gestionar = true;
+                    if(p.p_gest_sgc && (sol.idx === 0 || sol.idx === 1 || sol.idx === 3) && !isCancelado && !isAprobadoFinal) gestionar = true;
+                    if(p.p_ger_apr && sol.idx === 2 && sol.gerencia === currentUser.gerencia && !isCancelado && !isAprobadoFinal) gestionar = true;
 
                     if(gestionar) tbGest.innerHTML += `<tr><td>${sol.customId}</td><td>${sol.solicitante}</td><td>${sol.titulo}</td><td><span class="badge ${badgeClass}">${estadoMostrar}</span>${infoFase}</td><td><button class="btn btn-primary" onclick="verDetalle('${sol.docId}')">Gestionar</button></td></tr>`;
                 });
+                
+                if(document.getElementById('dash-total')) document.getElementById('dash-total').innerText = stats.total;
+                if(document.getElementById('dash-pend')) document.getElementById('dash-pend').innerText = stats.p;
+                if(document.getElementById('dash-ok')) document.getElementById('dash-ok').innerText = stats.o;
+                
+                // Barras del Dashboard
+                if(stats.total > 0) {
+                    if(document.getElementById('bar-pend')) document.getElementById('bar-pend').style.width = (stats.p / stats.total * 100) + "%";
+                    if(document.getElementById('bar-ok')) document.getElementById('bar-ok').style.width = (stats.o / stats.total * 100) + "%";
+                }
+                if(document.getElementById('dash-date')) {
+                    document.getElementById('dash-date').innerText = new Date().toLocaleDateString('es-PA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                }
             });
 
             onSnapshot(path("ListadoMaestro"), s => {
@@ -1591,6 +1615,11 @@
 
         window.verDetalle = async (id) => {
             selectedId = id;
+            
+            // Limpiamos los editores enriquecidos al abrir un nuevo caso
+            document.getElementById('m-extra-input').innerHTML = "";
+            document.getElementById('m-comentario-libre').innerHTML = "";
+            
             const docSnap = await getDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", id));
             selectedDocData = docSnap.data();
             const s = selectedDocData;
@@ -1649,18 +1678,24 @@
             }
 
             const esSGC = p.p_gest_sgc;
+            const esAdminSGC = p.admin || p.p_gest_sgc; // Validación para botón Reabrir
             
             const esGestorSGC = esSGC && (s.idx === 0 || s.idx === 1 || s.idx === 3);
             const esGer = p.p_ger_apr && s.idx === 2 && s.gerencia === currentUser.gerencia;
             
-            // Expandimos la validación para que los involucrados sean tratados como dueños
             const esInvolucradoActivo = s.involucrados && currentUser.email && s.involucrados.includes(currentUser.email.toLowerCase());
             const esDuenio = s.uid === currentUser.usuario || esInvolucradoActivo;
             const activo = !isAprobadoFinalModal && estadoStr !== 'RECHAZADO' && estadoStr !== 'ANULADO';
 
-            // Ocultar/Mostrar el boton de añadir involucrados según si la solicitud sigue activa
+            // MOSTRAR BOTÓN DE REABRIR SI EL CASO ESTÁ CERRADO Y ES ADMIN/SGC
+            if (esAdminSGC && !activo) {
+                document.getElementById('btn-reabrir').style.display = 'inline-flex';
+            } else {
+                document.getElementById('btn-reabrir').style.display = 'none';
+            }
+
+            // Ocultar/Mostrar paneles según estado
             document.getElementById('m-add-involucrado-section').style.display = activo ? 'flex' : 'none';
-            
             document.getElementById('m-actions').style.display = (esGestorSGC || esGer) && activo ? 'block' : 'none';
             document.getElementById('applicant-actions').style.display = (esDuenio && activo) ? 'block' : 'none';
             document.getElementById('m-input-area').style.display = 'none';
@@ -1681,7 +1716,6 @@
                 document.getElementById('m-upd-ver').value = s.ver_ref || '';
             }
             
-            // LÓGICA INFALIBLE PARA MOSTRAR PANEL VERDE DE APROBADO O EL DE SUBIDA DEL SGC
             if (isAprobadoFinalModal) {
                 if (s.version_final) {
                     document.getElementById('m-original-data').classList.add('locked-data');
@@ -1748,7 +1782,6 @@
                     }
 
                 } else if (esSGC) {
-                    // Si el estado es "APROBADO FINAL" (porque se editó manual en BD) pero faltan los datos del archivo, se muestra este panel
                     document.getElementById('m-panel-final-sgc').style.display = 'block';
                     document.getElementById('m-final-cod').value = s.cod_ref || ""; 
                 }
@@ -1767,22 +1800,49 @@
             document.getElementById('modal').style.display = 'flex';
         };
 
+        // FUNCIÓN PARA REABRIR SOLICITUD
+        window.reabrirSolicitud = async () => {
+            if(!confirm("⚠️ ¿Estás seguro de REABRIR esta solicitud? La solicitud volverá al estado inicial (Pendiente Documentado) y requerirá completar el ciclo nuevamente.")) return;
+            
+            let motivo = prompt("Describe el motivo de la reapertura:");
+            if(!motivo) return alert("Se requiere un motivo obligatorio para reabrir el caso.");
+
+            document.getElementById('loading-overlay').style.display = 'flex';
+            
+            await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), {
+                estado: "Pendiente Documentado",
+                idx: 0,
+                chat: arrayUnion({u: currentUser.nombre, m: `<b style="color:var(--danger);">⚠️ REAPERTURA DE SOLICITUD POR ADMINISTRACIÓN</b><br><b>Motivo:</b> ${motivo}`, t: new Date().toLocaleString()})
+            });
+
+            const dest = await getDatosEnvio(selectedDocData);
+            sendNotification(dest, `Solicitud Reabierta: ${selectedDocData.customId}`, `La solicitud ha sido devuelta al estado "Pendiente Documentado" por ${currentUser.nombre}. Motivo: ${motivo}`);
+
+            document.getElementById('loading-overlay').style.display = 'none';
+            alert("Solicitud reabierta de manera exitosa.");
+            closeModal();
+            
+            // Forzar actualización de pantalla actual
+            if(document.getElementById('nav-hist').classList.contains('active')) document.getElementById('nav-hist').click();
+            else if(document.getElementById('nav-gest').classList.contains('active')) document.getElementById('nav-gest').click();
+        };
+
         window.gestionar = (tipo) => {
             tempAction = tipo;
             document.getElementById('m-input-area').style.display = 'block';
             if(tipo === 'Reunión') {
                 document.getElementById('reunion-container').style.display = 'block';
-                document.getElementById('m-extra-input').placeholder = 'Tema de la reunión...';
+                document.getElementById('m-extra-input').setAttribute('data-placeholder', 'Tema de la reunión e instrucciones...');
             } else {
                 document.getElementById('reunion-container').style.display = 'none';
-                document.getElementById('m-extra-input').placeholder = 'Motivo / Consulta / Comentario';
+                document.getElementById('m-extra-input').setAttribute('data-placeholder', 'Motivo / Consulta / Comentario...');
             }
         };
 
         window.responderSolicitante = () => {
             tempAction = "Respuesta";
             document.getElementById('m-input-area').style.display = 'block';
-            document.getElementById('m-extra-input').placeholder = "Describe tu respuesta o corrección...";
+            document.getElementById('m-extra-input').setAttribute('data-placeholder', 'Describe tu respuesta o detalla tu corrección...');
             document.getElementById('reunion-container').style.display = 'none';
         }
 
@@ -1804,9 +1864,14 @@
         };
 
         window.enviarComentarioLibre = async () => {
-            const txt = document.getElementById('m-comentario-libre').value;
+            const box = document.getElementById('m-comentario-libre');
+            const txtHTML = box.innerHTML;
+            const txtPlain = box.innerText.trim();
             const f = document.getElementById('m-file-comentario');
-            if(!txt && !f.files[0]) return alert("Escribe un mensaje o adjunta un archivo.");
+            
+            if(!txtPlain && !f.files[0] && txtHTML.replace(/<[^>]*>?/gm, '').trim() === '') {
+                return alert("Escribe un mensaje o adjunta un archivo.");
+            }
             
             document.getElementById('loading-overlay').style.display = 'flex';
             
@@ -1819,7 +1884,7 @@
                 }
             }
             
-            let chatPayload = {u: currentUser.nombre, m: `💬 Comentario: ${txt}`, t: new Date().toLocaleString()};
+            let chatPayload = {u: currentUser.nombre, m: `💬 <b>Comentario:</b><br>${txtHTML}`, t: new Date().toLocaleString()};
             if (fileUrl) chatPayload.archivo = fileUrl; 
 
             await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), {
@@ -1827,9 +1892,9 @@
             });
 
             const dest = await getDatosEnvio(selectedDocData);
-            sendNotification(dest, `Nuevo Comentario: ${selectedDocData.customId}`, `${currentUser.nombre} ha dejado un comentario: ${txt}`);
+            sendNotification(dest, `Nuevo Comentario: ${selectedDocData.customId}`, `${currentUser.nombre} ha dejado un comentario: ${txtPlain || 'Se ha enviado un comentario con formato/adjuntos.'}`);
 
-            document.getElementById('m-comentario-libre').value = "";
+            box.innerHTML = "";
             f.value = "";
             document.getElementById('loading-overlay').style.display = 'none';
             closeModal();
@@ -1855,7 +1920,7 @@
             
             let fileName = f.files[0].name;
             
-            let chatPayload = {u: "SISTEMA (SGC)", m: `🏁 SOLICITUD APROBADA FINALMENTE Y PUBLICADA. Ver: ${ver}. Obs: ${com}`, t: new Date().toLocaleString(), archivo: fileUrl};
+            let chatPayload = {u: "SISTEMA (SGC)", m: `🏁 <b>SOLICITUD APROBADA FINALMENTE Y PUBLICADA.</b><br>Ver: ${ver}. Obs: ${com}`, t: new Date().toLocaleString(), archivo: fileUrl};
 
             await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), {
                 estado: "Aprobado Final", 
@@ -1903,7 +1968,7 @@
             document.getElementById('loading-overlay').style.display = 'flex';
             await updateDoc(doc(db, "artifacts", appId, "public", "data", "Solicitudes", selectedId), {
                 estado: "Anulado",
-                chat: arrayUnion({u: currentUser.nombre, m: `🚫 SOLICITUD ANULADA. Motivo: ${motivo}`, t: new Date().toLocaleString()})
+                chat: arrayUnion({u: currentUser.nombre, m: `🚫 <b>SOLICITUD ANULADA</b><br>Motivo: ${motivo}`, t: new Date().toLocaleString()})
             });
 
             const dest = await getDatosEnvio(selectedDocData);
@@ -1914,20 +1979,21 @@
         }
 
         document.getElementById('btnConfirmAction').onclick = async () => {
-            const txt = document.getElementById('m-extra-input').value;
+            const box = document.getElementById('m-extra-input');
+            const txtHTML = box.innerHTML;
             const f = document.getElementById('m-file-gestion');
             let mensajeFinal = "";
             let nEst = "";
 
             if (tempAction === "Respuesta") {
-                mensajeFinal = `Respuesta del Usuario: ${txt}`;
+                mensajeFinal = `<b>Respuesta del Usuario:</b><br>${txtHTML}`;
                 nEst = "Respuesta Recibida"; 
             } else {
-                mensajeFinal = `${tempAction}: ${txt}`;
+                mensajeFinal = `<b>${tempAction}:</b><br>${txtHTML}`;
                 if(tempAction === 'Reunión') {
                     const fechaReunion = document.getElementById('m-date-meeting').value;
                     if(!fechaReunion) { alert("Selecciona fecha y hora"); return; }
-                    mensajeFinal += `\n📅 Fecha: ${fechaReunion.replace('T', ' ')}`;
+                    mensajeFinal += `<br><br>📅 <b>Fecha Asignada:</b> ${fechaReunion.replace('T', ' ')}`;
                 }
                 nEst = tempAction === 'Rechazado' ? 'Rechazado' : `En ${tempAction}`;
             }
@@ -1952,7 +2018,8 @@
             });
 
             const dest = await getDatosEnvio(selectedDocData);
-            sendNotification(dest, `Actualización: ${selectedDocData.customId}`, mensajeFinal);
+            let plainTextMsg = mensajeFinal.replace(/<br>/g, "\n").replace(/<[^>]*>?/gm, '');
+            sendNotification(dest, `Actualización: ${selectedDocData.customId}`, plainTextMsg);
 
             document.getElementById('m-input-area').style.display = 'none';
             document.getElementById('loading-overlay').style.display = 'none';
